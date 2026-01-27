@@ -80,72 +80,55 @@ button:hover{
 
 
 <script>
+const USER_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?gid=32388154&single=true&output=csv";
 
-const USER_SHEET =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?gid=32388154&single=true&output=csv; // paste user sheet csv here
-
-
-function login(){
-
+function login() {
     const id = document.getElementById("userid").value.trim();
     const pass = document.getElementById("password").value.trim();
 
-    if(!id || !pass){
+    if (!id || !pass) {
         showError("Enter ID and Password");
         return;
     }
 
-
-    Papa.parse(USER_SHEET,{
-
-        download:true,
-        header:true,
-
-        complete:function(res){
-
+    Papa.parse(USER_SHEET, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(res) {
             const users = res.data;
-
             let found = false;
 
-
-            users.forEach(u=>{
-
-                const sheetID = (u.ID || "").trim();
-                const sheetPass = (u.Password || "").trim();
-
-                if(sheetID === id && sheetPass === pass){
-
+            users.forEach(u => {
+                // Trim CSV values to remove extra spaces
+                const uID = (u.ID || "").trim();
+                const uPass = (u.Password || "").trim();
+                
+                if (uID === id && uPass === pass) {
                     found = true;
 
                     // Save session
-                    localStorage.setItem("userid",id);
-                    localStorage.setItem("name",u.Name);
+                    localStorage.setItem("userid", uID);
+                    localStorage.setItem("name", (u.Name || "").trim());
 
                     // Go to dashboard
                     window.location.href = "dashboard.html";
-
                 }
-
             });
 
-
-            if(!found){
+            if (!found) {
                 showError("Wrong ID or Password");
             }
-
         }
-
     });
-
 }
 
-
-function showError(msg){
+function showError(msg) {
     document.getElementById("error").innerText = msg;
 }
-
 </script>
 
 </body>
 </html>
+
 
