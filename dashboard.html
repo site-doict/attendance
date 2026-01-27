@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard</title>
+
+<style>
+body{
+    font-family:Arial;
+    background:#f9f9f9;
+    padding:30px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Welcome</h2>
+
+<p id="user"></p>
+
+<button onclick="logout()">Logout</button>
+
+
+<script>
+
+const id = localStorage.getItem("userid");
+const name = localStorage.getItem("name");
+
+if(!id){
+    window.location.href="index.html";
+}
+
+document.getElementById("user").innerText =
+"ID: " + id + " | Name: " + name;
+
+
+function logout(){
+
+    localStorage.clear();
+    window.location.href="index.html";
+
+}
+
+</script>
+
+</body>
+</html>
