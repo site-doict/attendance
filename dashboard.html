@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Dashboard</title>
+<title>Attendance Dashboard</title>
 
 <style>
 body{
@@ -9,20 +9,57 @@ body{
     background:#f9f9f9;
     padding:30px;
 }
+h2{
+    color:#0056b3;
+}
+label{
+    display:block;
+    margin-top:10px;
+}
+input[type="text"], input[type="time"]{
+    padding:8px;
+    width:200px;
+    margin-top:4px;
+}
+button{
+    margin-top:20px;
+    padding:10px 20px;
+    background:#28a745;
+    color:white;
+    border:none;
+    cursor:pointer;
+    border-radius:4px;
+}
+button:hover{
+    background:#218838;
+}
+#status{
+    margin-top:20px;
+    font-weight:bold;
+}
 </style>
 </head>
 
 <body>
 
 <h2>Welcome</h2>
-
 <p id="user"></p>
 
+<h3>Submit Attendance</h3>
+
+<form id="attendanceForm">
+    <label>In Time: <input type="time" id="intime"></label>
+    <label>Out Time: <input type="time" id="outtime"></label>
+    <input type="hidden" id="lat">
+    <input type="hidden" id="lng">
+    <button type="button" onclick="submitAttendance()">Submit</button>
+</form>
+
+<p id="status"></p>
 <button onclick="logout()">Logout</button>
 
-
 <script>
-
+// Get user info
 const id = localStorage.getItem("userid");
 const name = localStorage.getItem("name");
 
@@ -30,15 +67,89 @@ if(!id){
     window.location.href="index.html";
 }
 
-document.getElementById("user").innerText =
-"ID: " + id + " | Name: " + name;
+document.getElementById("user").innerText = "ID: " + id + " | Name: " + name;
 
+// Get location
+function getLocation(){
+    if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(
+            (pos)=>{
+                document.getElementById("lat").value = pos.coords.latitude;
+                document.getElementById("lng").value = pos.coords.longitude;
+            },
+            ()=>{
+                document.getElementById("lat").value = "";
+                document.getElementById("lng").value = "";
+            }
+        );
+    }
+}
+getLocation();
 
+// Google Form POST URL and field IDs
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
+
+const FIELDS = {
+    id: "entry.1859002656",         // replace with your actual ID field
+    name: "entry.339531515",        // replace with your Name field
+    intime: "entry.542167419_hour", // InTime hour
+    intime_min: "entry.542167419_minute", // InTime minute
+    outtime: "entry.1532127027_hour", // OutTime hour
+    outtime_min: "entry.1532127027_minute", // OutTime minute
+    lat: "entry.1163502489",        // Latitude field
+    lng: "entry.698099376"          // Longitude field
+};
+
+function submitAttendance(){
+    const intime = document.getElementById("intime").value;
+    const outtime = document.getElementById("outtime").value;
+    const lat = document.getElementById("lat").value;
+    const lng = document.getElementById("lng").value;
+
+    if(!intime && !outtime){
+        document.getElementById("status").innerText = "Enter In or Out time";
+        return;
+    }
+
+    const [inH, inM] = intime.split(":");
+    const [outH, outM] = outtime.split(":");
+
+    // Build payload
+    const data = new URLSearchParams();
+    data.append(FIELDS.id, id);
+    data.append(FIELDS.name, name);
+    if(intime){
+        data.append(FIELDS.intime, inH);
+        data.append(FIELDS.intime_min, inM);
+    }
+    if(outtime){
+        data.append(FIELDS.outtime, outH);
+        data.append(FIELDS.outtime_min, outM);
+    }
+    data.append(FIELDS.lat, lat);
+    data.append(FIELDS.lng, lng);
+
+    // Submit to Google Form
+    fetch(FORM_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: data.toString()
+    }).then(()=>{
+        document.getElementById("status").innerText = "Attendance submitted successfully!";
+        document.getElementById("attendanceForm").reset();
+        getLocation();
+    }).catch((err)=>{
+        document.getElementById("status").innerText = "Submission failed.";
+    });
+}
+
+// Logout
 function logout(){
-
     localStorage.clear();
     window.location.href="index.html";
-
 }
 
 </script>
