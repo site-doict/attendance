@@ -182,42 +182,46 @@ function markOut(){
 
 
 // Send Data
-function sendData(date,inTime,outTime,status){
+function sendData(date, inTime, outTime, status){
 
     getLocation((lat,long)=>{
 
         const fd = new FormData();
 
 
-        // Basic
-        fd.append(ENTRY.id,id);
-        fd.append(ENTRY.name,name);
-        fd.append(ENTRY.status,status);
+        // Format Date
+        const dateStr =
+        `${date.year}-${String(date.month).padStart(2,"0")}-${String(date.day).padStart(2,"0")}`;
 
 
-        // Date
-        fd.append(ENTRY.date+"_year",date.year);
-        fd.append(ENTRY.date+"_month",date.month);
-        fd.append(ENTRY.date+"_day",date.day);
+        // Format Time
+        let inStr = "";
+        let outStr = "";
 
-
-        // In Time
         if(inTime){
-            fd.append(ENTRY.intime+"_hour",inTime.hour);
-            fd.append(ENTRY.intime+"_minute",inTime.minute);
+            inStr =
+            `${String(inTime.hour).padStart(2,"0")}:${String(inTime.minute).padStart(2,"0")}`;
         }
 
-
-        // Out Time
         if(outTime){
-            fd.append(ENTRY.outtime+"_hour",outTime.hour);
-            fd.append(ENTRY.outtime+"_minute",outTime.minute);
+            outStr =
+            `${String(outTime.hour).padStart(2,"0")}:${String(outTime.minute).padStart(2,"0")}`;
         }
 
 
-        // Location
-        fd.append(ENTRY.lat,lat);
-        fd.append(ENTRY.long,long);
+        // Google Form fields
+        fd.append("entry.1859002656", id);
+        fd.append("entry.339531515", name);
+
+        fd.append("entry.1163502489", dateStr);
+
+        fd.append("entry.542167419", inStr);
+        fd.append("entry.1532127027", outStr);
+
+        fd.append("entry.1008700991", lat);
+        fd.append("entry.698099376", long);
+
+        fd.append("entry.1126631987", status);
 
 
 
@@ -255,3 +259,4 @@ function logout(){
 
 </body>
 </html>
+
