@@ -9,30 +9,25 @@ body{
     background:#f9f9f9;
     padding:30px;
 }
-h2{
-    color:#0056b3;
-}
-label{
-    display:block;
-    margin-top:10px;
-}
-input[type="text"], input[type="time"]{
-    padding:8px;
-    width:200px;
-    margin-top:4px;
-}
+
+h2{ color:#0056b3; }
+
 button{
-    margin-top:20px;
-    padding:10px 20px;
+    padding:12px 25px;
+    font-size:16px;
+    margin:10px 0;
     background:#28a745;
     color:white;
     border:none;
+    border-radius:5px;
     cursor:pointer;
-    border-radius:4px;
 }
-button:hover{
-    background:#218838;
+
+button:disabled{
+    background:#aaa;
+    cursor:not-allowed;
 }
+
 #status{
     margin-top:20px;
     font-weight:bold;
@@ -45,110 +40,166 @@ button:hover{
 <h2>Welcome</h2>
 <p id="user"></p>
 
-<h3>Submit Attendance</h3>
+<h3>Attendance</h3>
 
-<form id="attendanceForm">
-    <label>In Time: <input type="time" id="intime"></label>
-    <label>Out Time: <input type="time" id="outtime"></label>
-    <input type="hidden" id="lat">
-    <input type="hidden" id="lng">
-    <button type="button" onclick="submitAttendance()">Submit</button>
-</form>
+<button id="inBtn" onclick="markIn()">✅ I am in Office</button>
+<br>
+
+<button id="outBtn" onclick="markOut()">🚪 I am Leaving</button>
 
 <p id="status"></p>
+
 <button onclick="logout()">Logout</button>
 
 <script>
-const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
 
-// Get saved login info
+// Google Form URL
+const FORM_URL =
+"https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
+
+// Entry IDs
+const ENTRY = {
+    id: "entry.1859002656",
+    name: "entry.339531515",
+    date: "entry.1163502489",
+    intime: "entry.542167419",
+    outtime: "entry.1532127027",
+    lat: "entry.1008700991",
+    long: "entry.698099376",
+    status: "entry.1126631987"
+};
+
+
+// Login Info
 const id = localStorage.getItem("userid");
 const name = localStorage.getItem("name");
 
-if (!id) {
-    window.location.href = "index.html";
+if(!id){
+    window.location.href="index.html";
 }
 
 document.getElementById("user").innerText =
-    "ID: " + id + " | Name: " + name;
+"ID: " + id + " | Name: " + name;
 
 
-// Get current time
-function getTime() {
-    return new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
+// Time Control
+const now = new Date();
+const hour = now.getHours();
+
+const inBtn = document.getElementById("inBtn");
+const outBtn = document.getElementById("outBtn");
+
+
+// Button Logic
+if(hour < 11){
+    outBtn.disabled = true;
+}
+else if(hour >= 14){
+    inBtn.disabled = true;
+}
+else{
+    inBtn.disabled = true;
+    outBtn.disabled = true;
+}
+
+
+
+// Get Current Time HH:MM
+function getTime(){
+
+    return new Date().toLocaleTimeString([],{
+        hour:"2-digit",
+        minute:"2-digit"
     });
 }
 
 
-// Get current date (yyyy-mm-dd)
-function getDate() {
+// Get Date
+function getDate(){
     return new Date().toISOString().split("T")[0];
 }
 
 
-// Get GPS location
-function getLocation(callback) {
+// Get Location
+function getLocation(cb){
 
-    if (!navigator.geolocation) {
-        callback("", "");
+    if(!navigator.geolocation){
+        cb("","");
         return;
     }
 
     navigator.geolocation.getCurrentPosition(
-        pos => {
-            callback(
-                pos.coords.latitude,
-                pos.coords.longitude
-            );
+        pos=>{
+            cb(pos.coords.latitude,pos.coords.longitude);
         },
-        () => {
-            callback("", "");
+        ()=>{
+            cb("","");
         }
     );
 }
 
 
-// Submit attendance
-function submitAttendance() {
 
-    const inTime = document.getElementById("intime").value;
-    const outTime = document.getElementById("outtime").value;
+// Submit IN
+function markIn(){
 
-    if (!inTime || !outTime) {
-        alert("Please select In and Out time");
-        return;
+    const time = getTime();
+    const date = getDate();
+
+    let status = "Present";
+
+    if(time > "09:00"){
+        status = "Late";
     }
 
-    const date = getDate();
-    const status = "Present";
+    sendData(time,"",status);
 
-    getLocation((lat, long) => {
-
-        const formData = new FormData();
-
-        // Google Form fields
-        formData.append("entry.1859002656", id);       // ID
-        formData.append("entry.339531515", name);     // Name
-        formData.append("entry.1163502489", date);    // Date
-        formData.append("entry.542167419", inTime);   // In Time
-        formData.append("entry.1532127027", outTime); // Out Time
-        formData.append("entry.1008700991", lat);     // Lat
-        formData.append("entry.698099376", long);     // Long
-        formData.append("entry.1126631987", status);  // Status
+}
 
 
-        fetch(FORM_URL, {
-            method: "POST",
-            mode: "no-cors",
-            body: formData
+
+// Submit OUT
+function markOut(){
+
+    const time = getTime();
+
+    sendData("",time,"Present");
+
+}
+
+
+
+// Send Data
+function sendData(inTime,outTime,status){
+
+    getLocation((lat,long)=>{
+
+        const fd = new FormData();
+
+        fd.append(ENTRY.id,id);
+        fd.append(ENTRY.name,name);
+        fd.append(ENTRY.date,getDate());
+        fd.append(ENTRY.intime,inTime);
+        fd.append(ENTRY.outtime,outTime);
+        fd.append(ENTRY.lat,lat);
+        fd.append(ENTRY.long,long);
+        fd.append(ENTRY.status,status);
+
+
+        fetch(FORM_URL,{
+            method:"POST",
+            mode:"no-cors",
+            body:fd
         })
-        .then(() => {
-            alert("Attendance submitted successfully!");
+        .then(()=>{
+            document.getElementById("status").innerText =
+            "✅ Attendance Submitted";
+
+            inBtn.disabled = true;
+            outBtn.disabled = true;
         })
-        .catch(() => {
-            alert("Submission failed!");
+        .catch(()=>{
+            alert("Submission Failed");
         });
 
     });
@@ -156,14 +207,14 @@ function submitAttendance() {
 }
 
 
-// Logout
-function logout() {
-    localStorage.clear();
-    window.location.href = "index.html";
-}
-</script>
 
+// Logout
+function logout(){
+    localStorage.clear();
+    window.location.href="index.html";
+}
+
+</script>
 
 </body>
 </html>
-
