@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Summary</title>
+    <!-- PapaParse Library -->
     <script src="https://cdn.jsdelivr.net"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f0f2f5; text-align: center; }
@@ -13,9 +14,12 @@
         .summary-table { width: 100%; border-collapse: collapse; }
         .summary-table th, .summary-table td { border: 1px solid #eee; padding: 12px; text-align: center; font-size: 13px; }
         .summary-table th { background: #0056b3; color: white; text-transform: uppercase; }
+        
+        /* Color Coding */
         .status-present { background: #d4edda !important; color: #155724; font-weight: bold; }
         .status-late { background: #fff3cd !important; color: #856404; font-weight: bold; }
         .status-absent { background: #f8d7da !important; color: #721c24; font-weight: bold; }
+        
         .logout-btn { padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         #loader { margin: 30px; font-style: italic; color: #666; font-size: 18px; }
     </style>
@@ -27,7 +31,7 @@
         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
-    <div id="loader">🔄 Loading Data...</div>
+    <div id="loader">🔄 Loading Staff Records...</div>
 
     <div class="table-container">
         <table class="summary-table">
@@ -46,55 +50,76 @@
     </div>
 
     <script>
-        const CSV_URL = "https://docs.google.com";
-        const ATTENDANCE_SHEET = "https://corsproxy.io" + encodeURIComponent(CSV_URL);
+        // YOUR REAL CSV URL
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?gid=156487384&single=true&output=csv";
+        
+        // PROXY URL TO BYPASS BROWSER SECURITY (CORS)
+        const PROXY_URL = "https://corsproxy.io" + encodeURIComponent(CSV_URL);
 
-        if(localStorage.getItem("role") !== "admin") { window.location.href = "index.html"; }
-
-        function loadSummary() {
-            Papa.parse(ATTENDANCE_SHEET, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                dynamicTyping: true,
-                complete: function(results) {
-                    document.getElementById("loader").style.display = "none";
-                    const data = results.data;
-                    const tbody = document.getElementById("tableBody");
-                    tbody.innerHTML = ""; 
-
-                    // Show newest entries first
-                    data.reverse().forEach(row => {
-                        // We use a flexible finder to catch headers even if they have tabs/spaces
-                        const find = (key) => {
-                            const foundKey = Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase());
-                            return foundKey ? row[foundKey] : "---";
-                        };
-
-                        const tr = document.createElement("tr");
-                        const status = String(find("Status")).trim();
-                        let sClass = "status-absent";
-                        if (status === "Present") sClass = "status-present";
-                        if (status === "Late") sClass = "status-late";
-
-                        tr.innerHTML = `
-                            <td>${find("Timestamp")}</td>
-                            <td>${find("ID")}</td>
-                            <td>${find("Name")}</td>
-                            <td>${find("InTime")}</td>
-                            <td>${find("OutTime")}</td>
-                            <td class="${sClass}">${status}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                },
-                error: function() {
-                    document.getElementById("loader").innerText = "⚠️ Connection failed.";
-                }
-            });
+        // Security Check
+        if(localStorage.getItem("role") !== "admin") { 
+            window.location.href = "index.html"; 
         }
 
-        function logout() { localStorage.clear(); window.location.href = "index.html"; }
+        async function loadSummary() {
+            try {
+                // Fetch using Proxy
+                const response = await fetch(PROXY_URL);
+                const csvText = await response.text();
+                
+                // Parse text with PapaParse
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        document.getElementById("loader").style.display = "none";
+                        const data = results.data;
+                        const tbody = document.getElementById("tableBody");
+                        tbody.innerHTML = ""; 
+
+                        if (data.length === 0) {
+                            document.getElementById("loader").innerText = "⚠️ No records found in the sheet.";
+                            return;
+                        }
+
+                        // Show Newest First
+                        data.reverse().forEach(row => {
+                            // Helper to find column even if there are hidden spaces
+                            const find = (key) => {
+                                const foundKey = Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase());
+                                return foundKey ? row[foundKey] : "---";
+                            };
+
+                            const tr = document.createElement("tr");
+                            const status = String(find("Status")).trim();
+                            
+                            let sClass = "status-absent";
+                            if (status === "Present") sClass = "status-present";
+                            if (status === "Late") sClass = "status-late";
+
+                            tr.innerHTML = `
+                                <td>${find("Timestamp")}</td>
+                                <td>${find("ID")}</td>
+                                <td>${find("Name")}</td>
+                                <td>${find("InTime")}</td>
+                                <td>${find("OutTime")}</td>
+                                <td class="${sClass}">${status}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                });
+            } catch (err) {
+                document.getElementById("loader").innerText = "⚠️ Error fetching data. Ensure Sheet is Published.";
+                console.error(err);
+            }
+        }
+
+        function logout() { 
+            localStorage.clear(); 
+            window.location.href = "index.html"; 
+        }
+
         loadSummary();
     </script>
 </body>
