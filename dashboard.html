@@ -41,6 +41,8 @@
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
 // Put your Response Sheet CSV link here (same as admin link)
 const SUMMARY_CSV = "https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
+//YOUR_WEB_APP_URL_HERE
+const LIVE_SERVER_URL = "https://script.google.com/macros/s/AKfycbz6gKNDkaXj3dWPT8y_NHWSL-zVVwMI5qUg4sGImFyfM-rX2LGAiQMwSDeN_MFkkBM/exec";
 
 const OFFICE_LAT = 24.8947079, OFFICE_LONG = 89.7182064, MAX_DISTANCE = 1500;
 const id = localStorage.getItem("userid"), name = localStorage.getItem("name");
@@ -55,39 +57,42 @@ let serverHasIn = false;
 let serverHasOut = false;
 
 // 1. FETCH DATA FROM GOOGLE SHEETS (ANTI-CHEAT)
+// Replace ONLY this function in your dashboard.html script
 async function verifyWithServer() {
-    statusTxt.innerText = "🔍 Syncing with server...";
-    const today = new Date().toLocaleDateString();
+    statusTxt.innerText = "🔍 Syncing with Live Server...";
     
     try {
-        // Use proxy to avoid CORS
+        // This calls your Google Script directly for 0-second delay
+        const response = await fetch(`${LIVE_SERVER_URL}?id=${id}`);
+        const data = await response.json();
+        
+        serverHasIn = data.hasIn;
+        serverHasOut = data.hasOut;
+        
+        updateClock(); 
+        
+        // Use the old CSV only for the 7-day history list
+        loadHistoryFromServer(); 
+    } catch (e) {
+        console.log("Live check failed, using local memory.");
+        updateClock();
+    }
+}
+
+async function loadHistoryFromServer() {
+    try {
         const proxyUrl = "https://corsproxy.io" + encodeURIComponent(SUMMARY_CSV);
         const res = await fetch(proxyUrl);
         const text = await res.text();
-        
         Papa.parse(text, {
             header: true,
             complete: function(results) {
-                const records = results.data;
-                // Check if this ID already has an entry for Today
-                records.forEach(row => {
-                    const rowDate = row["Date"] || row["Timestamp"] || "";
-                    const rowID = String(row["ID"] || "").trim();
-                    
-                    if (rowID === id && rowDate.includes(today)) {
-                        if (row["InTime"] && row["InTime"] !== "---") serverHasIn = true;
-                        if (row["OutTime"] && row["OutTime"] !== "---") serverHasOut = true;
-                    }
-                });
-                updateClock(); // Now update buttons based on REAL server data
-                loadHistory(records); // Load history from REAL server data
+                loadHistory(results.data);
             }
         });
-    } catch (e) {
-        console.error("Server sync failed, falling back to local memory.");
-        updateClock(); 
-    }
+    } catch (e) { console.log("History load failed."); }
 }
+
 
 function updateClock() {
     const now = new Date(), hour = now.getHours();
@@ -193,5 +198,6 @@ verifyWithServer(); // Initial sync
 
 </body>
 </html>
+
 
 
