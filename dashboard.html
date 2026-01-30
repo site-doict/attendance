@@ -7,348 +7,145 @@
     h2{ color:#0056b3; }
     #clock { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 20px; background: #eee; display: inline-block; padding: 10px 20px; border-radius: 10px; }
     button{ padding:12px 25px; font-size:16px; margin:10px 0; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer; }
-    button:disabled{ background:#aaa; cursor:not-allowed; }
-    
-    /* Updated Status Area */
-    #status{ 
-        margin-top:20px; 
-        font-weight:bold; 
-        color: #d9534f; 
-        padding: 15px;
-        border-radius: 8px;
-        display: inline-block;
-        min-width: 250px;
-    }
-
-    /* New Red Alert Box for Illegal Attempts */
-    .danger-box {
-        background: #ffebee;
-        color: #c62828;
-        border: 2px solid #ef5350;
-        animation: shake 0.5s; /* Adds a small shake effect */
-    }
-
-    @keyframes shake {
-        0% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        50% { transform: translateX(5px); }
-        75% { transform: translateX(-5px); }
-        100% { transform: translateX(0); }
-    }
-
-#historyArea {
-    margin-top: 30px;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: left;
-    background: #fff;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.history-item {
-    border-bottom: 1px solid #eee;
-    padding: 8px 0;
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-}
-.history-date { font-weight: bold; color: #555; }
-.history-status { color: #28a745; font-weight: bold; }
-    
-    .logout-btn { background: #6c757d; margin-top: 50px; }
+    #status{ margin-top:20px; font-weight:bold; color: #d9534f; padding: 15px; border-radius: 8px; display: inline-block; min-width: 250px; }
+    .danger-box { background: #ffebee; color: #c62828; border: 2px solid #ef5350; animation: shake 0.5s; }
+    @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+    #historyArea { margin-top: 30px; max-width: 400px; margin-left: auto; margin-right: auto; text-align: left; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .history-item { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; justify-content: space-between; font-size: 14px; }
+    .history-date { font-weight: bold; color: #555; }
+    .logout-btn { background: #6c757d; margin-top: 50px; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;}
 </style>
-
 </head>
 <body>
 
 <h2>Welcome</h2>
 <p id="user"></p>
-
 <div id="clock">00:00:00</div>
 
 <h3>Attendance</h3>
-
-<!-- Buttons are hidden by default via style="display:none" -->
 <button id="inBtn" onclick="markIn()" style="display:none;">✅ I am in Office</button>
 <button id="outBtn" onclick="markOut()" style="display:none;">🚪 I am Leaving</button>
 
 <p id="status"></p>
+
 <div id="historyArea">
     <h4 style="margin-top:0; color:#0056b3;">📅 Last 7 Days History</h4>
-    <div id="historyList">Loading history...</div>
+    <div id="historyList"></div>
 </div>
+
 <button class="logout-btn" onclick="logout()">Logout</button>
 
 <script>
-// Google Form URL
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
+const OFFICE_LAT = 24.8947079, OFFICE_LONG = 89.7182064, MAX_DISTANCE = 1500;
 
-// Office Location: 24.8947079, 89.7182064
-const OFFICE_LAT = 24.8947079; 
-const OFFICE_LONG = 89.7182064;
-const MAX_DISTANCE = 1500; // Metres
-
-// This function will calculate distance
-    function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Earth's radius in metres
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c; 
-}
-
-    
-// Login Info
 const id = localStorage.getItem("userid");
 const name = localStorage.getItem("name");
-
 if(!id){ window.location.href="index.html"; }
 document.getElementById("user").innerText = "ID: " + id + " | Name: " + name;
 
-const inBtn = document.getElementById("inBtn");
-const outBtn = document.getElementById("outBtn");
-const statusTxt = document.getElementById("status");
+const inBtn = document.getElementById("inBtn"), outBtn = document.getElementById("outBtn"), statusTxt = document.getElementById("status");
 
-// 1. LIVE CLOCK & BUTTON VISIBILITY LOGIC
 function updateClock() {
-    const now = new Date();
-    const hour = now.getHours();
-    const min = now.getMinutes();
-    const today = now.toLocaleDateString(); 
-    
+    const now = new Date(), hour = now.getHours(), today = now.toLocaleDateString();
     document.getElementById("clock").innerText = now.toLocaleTimeString();
+    if (statusTxt.classList.contains("danger-box")) return;
 
-    const hasDoneIn = localStorage.getItem("lastInDate_" + id) === today;
-    const hasDoneOut = localStorage.getItem("lastOutDate_" + id) === today;
+    const hasIn = localStorage.getItem("lastInDate_" + id) === today;
+    const hasOut = localStorage.getItem("lastOutDate_" + id) === today;
 
-    // RULE: IN button only visible before 11:00 AM
-    if (hour < 11) { 
-        inBtn.style.display = hasDoneIn ? "none" : "inline-block"; 
+    if (hour < 11) {
+        inBtn.style.display = hasIn ? "none" : "inline-block";
         outBtn.style.display = "none";
-        statusTxt.innerText = hasDoneIn ? "✅ Already Marked IN" : "";
-    } 
-    // RULE: OUT button visible after 2:00 PM (14:00) until night
-    else if (hour >= 14 && hour < 21) { 
+        statusTxt.innerText = hasIn ? "✅ Already Marked IN" : "";
+    } else if (hour >= 14 && hour < 23) { // Allowed until 11 PM for testing
         inBtn.style.display = "none";
-        outBtn.style.display = hasDoneOut ? "none" : "inline-block";
-        statusTxt.innerText = hasDoneOut ? "✅ Already Marked OUT" : "";
-    } 
-    else { 
-        inBtn.style.display = "none";
-        outBtn.style.display = "none";
-        // Show "Absent" message if they missed the 11 AM deadline
-        statusTxt.innerText = (hour >= 11 && hour < 14 && !hasDoneIn) ? "❌ You are marked ABSENT (Late after 11 AM)" : "Attendance Closed";
+        outBtn.style.display = hasOut ? "none" : "inline-block";
+        statusTxt.innerText = hasOut ? "✅ Already Marked OUT" : "";
+    } else {
+        inBtn.style.display = "none"; outBtn.style.display = "none";
+        statusTxt.innerText = "Attendance Closed";
     }
 }
-
-
-// Update clock every second
 setInterval(updateClock, 1000);
-updateClock(); // Run immediately on load
+updateClock();
 
-function getDateParts(){
-    const d = new Date();
-    return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate() };
-}
-
-function getTimeParts(){
-    const d = new Date();
-    return { hour: d.getHours(), minute: d.getMinutes() };
-}
-
-function getLocation(cb){
-    if(!navigator.geolocation){ cb("",""); return; }
-    navigator.geolocation.getCurrentPosition(
-        pos=>{ cb(pos.coords.latitude,pos.coords.longitude); },
-        ()=>{ cb("",""); }
-    );
-}
-
-function markIn(){
-    const t = getTimeParts();
-    const d = getDateParts();
-    let status = "Present";
-
-    // 9:00 - 10:00 -> Present
-    // 10:01 - 10:30 -> Late
-    // 10:31 - 11:00 -> Very Late (or Absent)
-    
-    if (t.hour === 10 && t.minute <= 30) {
-        status = "Late";
-    } else if (t.hour >= 10 && t.minute > 30) {
-        status = "Absent";
-    } else if (t.hour >= 11) {
-        status = "Absent";
-    }
-
-    sendData(d, t, null, status);
-}
-
-
-function markOut(){
-    const t = getTimeParts();
-    const d = getDateParts();
-    let status = "Present";
-
-    // RULE: Out < 4:20 PM (16:20) -> Early Leave
-    if (t.hour < 16 || (t.hour === 16 && t.minute < 20)) {
-        status = "Early Leave";
-    }
-
-    sendData(d, null, t, status);
-}
-
-
-function sendData(date, inTime, outTime, status) {
-    statusTxt.innerText = "📍 Verifying location...";
-    statusTxt.className = ""; // Reset styling
-    statusTxt.style.color = "orange";
-    
-    getLocation((lat, long) => {
-        if (!lat || !long) {
-            // NO ALERT HERE - USES ON-SCREEN BOX
-            statusTxt.className = "danger-box";
-            statusTxt.innerHTML = "🚫 GPS ERROR<br>Please enable location/GPS in your browser.";
-            return;
-        }
-
-        // Calculate distance
-        const distance = getDistance(lat, long, OFFICE_LAT, OFFICE_LONG);
-
-                       if (distance > MAX_DISTANCE) {
-            statusTxt.className = "danger-box";
-            statusTxt.innerHTML = `
-                <div style="font-size: 30px;">🚫</div>
-                ILLEGAL ATTEMPT!<br>
-                You are ${Math.round(distance)}m away.<br>
-                <p style="font-size:12px; cursor:pointer; text-decoration:underline;" onclick="tryAgain()">Click here to try again</p>
-            `;
-            return; 
-        }
-
-        // --- If location is OK, proceed to send ---
-        statusTxt.className = ""; 
-        statusTxt.style.color = "blue";
-        statusTxt.innerText = "🚀 Sending to Sheet...";
-
-        const fd = new FormData();
-        const dateStr = `${date.day}/${date.month}/${date.year}`;
-        const inStr = inTime ? `${inTime.hour}:${String(inTime.minute).padStart(2,"0")}` : "---";
-        const outStr = outTime ? `${outTime.hour}:${String(outTime.minute).padStart(2,"0")}` : "---";
-
-        fd.append("entry.1859002656", id);
-        fd.append("entry.339531515", name);
-        fd.append("entry.1163502489", dateStr);
-        fd.append("entry.542167419", inStr);
-        fd.append("entry.1532127027", outStr);
-        fd.append("entry.1008700991", lat);
-        fd.append("entry.698099376", long);
-        fd.append("entry.1126631987", status);
-
-        fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd })
-                 .then(() => {
-            const today = new Date().toLocaleDateString();
-            
-            if (inTime) { 
-                localStorage.setItem("lastInDate_" + id, today);
-                localStorage.setItem("lastInStatus_" + id, status); // Saves "Late" or "Present"
-            }
-            if (outTime) { 
-                localStorage.setItem("lastOutDate_" + id, today);
-                localStorage.setItem("lastOutStatus_" + id, status); // Saves "Early Leave" or "Present"
-            }
-
-            statusTxt.style.color = "green";
-            statusTxt.innerText = "✅ Submitted Successfully!";
-            inBtn.style.display = "none";
-            outBtn.style.display = "none";
-            loadHistory(); // Refresh history immediately
-        })
-
-
-        .catch(() => {
-            // NO ALERT HERE - USES ON-SCREEN BOX
-            statusTxt.className = "danger-box";
-            statusTxt.innerText = "📡 Connection Failed. Check Internet.";
-        });
-    });
-}
-
-// Function to let users try again after moving closer
-function tryAgain() {
-    statusTxt.className = ""; // Remove the red box
-    statusTxt.innerText = "📍 Re-verifying...";
-    updateClock(); // Restart the visibility check
-}
-
-// Function to show history
 function loadHistory() {
     const list = document.getElementById("historyList");
     list.innerHTML = "";
-    
     for (let i = 0; i < 7; i++) {
-        let d = new Date();
-        d.setDate(d.getDate() - i);
-        let dateKey = d.toLocaleDateString(); 
-
+        let d = new Date(); d.setDate(d.getDate() - i);
+        let dateKey = d.toLocaleDateString();
         const hasIn = localStorage.getItem("lastInDate_" + id) === dateKey;
         const hasOut = localStorage.getItem("lastOutDate_" + id) === dateKey;
-        
-        // Get the specific saved statuses
         const inStatus = localStorage.getItem("lastInStatus_" + id) || "";
         const outStatus = localStorage.getItem("lastOutStatus_" + id) || "";
 
         let statusText = "<span style='color:red;'>❌ No Record</span>";
-
-        if (hasIn && hasOut) {
-            statusText = `<span style='color:green;'>✅ ${inStatus} | 🚪 ${outStatus}</span>`;
-        } else if (hasIn) {
-            statusText = `<span style='color:orange;'>⏳ In: ${inStatus}</span>`;
-        } else if (hasOut) {
-            statusText = `<span style='color:blue;'>🚪 Out: ${outStatus}</span>`;
+        if (hasIn || hasOut) {
+            statusText = `<span style='color:green;'>${hasIn ? 'In: '+inStatus : ''} ${hasOut ? '| Out: '+outStatus : ''}</span>`;
         }
-
         const item = document.createElement("div");
         item.className = "history-item";
-        item.innerHTML = `
-            <span class="history-date">${i === 0 ? "Today" : dateKey}</span>
-            <span class="history-status">${statusText}</span>
-        `;
+        item.innerHTML = `<span class="history-date">${i===0?"Today":dateKey}</span><span class="history-status">${statusText}</span>`;
         list.appendChild(item);
     }
 }
-
-
-
-// Call this function when the page loads
 loadHistory();
 
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+function markIn(){
+    const t = {hour: new Date().getHours(), minute: new Date().getMinutes()};
+    let status = "Present";
+    if (t.hour === 10 && t.minute <= 30) status = "Late";
+    else if (t.hour >= 10 && t.minute > 30) status = "Absent";
+    sendData(status, true);
+}
+
+function markOut(){
+    const t = {hour: new Date().getHours(), minute: new Date().getMinutes()};
+    let status = (t.hour < 16 || (t.hour === 16 && t.minute < 20)) ? "Early Leave" : "Present";
+    sendData(status, false);
+}
+
+function sendData(status, isIn) {
+    statusTxt.innerText = "📍 Verifying location...";
+    navigator.geolocation.getCurrentPosition(pos => {
+        const dist = getDistance(pos.coords.latitude, pos.coords.longitude, OFFICE_LAT, OFFICE_LONG);
+        if (dist > MAX_DISTANCE) {
+            statusTxt.className = "danger-box";
+            statusTxt.innerHTML = `🚫 ILLEGAL ATTEMPT!<br>You are ${Math.round(dist)}m away.`;
+            return;
+        }
+        const fd = new FormData();
+        const now = new Date();
+        fd.append("entry.1859002656", id);
+        fd.append("entry.339531515", name);
+        fd.append("entry.1163502489", `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`);
+        fd.append(isIn ? "entry.542167419" : "entry.1532127027", `${now.getHours()}:${now.getMinutes()}`);
+        fd.append("entry.1126631987", status);
+        fd.append("entry.1008700991", pos.coords.latitude);
+        fd.append("entry.698099376", pos.coords.longitude);
+
+        fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd }).then(() => {
+            const today = new Date().toLocaleDateString();
+            localStorage.setItem(isIn ? "lastInDate_"+id : "lastOutDate_"+id, today);
+            localStorage.setItem(isIn ? "lastInStatus_"+id : "lastOutStatus_"+id, status);
+            statusTxt.innerHTML = "✅ Submitted Successfully!";
+            loadHistory(); updateClock();
+        });
+    });
+}
 
 function logout(){
-    // Only remove login session, DO NOT remove attendance records
-    localStorage.removeItem("userid");
-    localStorage.removeItem("name");
+    localStorage.removeItem("userid"); localStorage.removeItem("name");
     window.location.href = "index.html";
 }
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
