@@ -73,26 +73,46 @@
                     const tbody = document.getElementById("tableBody");
                     tbody.innerHTML = ""; 
                     
-                    // Display newest entries first
-                    data.reverse().forEach(row => {
-                        const tr = document.createElement("tr");
-                        
-                        // Extract status and apply color logic
-                        const status = (row["Status"] || "Absent").trim();
-                        let statusClass = "status-absent"; 
-                        if (status === "Present") statusClass = "status-present";
-                        if (status === "Late") statusClass = "status-late";
+                    complete: function(results) {
+    document.getElementById("loader").style.display = "none";
+    const data = results.data;
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = ""; 
 
-                        // Map columns from your Google Sheet (match headers exactly)
-                        tr.innerHTML = `
-                            <td>${row["Timestamp"] || row["Date"] || '---'}</td>
-                            <td>${row["ID"] || '---'}</td>
-                            <td>${row["Name"] || '---'}</td>
-                            <td>${row["InTime"] || '---'}</td>
-                            <td class="${statusClass}">${status}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+    if (data.length === 0) {
+        document.getElementById("loader").style.display = "block";
+        document.getElementById("loader").innerText = "⚠️ No data found in the CSV link.";
+        return;
+    }
+
+    // DEBUG: Look at the console (F12) to see your real header names
+    console.log("Your CSV Headers are:", Object.keys(data[0]));
+
+    data.reverse().forEach(row => {
+        const tr = document.createElement("tr");
+        
+        // Match headers automatically or use fallback names
+        const dateVal = row["Timestamp"] || row["Date"] || row["date"] || "---";
+        const idVal = row["ID"] || row["entry.1859002656"] || "---";
+        const nameVal = row["Name"] || row["entry.339531515"] || "---";
+        const timeVal = row["InTime"] || row["In Time"] || row["entry.542167419"] || "---";
+        const statusVal = (row["Status"] || "Absent").trim();
+
+        let statusClass = "status-absent"; 
+        if (statusVal === "Present") statusClass = "status-present";
+        if (statusVal === "Late") statusClass = "status-late";
+
+        tr.innerHTML = `
+            <td>${dateVal}</td>
+            <td>${idVal}</td>
+            <td>${nameVal}</td>
+            <td>${timeVal}</td>
+            <td class="${statusClass}">${statusVal}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
                 },
                 error: function() {
                     document.getElementById("loader").innerText = "⚠️ Connection failed. Please check your sheet visibility.";
