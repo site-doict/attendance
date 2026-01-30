@@ -286,22 +286,21 @@ function loadHistory() {
     const list = document.getElementById("historyList");
     list.innerHTML = "";
     
-    // Loop through the last 7 days
     for (let i = 0; i < 7; i++) {
         let d = new Date();
         d.setDate(d.getDate() - i);
-        let dateKey = d.toLocaleDateString();
+        
+        // This MUST match the format used in your sendData function
+        let dateKey = d.toLocaleDateString(); 
 
-        // Check if this specific user has data for this date
         const hasIn = localStorage.getItem("lastInDate_" + id) === dateKey;
         const hasOut = localStorage.getItem("lastOutDate_" + id) === dateKey;
 
-        let statusText = "❌ No Record";
-        if (hasIn && hasOut) statusText = "✅ Full Day";
-        else if (hasIn) statusText = "⏳ In Only";
-        else if (hasOut) statusText = "🚪 Out Only";
+        let statusText = "<span style='color:red;'>❌ No Record</span>";
+        if (hasIn && hasOut) statusText = "<span style='color:green;'>✅ Full Day</span>";
+        else if (hasIn) statusText = "<span style='color:orange;'>⏳ In Only</span>";
+        else if (hasOut) statusText = "<span style='color:blue;'>🚪 Out Only</span>";
 
-        // Create the row
         const item = document.createElement("div");
         item.className = "history-item";
         item.innerHTML = `
@@ -311,6 +310,7 @@ function loadHistory() {
         list.appendChild(item);
     }
 }
+
 
 // Call this function when the page loads
 loadHistory();
@@ -325,6 +325,7 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
 
