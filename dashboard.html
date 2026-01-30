@@ -48,28 +48,36 @@ const statusTxt = document.getElementById("status");
 function updateClock() {
     const now = new Date();
     const hour = now.getHours();
+    const today = now.toLocaleDateString(); // Example: "30/01/2026"
     
     // Display Clock
     document.getElementById("clock").innerText = now.toLocaleTimeString();
 
-    // Button Visibility Logic
+    // Memory check: Did they already click today?
+    const hasDoneIn = localStorage.getItem("lastInDate") === today;
+    const hasDoneOut = localStorage.getItem("lastOutDate") === today;
+
+    // Visibility Logic
     if (hour < 11) { 
         // Before 11 AM
-        inBtn.style.display = "inline-block"; 
+        inBtn.style.display = hasDoneIn ? "none" : "inline-block"; 
         outBtn.style.display = "none";
-        statusTxt.innerText = "";
+        statusTxt.innerText = hasDoneIn ? "✅ You already marked IN today" : "";
+        statusTxt.style.color = "green";
     } 
     else if (hour >= 14 && hour < 21) { 
         // 2 PM to 9 PM
         inBtn.style.display = "none";
-        outBtn.style.display = "inline-block";
-        statusTxt.innerText = "";
+        outBtn.style.display = hasDoneOut ? "none" : "inline-block";
+        statusTxt.innerText = hasDoneOut ? "✅ You already marked OUT today" : "";
+        statusTxt.style.color = "green";
     } 
     else { 
         // Between 11 AM and 2 PM OR Night
         inBtn.style.display = "none";
         outBtn.style.display = "none";
         statusTxt.innerText = "Attendance is currently closed.";
+        statusTxt.style.color = "#d9534f";
     }
 }
 
@@ -127,7 +135,13 @@ function sendData(date, inTime, outTime, status) {
         fd.append("entry.1126631987", status);
 
         fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd })
-        .then(() => {
+       .then(() => {
+            const today = new Date().toLocaleDateString();
+            
+            // Save to browser memory so button hides on refresh
+            if (inTime) { localStorage.setItem("lastInDate", today); }
+            if (outTime) { localStorage.setItem("lastOutDate", today); }
+
             statusTxt.style.color = "green";
             statusTxt.innerText = "✅ Attendance Submitted Successfully!";
             inBtn.style.display = "none";
@@ -143,3 +157,4 @@ function logout(){ localStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
 </html>
+
