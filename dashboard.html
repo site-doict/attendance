@@ -35,71 +35,137 @@
 
 <button class="logout-btn" onclick="logout()">Logout</button>
 
+<script src="https://cdn.jsdelivr.net"></script>
 <script>
+// --- CONFIGURATION ---
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
-const OFFICE_LAT = 24.8947079, OFFICE_LONG = 89.7182064, MAX_DISTANCE = 1500;
+// Put your Response Sheet CSV link here (same as admin link)
+const SUMMARY_CSV = "https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
 
-const id = localStorage.getItem("userid");
-const name = localStorage.getItem("name");
+const OFFICE_LAT = 24.8947079, OFFICE_LONG = 89.7182064, MAX_DISTANCE = 1500;
+const id = localStorage.getItem("userid"), name = localStorage.getItem("name");
+
 if(!id){ window.location.href="index.html"; }
-document.getElementById("user").innerText = "ID: " + id + " | Name: " + name;
+document.getElementById("user").innerText = `ID: ${id} | Name: ${name}`;
 
 const inBtn = document.getElementById("inBtn"), outBtn = document.getElementById("outBtn"), statusTxt = document.getElementById("status");
 
-function updateClock() {
-    const now = new Date(), hour = now.getHours(), today = now.toLocaleDateString();
-    document.getElementById("clock").innerText = now.toLocaleTimeString();
-    if (statusTxt.classList.contains("danger-box")) return;
+// --- GLOBAL STATE TO PREVENT CHEATING ---
+let serverHasIn = false;
+let serverHasOut = false;
 
-    const hasIn = localStorage.getItem("lastInDate_" + id) === today;
-    const hasOut = localStorage.getItem("lastOutDate_" + id) === today;
+// 1. FETCH DATA FROM GOOGLE SHEETS (ANTI-CHEAT)
+async function verifyWithServer() {
+    statusTxt.innerText = "🔍 Syncing with server...";
+    const today = new Date().toLocaleDateString();
+    
+    try {
+        // Use proxy to avoid CORS
+        const proxyUrl = "https://corsproxy.io" + encodeURIComponent(SUMMARY_CSV);
+        const res = await fetch(proxyUrl);
+        const text = await res.text();
+        
+        Papa.parse(text, {
+            header: true,
+            complete: function(results) {
+                const records = results.data;
+                // Check if this ID already has an entry for Today
+                records.forEach(row => {
+                    const rowDate = row["Date"] || row["Timestamp"] || "";
+                    const rowID = String(row["ID"] || "").trim();
+                    
+                    if (rowID === id && rowDate.includes(today)) {
+                        if (row["InTime"] && row["InTime"] !== "---") serverHasIn = true;
+                        if (row["OutTime"] && row["OutTime"] !== "---") serverHasOut = true;
+                    }
+                });
+                updateClock(); // Now update buttons based on REAL server data
+                loadHistory(records); // Load history from REAL server data
+            }
+        });
+    } catch (e) {
+        console.error("Server sync failed, falling back to local memory.");
+        updateClock(); 
+    }
+}
+
+function updateClock() {
+    const now = new Date(), hour = now.getHours();
+    document.getElementById("clock").innerText = now.toLocaleTimeString();
+    const today = now.toLocaleDateString();
+
+    // Combine Server Data + Local Cache for maximum security
+    const hasIn = serverHasIn || (localStorage.getItem("lastInDate_" + id) === today);
+    const hasOut = serverHasOut || (localStorage.getItem("lastOutDate_" + id) === today);
 
     if (hour < 11) {
         inBtn.style.display = hasIn ? "none" : "inline-block";
         outBtn.style.display = "none";
-        statusTxt.innerText = hasIn ? "✅ Already Marked IN" : "";
-    } else if (hour >= 14 && hour < 23) { // Allowed until 11 PM for testing
+        statusTxt.innerText = hasIn ? "✅ Already Marked IN (Server Verified)" : "";
+    } else if (hour >= 14 && hour < 23) {
         inBtn.style.display = "none";
         outBtn.style.display = hasOut ? "none" : "inline-block";
-        statusTxt.innerText = hasOut ? "✅ Already Marked OUT" : "";
+        statusTxt.innerText = hasOut ? "✅ Already Marked OUT (Server Verified)" : "";
     } else {
         inBtn.style.display = "none"; outBtn.style.display = "none";
         statusTxt.innerText = "Attendance Closed";
     }
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-function loadHistory() {
+// 2. SEND DATA
+function sendData(status, isIn) {
+    statusTxt.innerText = "📍 Verifying location...";
+    navigator.geolocation.getCurrentPosition(pos => {
+        const dist = getDistance(pos.coords.latitude, pos.coords.longitude, OFFICE_LAT, OFFICE_LONG);
+        if (dist > MAX_DISTANCE) {
+            statusTxt.className = "danger-box";
+            statusTxt.innerHTML = `🚫 ILLEGAL ATTEMPT!<br>You are ${Math.round(dist)}m away.`;
+            return;
+        }
+
+        const now = new Date();
+        const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+        const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2,"0")}`;
+
+        const fd = new FormData();
+        fd.append("entry.1859002656", id);
+        fd.append("entry.339531515", name);
+        fd.append("entry.1163502489", dateStr);
+        fd.append("entry.542167419", isIn ? timeStr : "---");
+        fd.append("entry.1532127027", isIn ? "---" : timeStr);
+        fd.append("entry.1008700991", pos.coords.latitude);
+        fd.append("entry.698099376", pos.coords.longitude);
+        fd.append("entry.1126631987", status);
+
+        fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd }).then(() => {
+            const today = now.toLocaleDateString();
+            localStorage.setItem(isIn ? "lastInDate_"+id : "lastOutDate_"+id, today);
+            statusTxt.innerText = "✅ Submitted Successfully!";
+            verifyWithServer(); // Sync immediately
+        });
+    });
+}
+
+function loadHistory(serverRecords = []) {
     const list = document.getElementById("historyList");
     list.innerHTML = "";
+    // Show last 7 days from REAL server data
     for (let i = 0; i < 7; i++) {
-        let d = new Date(); 
-        d.setDate(d.getDate() - i);
+        let d = new Date(); d.setDate(d.getDate() - i);
         let dateKey = d.toLocaleDateString();
-
-        const hasIn = localStorage.getItem("lastInDate_" + id) === dateKey;
-        const hasOut = localStorage.getItem("lastOutDate_" + id) === dateKey;
-        const inStatus = localStorage.getItem("lastInStatus_" + id) || "---";
-        const outStatus = localStorage.getItem("lastOutStatus_" + id) || "---";
-
-        let statusHtml = "<span style='color:red;'>❌ No Record</span>";
-
-        if (hasIn || hasOut) {
-            statusHtml = `<span style='color:green;'>In: ${hasIn ? inStatus : '❌'} | Out: ${hasOut ? outStatus : '❌'}</span>`;
-        }
+        
+        let dayRecord = serverRecords.find(r => r.ID == id && (r.Date || r.Timestamp || "").includes(dateKey));
+        
+        let statusHtml = dayRecord ? 
+            `<span style='color:green;'>✅ In: ${dayRecord.InTime} | Out: ${dayRecord.OutTime}</span>` : 
+            `<span style='color:red;'>❌ No Record</span>`;
 
         const item = document.createElement("div");
         item.className = "history-item";
-        item.innerHTML = `<span class="history-date">${i === 0 ? "Today" : dateKey}</span>
-                          <span class="history-status">${statusHtml}</span>`;
+        item.innerHTML = `<span class="history-date">${i===0?"Today":dateKey}</span><span class="history-status">${statusHtml}</span>`;
         list.appendChild(item);
     }
 }
-
-
-    
-loadHistory();
 
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
@@ -108,77 +174,24 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 function markIn(){
-    const t = {hour: new Date().getHours(), minute: new Date().getMinutes()};
-    let status = "Present";
-    if (t.hour === 10 && t.minute <= 30) status = "Late";
-    else if (t.hour >= 10 && t.minute > 30) status = "Absent";
-    sendData(status, true);
+    const h = new Date().getHours(), m = new Date().getMinutes();
+    let s = (h === 10 && m <= 30) ? "Late" : (h >= 10 && m > 30) ? "Absent" : "Present";
+    sendData(s, true);
 }
 
 function markOut(){
-    const t = {hour: new Date().getHours(), minute: new Date().getMinutes()};
-    let status = (t.hour < 16 || (t.hour === 16 && t.minute < 20)) ? "Early Leave" : "Present";
-    sendData(status, false);
+    const h = new Date().getHours(), m = new Date().getMinutes();
+    let s = (h < 16 || (h === 16 && m < 20)) ? "Early Leave" : "Present";
+    sendData(s, false);
 }
 
-function sendData(status, isIn) {
-    statusTxt.innerText = "📍 Verifying location...";
-    statusTxt.className = ""; 
+function logout(){ localStorage.removeItem("userid"); localStorage.removeItem("name"); window.location.href="index.html"; }
 
-    navigator.geolocation.getCurrentPosition(pos => {
-        const lat = pos.coords.latitude;
-        const long = pos.coords.longitude;
-        const dist = getDistance(lat, long, OFFICE_LAT, OFFICE_LONG);
-
-        if (dist > MAX_DISTANCE) {
-            statusTxt.className = "danger-box";
-            statusTxt.innerHTML = `🚫 ILLEGAL ATTEMPT!<br>You are ${Math.round(dist)}m away.`;
-            return;
-        }
-
-        const now = new Date();
-        const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
-        const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-        const fd = new FormData();
-        // Use your verified entry IDs
-        fd.append("entry.1859002656", id);                  // ID
-        fd.append("entry.339531515", name);                // Name
-        fd.append("entry.1163502489", dateStr);             // Date
-        fd.append("entry.542167419", isIn ? timeStr : "---"); // InTime
-        fd.append("entry.1532127027", isIn ? "---" : timeStr); // OutTime
-        fd.append("entry.1008700991", lat);                 // Lat
-        fd.append("entry.698099376", long);                 // Long
-        fd.append("entry.1126631987", status);               // Status
-
-        fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd })
-        .then(() => {
-            const today = now.toLocaleDateString();
-            if (isIn) {
-                localStorage.setItem("lastInDate_" + id, today);
-                localStorage.setItem("lastInStatus_" + id, status);
-            } else {
-                localStorage.setItem("lastOutDate_" + id, today);
-                localStorage.setItem("lastOutStatus_" + id, status);
-            }
-            statusTxt.className = "";
-            statusTxt.style.color = "green";
-            statusTxt.innerHTML = "✅ Submitted Successfully!";
-            loadHistory(); 
-            updateClock();
-        })
-        .catch(() => alert("Network Error. Try again."));
-    }, () => {
-        statusTxt.innerText = "❌ GPS Error. Please enable Location.";
-    });
-}
-
-
-function logout(){
-    localStorage.removeItem("userid"); localStorage.removeItem("name");
-    window.location.href = "index.html";
-}
+setInterval(updateClock, 1000);
+verifyWithServer(); // Initial sync
 </script>
+
 </body>
 </html>
+
 
