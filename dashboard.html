@@ -161,12 +161,14 @@ function markOut(){
 
 function sendData(date, inTime, outTime, status) {
     statusTxt.innerText = "📍 Verifying location...";
+    statusTxt.className = ""; // Reset styling
     statusTxt.style.color = "orange";
     
     getLocation((lat, long) => {
         if (!lat || !long) {
-            alert("Location is required. Please enable GPS.");
-            statusTxt.innerText = "❌ Location Error";
+            // NO ALERT HERE - USES ON-SCREEN BOX
+            statusTxt.className = "danger-box";
+            statusTxt.innerHTML = "🚫 GPS ERROR<br>Please enable location/GPS in your browser.";
             return;
         }
 
@@ -174,13 +176,22 @@ function sendData(date, inTime, outTime, status) {
         const distance = getDistance(lat, long, OFFICE_LAT, OFFICE_LONG);
 
         if (distance > MAX_DISTANCE) {
-            statusTxt.style.color = "red";
-            statusTxt.innerHTML = `⚠️ Access Denied!<br>You are ${Math.round(distance)}m away.<br>Please enter office territory.`;
-            alert("You are not in the office territory!");
-            return; // This STOPS the submission
+            // NO ALERT HERE - USES ON-SCREEN BOX
+            statusTxt.className = "danger-box";
+            statusTxt.innerHTML = `
+                <div style="font-size: 30px;">🚫</div>
+                ILLEGAL ATTEMPT!<br>
+                You are ${Math.round(distance)}m away.<br>
+                <small>Please enter office territory.</small>
+            `;
+            return; 
         }
 
         // --- If location is OK, proceed to send ---
+        statusTxt.className = ""; 
+        statusTxt.style.color = "blue";
+        statusTxt.innerText = "🚀 Sending to Sheet...";
+
         const fd = new FormData();
         const dateStr = `${date.day}/${date.month}/${date.year}`;
         const inStr = inTime ? `${inTime.hour}:${String(inTime.minute).padStart(2,"0")}` : "---";
@@ -201,12 +212,17 @@ function sendData(date, inTime, outTime, status) {
             if (inTime) { localStorage.setItem("lastInDate_" + id, today); }
             if (outTime) { localStorage.setItem("lastOutDate_" + id, today); }
 
+            statusTxt.className = "";
             statusTxt.style.color = "green";
             statusTxt.innerText = "✅ Submitted Successfully!";
             inBtn.style.display = "none";
             outBtn.style.display = "none";
         })
-        .catch(() => alert("Connection error."));
+        .catch(() => {
+            // NO ALERT HERE - USES ON-SCREEN BOX
+            statusTxt.className = "danger-box";
+            statusTxt.innerText = "📡 Connection Failed. Check Internet.";
+        });
     });
 }
 
@@ -220,6 +236,7 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
 
