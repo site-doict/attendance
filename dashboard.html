@@ -74,23 +74,31 @@ function loadHistory() {
     const list = document.getElementById("historyList");
     list.innerHTML = "";
     for (let i = 0; i < 7; i++) {
-        let d = new Date(); d.setDate(d.getDate() - i);
+        let d = new Date(); 
+        d.setDate(d.getDate() - i);
         let dateKey = d.toLocaleDateString();
+
         const hasIn = localStorage.getItem("lastInDate_" + id) === dateKey;
         const hasOut = localStorage.getItem("lastOutDate_" + id) === dateKey;
-        const inStatus = localStorage.getItem("lastInStatus_" + id) || "";
-        const outStatus = localStorage.getItem("lastOutStatus_" + id) || "";
+        const inStatus = localStorage.getItem("lastInStatus_" + id) || "---";
+        const outStatus = localStorage.getItem("lastOutStatus_" + id) || "---";
 
-        let statusText = "<span style='color:red;'>❌ No Record</span>";
+        let statusHtml = "<span style='color:red;'>❌ No Record</span>";
+
         if (hasIn || hasOut) {
-            statusText = `<span style='color:green;'>${hasIn ? 'In: '+inStatus : ''} ${hasOut ? '| Out: '+outStatus : ''}</span>`;
+            statusHtml = `<span style='color:green;'>In: ${hasIn ? inStatus : '❌'} | Out: ${hasOut ? outStatus : '❌'}</span>`;
         }
+
         const item = document.createElement("div");
         item.className = "history-item";
-        item.innerHTML = `<span class="history-date">${i===0?"Today":dateKey}</span><span class="history-status">${statusText}</span>`;
+        item.innerHTML = `<span class="history-date">${i === 0 ? "Today" : dateKey}</span>
+                          <span class="history-status">${statusHtml}</span>`;
         list.appendChild(item);
     }
 }
+
+
+    
 loadHistory();
 
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -115,32 +123,56 @@ function markOut(){
 
 function sendData(status, isIn) {
     statusTxt.innerText = "📍 Verifying location...";
+    statusTxt.className = ""; 
+
     navigator.geolocation.getCurrentPosition(pos => {
-        const dist = getDistance(pos.coords.latitude, pos.coords.longitude, OFFICE_LAT, OFFICE_LONG);
+        const lat = pos.coords.latitude;
+        const long = pos.coords.longitude;
+        const dist = getDistance(lat, long, OFFICE_LAT, OFFICE_LONG);
+
         if (dist > MAX_DISTANCE) {
             statusTxt.className = "danger-box";
             statusTxt.innerHTML = `🚫 ILLEGAL ATTEMPT!<br>You are ${Math.round(dist)}m away.`;
             return;
         }
-        const fd = new FormData();
-        const now = new Date();
-        fd.append("entry.1859002656", id);
-        fd.append("entry.339531515", name);
-        fd.append("entry.1163502489", `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`);
-        fd.append(isIn ? "entry.542167419" : "entry.1532127027", `${now.getHours()}:${now.getMinutes()}`);
-        fd.append("entry.1126631987", status);
-        fd.append("entry.1008700991", pos.coords.latitude);
-        fd.append("entry.698099376", pos.coords.longitude);
 
-        fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd }).then(() => {
-            const today = new Date().toLocaleDateString();
-            localStorage.setItem(isIn ? "lastInDate_"+id : "lastOutDate_"+id, today);
-            localStorage.setItem(isIn ? "lastInStatus_"+id : "lastOutStatus_"+id, status);
+        const now = new Date();
+        const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+        const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+        const fd = new FormData();
+        // Use your verified entry IDs
+        fd.append("entry.1859002656", id);                  // ID
+        fd.append("entry.339531515", name);                // Name
+        fd.append("entry.1163502489", dateStr);             // Date
+        fd.append("entry.542167419", isIn ? timeStr : "---"); // InTime
+        fd.append("entry.1532127027", isIn ? "---" : timeStr); // OutTime
+        fd.append("entry.1008700991", lat);                 // Lat
+        fd.append("entry.698099376", long);                 // Long
+        fd.append("entry.1126631987", status);               // Status
+
+        fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd })
+        .then(() => {
+            const today = now.toLocaleDateString();
+            if (isIn) {
+                localStorage.setItem("lastInDate_" + id, today);
+                localStorage.setItem("lastInStatus_" + id, status);
+            } else {
+                localStorage.setItem("lastOutDate_" + id, today);
+                localStorage.setItem("lastOutStatus_" + id, status);
+            }
+            statusTxt.className = "";
+            statusTxt.style.color = "green";
             statusTxt.innerHTML = "✅ Submitted Successfully!";
-            loadHistory(); updateClock();
-        });
+            loadHistory(); 
+            updateClock();
+        })
+        .catch(() => alert("Network Error. Try again."));
+    }, () => {
+        statusTxt.innerText = "❌ GPS Error. Please enable Location.";
     });
 }
+
 
 function logout(){
     localStorage.removeItem("userid"); localStorage.removeItem("name");
@@ -149,3 +181,4 @@ function logout(){
 </script>
 </body>
 </html>
+
