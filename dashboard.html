@@ -36,6 +36,27 @@
         100% { transform: translateX(0); }
     }
 
+#historyArea {
+    margin-top: 30px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.history-item {
+    border-bottom: 1px solid #eee;
+    padding: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+.history-date { font-weight: bold; color: #555; }
+.history-status { color: #28a745; font-weight: bold; }
+    
     .logout-btn { background: #6c757d; margin-top: 50px; }
 </style>
 
@@ -54,7 +75,10 @@
 <button id="outBtn" onclick="markOut()" style="display:none;">🚪 I am Leaving</button>
 
 <p id="status"></p>
-
+<div id="historyArea">
+    <h4 style="margin-top:0; color:#0056b3;">📅 Last 7 Days History</h4>
+    <div id="historyList">Loading history...</div>
+</div>
 <button class="logout-btn" onclick="logout()">Logout</button>
 
 <script>
@@ -239,6 +263,8 @@ function sendData(date, inTime, outTime, status) {
             statusTxt.innerText = "✅ Submitted Successfully!";
             inBtn.style.display = "none";
             outBtn.style.display = "none";
+
+            loadHistory();
         })
         .catch(() => {
             // NO ALERT HERE - USES ON-SCREEN BOX
@@ -255,6 +281,40 @@ function tryAgain() {
     updateClock(); // Restart the visibility check
 }
 
+// Function to show history
+function loadHistory() {
+    const list = document.getElementById("historyList");
+    list.innerHTML = "";
+    
+    // Loop through the last 7 days
+    for (let i = 0; i < 7; i++) {
+        let d = new Date();
+        d.setDate(d.getDate() - i);
+        let dateKey = d.toLocaleDateString();
+
+        // Check if this specific user has data for this date
+        const hasIn = localStorage.getItem("lastInDate_" + id) === dateKey;
+        const hasOut = localStorage.getItem("lastOutDate_" + id) === dateKey;
+
+        let statusText = "❌ No Record";
+        if (hasIn && hasOut) statusText = "✅ Full Day";
+        else if (hasIn) statusText = "⏳ In Only";
+        else if (hasOut) statusText = "🚪 Out Only";
+
+        // Create the row
+        const item = document.createElement("div");
+        item.className = "history-item";
+        item.innerHTML = `
+            <span class="history-date">${i === 0 ? "Today" : dateKey}</span>
+            <span class="history-status">${statusText}</span>
+        `;
+        list.appendChild(item);
+    }
+}
+
+// Call this function when the page loads
+loadHistory();
+
 
 function logout(){
     // Only remove login session, DO NOT remove attendance records
@@ -265,6 +325,7 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
 
