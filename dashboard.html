@@ -8,9 +8,37 @@
     #clock { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 20px; background: #eee; display: inline-block; padding: 10px 20px; border-radius: 10px; }
     button{ padding:12px 25px; font-size:16px; margin:10px 0; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer; }
     button:disabled{ background:#aaa; cursor:not-allowed; }
-    #status{ margin-top:20px; font-weight:bold; color: #d9534f; }
+    
+    /* Updated Status Area */
+    #status{ 
+        margin-top:20px; 
+        font-weight:bold; 
+        color: #d9534f; 
+        padding: 15px;
+        border-radius: 8px;
+        display: inline-block;
+        min-width: 250px;
+    }
+
+    /* New Red Alert Box for Illegal Attempts */
+    .danger-box {
+        background: #ffebee;
+        color: #c62828;
+        border: 2px solid #ef5350;
+        animation: shake 0.5s; /* Adds a small shake effect */
+    }
+
+    @keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-5px); }
+        100% { transform: translateX(0); }
+    }
+
     .logout-btn { background: #6c757d; margin-top: 50px; }
 </style>
+
 </head>
 <body>
 
@@ -192,6 +220,7 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
 
