@@ -179,17 +179,16 @@ function sendData(date, inTime, outTime, status) {
         // Calculate distance
         const distance = getDistance(lat, long, OFFICE_LAT, OFFICE_LONG);
 
-               if (distance > MAX_DISTANCE) {
+                       if (distance > MAX_DISTANCE) {
             statusTxt.className = "danger-box";
             statusTxt.innerHTML = `
                 <div style="font-size: 30px;">🚫</div>
                 ILLEGAL ATTEMPT!<br>
                 You are ${Math.round(distance)}m away.<br>
-                <button onclick="location.reload()" style="background:white; color:red; padding:5px; font-size:12px; margin-top:10px;">Try Again</button>
+                <p style="font-size:12px; cursor:pointer; text-decoration:underline;" onclick="tryAgain()">Click here to try again</p>
             `;
             return; 
         }
-
 
         // --- If location is OK, proceed to send ---
         statusTxt.className = ""; 
@@ -230,6 +229,13 @@ function sendData(date, inTime, outTime, status) {
     });
 }
 
+// Function to let users try again after moving closer
+function tryAgain() {
+    statusTxt.className = ""; // Remove the red box
+    statusTxt.innerText = "📍 Re-verifying...";
+    updateClock(); // Restart the visibility check
+}
+
 
 function logout(){
     // Only remove login session, DO NOT remove attendance records
@@ -240,6 +246,7 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
 
