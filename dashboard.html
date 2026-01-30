@@ -181,49 +181,36 @@ function markOut(){
 
 
 
-// Send Data
+// FIXED Send Data function
 function sendData(date, inTime, outTime, status){
 
     getLocation((lat,long)=>{
 
         const fd = new FormData();
 
+        // 1. Correct Date Format: Google Forms needs YYYY-MM-DD
+        const dateStr = `${date.year}-${String(date.month).padStart(2,"0")}-${String(date.day).padStart(2,"0")}`;
 
-        // Format Date
-        const dateStr =
-        `${date.year}-${String(date.month).padStart(2,"0")}-${String(date.day).padStart(2,"0")}`;
+        // 2. Add basic info
+        fd.append("entry.1859002656", id);
+        fd.append("entry.339531515", name);
+        fd.append("entry.1126631987", status);
+        fd.append("entry.1163502489", dateStr);
 
-
-        // Format Time
-        let inStr = "";
-        let outStr = "";
-
+        // 3. Only add time if it exists (avoids sending empty strings that cause errors)
         if(inTime){
-            inStr =
-            `${String(inTime.hour).padStart(2,"0")}:${String(inTime.minute).padStart(2,"0")}`;
+            const inStr = `${String(inTime.hour).padStart(2,"0")}:${String(inTime.minute).padStart(2,"0")}`;
+            fd.append("entry.542167419", inStr);
         }
 
         if(outTime){
-            outStr =
-            `${String(outTime.hour).padStart(2,"0")}:${String(outTime.minute).padStart(2,"0")}`;
+            const outStr = `${String(outTime.hour).padStart(2,"0")}:${String(outTime.minute).padStart(2,"0")}`;
+            fd.append("entry.1532127027", outStr);
         }
 
-
-        // Google Form fields
-        fd.append("entry.1859002656", id);
-        fd.append("entry.339531515", name);
-
-        fd.append("entry.1163502489", dateStr);
-
-        fd.append("entry.542167419", inStr);
-        fd.append("entry.1532127027", outStr);
-
+        // 4. Add Location
         fd.append("entry.1008700991", lat);
         fd.append("entry.698099376", long);
-
-        fd.append("entry.1126631987", status);
-
-
 
         fetch(FORM_URL,{
             method:"POST",
@@ -231,20 +218,15 @@ function sendData(date, inTime, outTime, status){
             body:fd
         })
         .then(()=>{
-
-            document.getElementById("status").innerText =
-            "✅ Attendance Submitted";
-
+            document.getElementById("status").innerText = "✅ Attendance Submitted";
             inBtn.disabled = true;
             outBtn.disabled = true;
-
         })
-        .catch(()=>{
-            alert("Submission Failed");
+        .catch((error)=>{
+            console.error("Error:", error);
+            alert("Submission Failed. Check your internet or Form IDs.");
         });
-
     });
-
 }
 
 
@@ -259,4 +241,5 @@ function logout(){
 
 </body>
 </html>
+
 
