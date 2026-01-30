@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Summary</title>
-    <!-- FIXED: Added full PapaParse Library Link -->
+    <!-- PapaParse Library -->
     <script src="https://cdn.jsdelivr.net"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f0f2f5; text-align: center; }
@@ -14,9 +14,12 @@
         .summary-table { width: 100%; border-collapse: collapse; }
         .summary-table th, .summary-table td { border: 1px solid #eee; padding: 14px; text-align: center; font-size: 14px; }
         .summary-table th { background: #0056b3; color: white; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Status Color Coding */
         .status-present { background: #d4edda !important; color: #155724; font-weight: bold; }
         .status-late { background: #fff3cd !important; color: #856404; font-weight: bold; }
         .status-absent { background: #f8d7da !important; color: #721c24; font-weight: bold; }
+        
         .logout-btn { padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         #loader { margin: 30px; font-style: italic; color: #666; font-size: 18px; }
     </style>
@@ -34,7 +37,7 @@
         <table class="summary-table" id="adminTable">
             <thead>
                 <tr>
-                    <th>Date/Time</th>
+                    <th>Timestamp</th>
                     <th>Staff ID</th>
                     <th>Name</th>
                     <th>In Time</th>
@@ -42,13 +45,15 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <!-- Data rows injected here -->
+                <!-- Data injected here -->
             </tbody>
         </table>
     </div>
 
     <script>
-        const ATTENDANCE_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?gid=156487384&single=true&output=csv";
+        // COMBINED PROXY + CSV LINK
+        const CSV_LINK = "https://docs.google.com";
+        const ATTENDANCE_SHEET = "https://corsproxy.io" + encodeURIComponent(https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?gid=156487384&single=true&output=csv);
 
         // Security Check
         if(localStorage.getItem("role") !== "admin" && localStorage.getItem("role") !== "superadmin") {
@@ -68,7 +73,7 @@
 
                     if (data.length === 0) {
                         document.getElementById("loader").style.display = "block";
-                        document.getElementById("loader").innerText = "⚠️ No data found.";
+                        document.getElementById("loader").innerText = "⚠️ No data found in the sheet.";
                         return;
                     }
 
@@ -76,29 +81,25 @@
                     data.reverse().forEach(row => {
                         const tr = document.createElement("tr");
                         
-                        // Detect column names automatically
-                        const dateVal = row["Timestamp"] || row["Date"] || "---";
-                        const idVal = row["ID"] || row["entry.1859002656"] || "---";
-                        const nameVal = row["Name"] || row["entry.339531515"] || "---";
-                        const timeVal = row["InTime"] || row["entry.542167419"] || "---";
+                        // Clean status string
                         const statusVal = (row["Status"] || "Absent").trim();
-
                         let statusClass = "status-absent"; 
                         if (statusVal === "Present") statusClass = "status-present";
                         if (statusVal === "Late") statusClass = "status-late";
 
+                        // EXPLICIT MAPPING to your sheet headers: Timestamp, ID, Name, InTime, Status
                         tr.innerHTML = `
-                            <td>${dateVal}</td>
-                            <td>${idVal}</td>
-                            <td>${nameVal}</td>
-                            <td>${timeVal}</td>
+                            <td>${row["Timestamp"] || '---'}</td>
+                            <td>${row["ID"] || '---'}</td>
+                            <td>${row["Name"] || '---'}</td>
+                            <td>${row["InTime"] || '---'}</td>
                             <td class="${statusClass}">${statusVal}</td>
                         `;
                         tbody.appendChild(tr);
                     });
                 },
                 error: function() {
-                    document.getElementById("loader").innerText = "⚠️ Connection failed. Check sheet publishing.";
+                    document.getElementById("loader").innerText = "⚠️ Connection failed. Check if Sheet is Published to Web.";
                 }
             });
         }
