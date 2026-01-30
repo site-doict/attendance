@@ -100,7 +100,11 @@ function updateClock() {
     
     document.getElementById("clock").innerText = now.toLocaleTimeString();
 
-    // Memory check: Tied to the specific Logged-in ID
+    // STOP the clock from resetting the status if a Danger message is visible
+    if (statusTxt.classList.contains("danger-box")) {
+        return; 
+    }
+
     const hasDoneIn = localStorage.getItem("lastInDate_" + id) === today;
     const hasDoneOut = localStorage.getItem("lastOutDate_" + id) === today;
 
@@ -175,17 +179,17 @@ function sendData(date, inTime, outTime, status) {
         // Calculate distance
         const distance = getDistance(lat, long, OFFICE_LAT, OFFICE_LONG);
 
-        if (distance > MAX_DISTANCE) {
-            // NO ALERT HERE - USES ON-SCREEN BOX
+               if (distance > MAX_DISTANCE) {
             statusTxt.className = "danger-box";
             statusTxt.innerHTML = `
                 <div style="font-size: 30px;">🚫</div>
                 ILLEGAL ATTEMPT!<br>
                 You are ${Math.round(distance)}m away.<br>
-                <small>Please enter office territory.</small>
+                <button onclick="location.reload()" style="background:white; color:red; padding:5px; font-size:12px; margin-top:10px;">Try Again</button>
             `;
             return; 
         }
+
 
         // --- If location is OK, proceed to send ---
         statusTxt.className = ""; 
@@ -236,6 +240,7 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
 
