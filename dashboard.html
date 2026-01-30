@@ -33,6 +33,26 @@
 // Google Form URL
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf6vzUcheslghKL4nR-a7_GgN3VESLjazzfsaxnmTuEaIY0ow/formResponse";
 
+// Office Location: 24.8947079, 89.7182064
+const OFFICE_LAT = 24.8947079; 
+const OFFICE_LONG = 89.7182064;
+const MAX_DISTANCE = 150; // Metres
+
+// This function will calculate distance
+    function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Earth's radius in metres
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+}
+
+    
 // Login Info
 const id = localStorage.getItem("userid");
 const name = localStorage.getItem("name");
@@ -112,9 +132,27 @@ function markOut(){
 }
 
 function sendData(date, inTime, outTime, status) {
-    statusTxt.innerText = "Processing... Please wait.";
+    statusTxt.innerText = "📍 Verifying location...";
+    statusTxt.style.color = "orange";
     
     getLocation((lat, long) => {
+        if (!lat || !long) {
+            alert("Location is required. Please enable GPS.");
+            statusTxt.innerText = "❌ Location Error";
+            return;
+        }
+
+        // Calculate distance
+        const distance = getDistance(lat, long, OFFICE_LAT, OFFICE_LONG);
+
+        if (distance > MAX_DISTANCE) {
+            statusTxt.style.color = "red";
+            statusTxt.innerHTML = `⚠️ Access Denied!<br>You are ${Math.round(distance)}m away.<br>Please enter office territory.`;
+            alert("You are not in the office territory!");
+            return; // This STOPS the submission
+        }
+
+        // --- If location is OK, proceed to send ---
         const fd = new FormData();
         const dateStr = `${date.day}/${date.month}/${date.year}`;
         const inStr = inTime ? `${inTime.hour}:${String(inTime.minute).padStart(2,"0")}` : "---";
@@ -125,28 +163,25 @@ function sendData(date, inTime, outTime, status) {
         fd.append("entry.1163502489", dateStr);
         fd.append("entry.542167419", inStr);
         fd.append("entry.1532127027", outStr);
-        fd.append("entry.1008700991", lat || "0");
-        fd.append("entry.698099376", long || "0");
+        fd.append("entry.1008700991", lat);
+        fd.append("entry.698099376", long);
         fd.append("entry.1126631987", status);
 
         fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd })
-       .then(() => {
+        .then(() => {
             const today = new Date().toLocaleDateString();
-            
-            // Save using the specific ID so logout doesn't break the limit
             if (inTime) { localStorage.setItem("lastInDate_" + id, today); }
             if (outTime) { localStorage.setItem("lastOutDate_" + id, today); }
 
             statusTxt.style.color = "green";
-            statusTxt.innerText = "✅ Attendance Submitted Successfully!";
+            statusTxt.innerText = "✅ Submitted Successfully!";
             inBtn.style.display = "none";
             outBtn.style.display = "none";
         })
-        .catch((err) => {
-            alert("Failed to connect. Check internet.");
-        });
+        .catch(() => alert("Connection error."));
     });
 }
+
 
 function logout(){
     // Only remove login session, DO NOT remove attendance records
@@ -157,5 +192,6 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
