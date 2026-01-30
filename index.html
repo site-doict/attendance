@@ -100,33 +100,30 @@ function login() {
             let found = false;
 
             users.forEach(u => {
-                // Trim CSV values to remove extra spaces
                 const uID = (u.ID || "").trim();
                 const uPass = (u.Password || "").trim();
+                const uRole = (u.Role || "user").trim().toLowerCase(); // Make sure your Sheet has a "Role" column
                 
                 if (uID === id && uPass === pass) {
-    found = true;
-    
-    // Save info and Role
-    localStorage.setItem("userid", uID);
-    localStorage.setItem("name", (u.Name || "").trim());
-    localStorage.setItem("role", (u.Role || "user").trim()); // Save the role
+                    found = true;
+                    localStorage.setItem("userid", uID);
+                    localStorage.setItem("name", (u.Name || "").trim());
+                    localStorage.setItem("role", uRole);
 
-    // Redirect based on Role
-    if (u.Role && u.Role.trim().toLowerCase() === "admin") {
-        window.location.href = "admin.html";
-    } else {
-        window.location.href = "dashboard.html";
-    }
-}
+                    // ADMIN REDIRECT
+                    if (uRole === "admin" || uRole === "superadmin") {
+                        window.location.href = "admin.html";
+                    } else {
+                        window.location.href = "dashboard.html";
+                    }
+                }
             });
 
-            if (!found) {
-                showError("Wrong ID or Password");
-            }
+            if (!found) showError("Wrong ID or Password");
         }
     });
 }
+
 
 function showError(msg) {
     document.getElementById("error").innerText = msg;
@@ -135,6 +132,7 @@ function showError(msg) {
 
 </body>
 </html>
+
 
 
 
