@@ -87,19 +87,17 @@ document.getElementById("user").innerText =
 
 
 // Time Control
-const hour = new Date().getHours();
-
-const inBtn = document.getElementById("inBtn");
-const outBtn = document.getElementById("outBtn");
-
-
-if(hour < 13){
+// REPLACE your Time Control section with this:
+if (hour < 12) {
+    // MORNING: Only "In" is active
+    inBtn.disabled = false;
     outBtn.disabled = true;
-}
-else if(hour >= 14){
+} else if (hour >= 12 && hour < 18) {
+    // AFTERNOON: Only "Out" is active
     inBtn.disabled = true;
-}
-else{
+    outBtn.disabled = false;
+} else {
+    // NIGHT: Everything off
     inBtn.disabled = true;
     outBtn.disabled = true;
 }
@@ -231,6 +229,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
