@@ -182,53 +182,43 @@ function markOut(){
 
 
 // FIXED Send Data function
-function sendData(date, inTime, outTime, status){
-
-    getLocation((lat,long)=>{
-
+function sendData(date, inTime, outTime, status) {
+    getLocation((lat, long) => {
         const fd = new FormData();
 
-        // 1. Correct Date Format: Google Forms needs YYYY-MM-DD
-        const dateStr = `${date.year}-${String(date.month).padStart(2,"0")}-${String(date.day).padStart(2,"0")}`;
+        // Prepare strings (Short Answer format)
+        const dateStr = `${date.day}/${date.month}/${date.year}`;
+        
+        // If time is missing, we send "---" so the Required field isn't empty
+        const inStr = inTime ? `${inTime.hour}:${String(inTime.minute).padStart(2,"0")}` : "---";
+        const outStr = outTime ? `${outTime.hour}:${String(outTime.minute).padStart(2,"0")}` : "---";
 
-        // 2. Add basic info
-        fd.append("entry.1859002656", id);
-        fd.append("entry.339531515", name);
-        fd.append("entry.1126631987", status);
-        fd.append("entry.1163502489", dateStr);
+        // Map your verified Entry IDs
+        fd.append("entry.1859002656", id);          // ID
+        fd.append("entry.339531515", name);        // Name
+        fd.append("entry.1163502489", dateStr);     // Date
+        fd.append("entry.542167419", inStr);        // InTime
+        fd.append("entry.1532127027", outStr);      // OutTime
+        fd.append("entry.1008700991", lat || "0");  // Lat
+        fd.append("entry.698099376", long || "0");  // Long
+        fd.append("entry.1126631987", status);      // Status
 
-        // 3. Only add time if it exists (avoids sending empty strings that cause errors)
-        if(inTime){
-            const inStr = `${String(inTime.hour).padStart(2,"0")}:${String(inTime.minute).padStart(2,"0")}`;
-            fd.append("entry.542167419", inStr);
-        }
-
-        if(outTime){
-            const outStr = `${String(outTime.hour).padStart(2,"0")}:${String(outTime.minute).padStart(2,"0")}`;
-            fd.append("entry.1532127027", outStr);
-        }
-
-        // 4. Add Location
-        fd.append("entry.1008700991", lat);
-        fd.append("entry.698099376", long);
-
-        fetch(FORM_URL,{
-            method:"POST",
-            mode:"no-cors",
-            body:fd
+        fetch(FORM_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: fd
         })
-        .then(()=>{
-            document.getElementById("status").innerText = "✅ Attendance Submitted";
+        .then(() => {
+            document.getElementById("status").innerText = "✅ Attendance Submitted Successfully!";
             inBtn.disabled = true;
             outBtn.disabled = true;
         })
-        .catch((error)=>{
-            console.error("Error:", error);
-            alert("Submission Failed. Check your internet or Form IDs.");
+        .catch((err) => {
+            console.error(err);
+            alert("Failed to connect to Google Sheets.");
         });
     });
 }
-
 
 
 // Logout
@@ -241,6 +231,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
