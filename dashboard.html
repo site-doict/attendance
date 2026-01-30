@@ -253,19 +253,26 @@ function sendData(date, inTime, outTime, status) {
         fd.append("entry.1126631987", status);
 
         fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd })
-        .then(() => {
+                 .then(() => {
             const today = new Date().toLocaleDateString();
-            if (inTime) { localStorage.setItem("lastInDate_" + id, today); }
-            if (outTime) { localStorage.setItem("lastOutDate_" + id, today); }
+            
+            if (inTime) { 
+                localStorage.setItem("lastInDate_" + id, today);
+                localStorage.setItem("lastInStatus_" + id, status); // Saves "Late" or "Present"
+            }
+            if (outTime) { 
+                localStorage.setItem("lastOutDate_" + id, today);
+                localStorage.setItem("lastOutStatus_" + id, status); // Saves "Early Leave" or "Present"
+            }
 
-            statusTxt.className = "";
             statusTxt.style.color = "green";
             statusTxt.innerText = "✅ Submitted Successfully!";
             inBtn.style.display = "none";
             outBtn.style.display = "none";
-
-            loadHistory();
+            loadHistory(); // Refresh history immediately
         })
+
+
         .catch(() => {
             // NO ALERT HERE - USES ON-SCREEN BOX
             statusTxt.className = "danger-box";
@@ -289,17 +296,24 @@ function loadHistory() {
     for (let i = 0; i < 7; i++) {
         let d = new Date();
         d.setDate(d.getDate() - i);
-        
-        // This MUST match the format used in your sendData function
         let dateKey = d.toLocaleDateString(); 
 
         const hasIn = localStorage.getItem("lastInDate_" + id) === dateKey;
         const hasOut = localStorage.getItem("lastOutDate_" + id) === dateKey;
+        
+        // Get the specific saved statuses
+        const inStatus = localStorage.getItem("lastInStatus_" + id) || "";
+        const outStatus = localStorage.getItem("lastOutStatus_" + id) || "";
 
         let statusText = "<span style='color:red;'>❌ No Record</span>";
-        if (hasIn && hasOut) statusText = "<span style='color:green;'>✅ Full Day</span>";
-        else if (hasIn) statusText = "<span style='color:orange;'>⏳ In Only</span>";
-        else if (hasOut) statusText = "<span style='color:blue;'>🚪 Out Only</span>";
+
+        if (hasIn && hasOut) {
+            statusText = `<span style='color:green;'>✅ ${inStatus} | 🚪 ${outStatus}</span>`;
+        } else if (hasIn) {
+            statusText = `<span style='color:orange;'>⏳ In: ${inStatus}</span>`;
+        } else if (hasOut) {
+            statusText = `<span style='color:blue;'>🚪 Out: ${outStatus}</span>`;
+        }
 
         const item = document.createElement("div");
         item.className = "history-item";
@@ -310,6 +324,7 @@ function loadHistory() {
         list.appendChild(item);
     }
 }
+
 
 
 // Call this function when the page loads
@@ -325,6 +340,7 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
 
