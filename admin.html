@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - Summary</title>
+    <script src="https://cdn.jsdelivr.net"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f4f7f6; }
+        .summary-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        .summary-table th, .summary-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        .status-present { background: #c8e6c9; color: #2e7d32; font-weight: bold; } /* Green */
+        .status-late { background: #fff9c4; color: #f57f17; font-weight: bold; }    /* Yellow */
+        .status-absent { background: #ffcdd2; color: #c62828; font-weight: bold; }  /* Red */
+        .header { display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Admin Attendance Summary</h2>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <table class="summary-table" id="adminTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Staff ID</th>
+                <th>Name</th>
+                <th>In Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Data will load here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Use your main Attendance Response CSV URL here
+        const ATTENDANCE_SHEET = "YOUR_PUBLISHED_ATTENDANCE_CSV_URL";
+
+        if(localStorage.getItem("role") !== "admin") {
+            window.location.href = "index.html"; // Block non-admins
+        }
+
+        function loadSummary() {
+            Papa.parse(ATTENDANCE_SHEET, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    const data = results.data;
+                    const tbody = document.getElementById("tableBody");
+                    
+                    data.forEach(row => {
+                        const tr = document.createElement("tr");
+                        const statusClass = row.Status === "Present" ? "status-present" : 
+                                            row.Status === "Late" ? "status-late" : "status-absent";
+                        
+                        tr.innerHTML = `
+                            <td>${row.Date || '---'}</td>
+                            <td>${row["entry.1859002656"] || '---'}</td>
+                            <td>${row["entry.339531515"] || '---'}</td>
+                            <td>${row["entry.542167419"] || '---'}</td>
+                            <td class="${statusClass}">${row.Status || 'Absent'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            });
+        }
+
+        function logout() { localStorage.clear(); window.location.href = "index.html"; }
+        loadSummary();
+    </script>
+</body>
+</html>
