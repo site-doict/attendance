@@ -105,15 +105,20 @@ function login() {
                 const uPass = (u.Password || "").trim();
                 
                 if (uID === id && uPass === pass) {
-                    found = true;
+    found = true;
+    
+    // Save info and Role
+    localStorage.setItem("userid", uID);
+    localStorage.setItem("name", (u.Name || "").trim());
+    localStorage.setItem("role", (u.Role || "user").trim()); // Save the role
 
-                    // Save session
-                    localStorage.setItem("userid", uID);
-                    localStorage.setItem("name", (u.Name || "").trim());
-
-                    // Go to dashboard
-                    window.location.href = "dashboard.html";
-                }
+    // Redirect based on Role
+    if (u.Role && u.Role.trim().toLowerCase() === "admin") {
+        window.location.href = "admin.html";
+    } else {
+        window.location.href = "dashboard.html";
+    }
+}
             });
 
             if (!found) {
@@ -130,5 +135,6 @@ function showError(msg) {
 
 </body>
 </html>
+
 
 
