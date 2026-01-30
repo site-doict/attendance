@@ -48,32 +48,27 @@ const statusTxt = document.getElementById("status");
 function updateClock() {
     const now = new Date();
     const hour = now.getHours();
-    const today = now.toLocaleDateString(); // Example: "30/01/2026"
+    const today = now.toLocaleDateString(); 
     
-    // Display Clock
     document.getElementById("clock").innerText = now.toLocaleTimeString();
 
-    // Memory check: Did they already click today?
-    const hasDoneIn = localStorage.getItem("lastInDate") === today;
-    const hasDoneOut = localStorage.getItem("lastOutDate") === today;
+    // Memory check: Tied to the specific Logged-in ID
+    const hasDoneIn = localStorage.getItem("lastInDate_" + id) === today;
+    const hasDoneOut = localStorage.getItem("lastOutDate_" + id) === today;
 
-    // Visibility Logic
     if (hour < 11) { 
-        // Before 11 AM
         inBtn.style.display = hasDoneIn ? "none" : "inline-block"; 
         outBtn.style.display = "none";
         statusTxt.innerText = hasDoneIn ? "✅ You already marked IN today" : "";
         statusTxt.style.color = "green";
     } 
     else if (hour >= 14 && hour < 21) { 
-        // 2 PM to 9 PM
         inBtn.style.display = "none";
         outBtn.style.display = hasDoneOut ? "none" : "inline-block";
         statusTxt.innerText = hasDoneOut ? "✅ You already marked OUT today" : "";
         statusTxt.style.color = "green";
     } 
     else { 
-        // Between 11 AM and 2 PM OR Night
         inBtn.style.display = "none";
         outBtn.style.display = "none";
         statusTxt.innerText = "Attendance is currently closed.";
@@ -138,9 +133,9 @@ function sendData(date, inTime, outTime, status) {
        .then(() => {
             const today = new Date().toLocaleDateString();
             
-            // Save to browser memory so button hides on refresh
-            if (inTime) { localStorage.setItem("lastInDate", today); }
-            if (outTime) { localStorage.setItem("lastOutDate", today); }
+            // Save using the specific ID so logout doesn't break the limit
+            if (inTime) { localStorage.setItem("lastInDate_" + id, today); }
+            if (outTime) { localStorage.setItem("lastOutDate_" + id, today); }
 
             statusTxt.style.color = "green";
             statusTxt.innerText = "✅ Attendance Submitted Successfully!";
@@ -153,8 +148,14 @@ function sendData(date, inTime, outTime, status) {
     });
 }
 
-function logout(){ localStorage.clear(); window.location.href="index.html"; }
+function logout(){
+    // Only remove login session, DO NOT remove attendance records
+    localStorage.removeItem("userid");
+    localStorage.removeItem("name");
+    window.location.href = "index.html";
+}
 </script>
 </body>
 </html>
+
 
