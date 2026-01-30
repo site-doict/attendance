@@ -87,22 +87,22 @@ document.getElementById("user").innerText =
 
 
 // Time Control
-// REPLACE your Time Control section with this:
-if (hour < 12) {
-    // MORNING: Only "In" is active
-    inBtn.disabled = false;
-    outBtn.disabled = true;
-} else if (hour >= 12 && hour < 18) {
-    // AFTERNOON: Only "Out" is active
-    inBtn.disabled = true;
-    outBtn.disabled = false;
-} else {
-    // NIGHT: Everything off
-    inBtn.disabled = true;
-    outBtn.disabled = true;
+if (hour < 11) { 
+    // Before 11 AM: Show only "In"
+    inBtn.style.display = "inline-block"; 
+    outBtn.style.display = "none";
+} 
+else if (hour >= 14 && hour < 21) { 
+    // After 2 PM: Show only "Out"
+    inBtn.style.display = "none";
+    outBtn.style.display = "inline-block";
+} 
+else { 
+    // Between 11 AM and 2 PM: Hide everything
+    inBtn.style.display = "none";
+    outBtn.style.display = "none";
+    document.getElementById("status").innerText = "Attendance is currently closed.";
 }
-
-
 
 // Get Date Parts
 function getDateParts(){
@@ -229,6 +229,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
