@@ -96,37 +96,34 @@ const statusTxt = document.getElementById("status");
 function updateClock() {
     const now = new Date();
     const hour = now.getHours();
+    const min = now.getMinutes();
     const today = now.toLocaleDateString(); 
     
     document.getElementById("clock").innerText = now.toLocaleTimeString();
 
-    // STOP the clock from resetting the status if a Danger message is visible
-    if (statusTxt.classList.contains("danger-box")) {
-        return; 
-    }
-
     const hasDoneIn = localStorage.getItem("lastInDate_" + id) === today;
     const hasDoneOut = localStorage.getItem("lastOutDate_" + id) === today;
 
+    // RULE: IN button only visible before 11:00 AM
     if (hour < 11) { 
         inBtn.style.display = hasDoneIn ? "none" : "inline-block"; 
         outBtn.style.display = "none";
-        statusTxt.innerText = hasDoneIn ? "✅ You already marked IN today" : "";
-        statusTxt.style.color = "green";
+        statusTxt.innerText = hasDoneIn ? "✅ Already Marked IN" : "";
     } 
+    // RULE: OUT button visible after 2:00 PM (14:00) until night
     else if (hour >= 14 && hour < 21) { 
         inBtn.style.display = "none";
         outBtn.style.display = hasDoneOut ? "none" : "inline-block";
-        statusTxt.innerText = hasDoneOut ? "✅ You already marked OUT today" : "";
-        statusTxt.style.color = "green";
+        statusTxt.innerText = hasDoneOut ? "✅ Already Marked OUT" : "";
     } 
     else { 
         inBtn.style.display = "none";
         outBtn.style.display = "none";
-        statusTxt.innerText = "Attendance is currently closed.";
-        statusTxt.style.color = "#d9534f";
+        // Show "Absent" message if they missed the 11 AM deadline
+        statusTxt.innerText = (hour >= 11 && hour < 14 && !hasDoneIn) ? "❌ You are marked ABSENT (Late after 11 AM)" : "Attendance Closed";
     }
 }
+
 
 // Update clock every second
 setInterval(updateClock, 1000);
@@ -153,15 +150,37 @@ function getLocation(cb){
 function markIn(){
     const t = getTimeParts();
     const d = getDateParts();
-    let status = t.hour > 9 ? "Late" : "Present";
-    sendData(d,t,null,status);
+    let status = "Present";
+
+    // 9:00 - 10:00 -> Present
+    // 10:01 - 10:30 -> Late
+    // 10:31 - 11:00 -> Very Late (or Absent)
+    
+    if (t.hour === 10 && t.minute <= 30) {
+        status = "Late";
+    } else if (t.hour >= 10 && t.minute > 30) {
+        status = "Absent";
+    } else if (t.hour >= 11) {
+        status = "Absent";
+    }
+
+    sendData(d, t, null, status);
 }
+
 
 function markOut(){
     const t = getTimeParts();
     const d = getDateParts();
-    sendData(d,null,t,"Present");
+    let status = "Present";
+
+    // RULE: Out < 4:20 PM (16:20) -> Early Leave
+    if (t.hour < 16 || (t.hour === 16 && t.minute < 20)) {
+        status = "Early Leave";
+    }
+
+    sendData(d, null, t, status);
 }
+
 
 function sendData(date, inTime, outTime, status) {
     statusTxt.innerText = "📍 Verifying location...";
@@ -246,6 +265,7 @@ function logout(){
 </script>
 </body>
 </html>
+
 
 
 
