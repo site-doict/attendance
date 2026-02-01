@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Attendance Dashboard</title>
 
-<!-- PapaParse -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -15,7 +14,6 @@ body{
     padding:20px;
     text-align:center;
 }
-
 .header{
     max-width:1100px;
     margin:auto;
@@ -27,12 +25,7 @@ body{
     align-items:center;
     box-shadow:0 2px 6px rgba(0,0,0,.1);
 }
-
-h2{
-    margin:0;
-    color:#0056b3;
-}
-
+h2{ margin:0; color:#0056b3; }
 .logout{
     padding:8px 16px;
     background:#dc3545;
@@ -42,13 +35,7 @@ h2{
     cursor:pointer;
     font-weight:bold;
 }
-
-#loader{
-    margin:30px;
-    font-size:18px;
-    color:#555;
-}
-
+#loader{ margin:30px; font-size:18px; color:#555; }
 .table-box{
     max-width:1100px;
     margin:auto;
@@ -57,32 +44,16 @@ h2{
     overflow-x:auto;
     box-shadow:0 4px 10px rgba(0,0,0,.1);
 }
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-th,td{
-    border:1px solid #eee;
-    padding:10px;
-    font-size:14px;
-    text-align:center;
-}
-
-th{
-    background:#0056b3;
-    color:white;
-}
-
-.present{ background:#d4edda; color:#155724; font-weight:bold;}
-.late{ background:#fff3cd; color:#856404; font-weight:bold;}
-.absent{ background:#f8d7da; color:#721c24; font-weight:bold;}
+table{ width:100%; border-collapse:collapse; }
+th,td{ border:1px solid #eee; padding:10px; font-size:14px; text-align:center; }
+th{ background:#0056b3; color:white; }
+.present{ background:#d4edda; color:#155724; font-weight:bold; }
+.late{ background:#fff3cd; color:#856404; font-weight:bold; }
+.absent{ background:#f8d7da; color:#721c24; font-weight:bold; }
 </style>
 </head>
 
 <body>
-
 <div class="header">
     <h2>Admin Attendance Summary</h2>
     <button class="logout" onclick="logout()">Logout</button>
@@ -107,16 +78,13 @@ th{
 </div>
 
 <script>
-/* =============== CONFIG =============== */
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?output=csv";
 const PROXY = "https://api.allorigins.win/raw?url=";
 
-/* =============== SECURITY =============== */
 if(localStorage.getItem("role") !== "admin" && localStorage.getItem("role") !== "superadmin"){
     location.href="index.html";
 }
 
-/* =============== FETCH DATA =============== */
 function loadData(){
     const url = PROXY + encodeURIComponent(CSV_URL);
     fetch(url)
@@ -125,7 +93,6 @@ function loadData(){
         Papa.parse(data, {
             header:true,
             skipEmptyLines:true,
-            delimiter: "\t", // Important for your sheet
             complete: function(result){
                 renderTable(result.data);
             },
@@ -141,7 +108,6 @@ function loadData(){
     });
 }
 
-/* =============== RENDER TABLE =============== */
 function renderTable(rows){
     document.getElementById("loader").style.display="none";
     const tbody = document.getElementById("tbody");
@@ -153,39 +119,39 @@ function renderTable(rows){
         return;
     }
 
+    // Remove empty rows automatically
+    rows = rows.filter(r => r.ID && r.ID.trim() !== "");
+
     rows.reverse().forEach(r=>{
-        function col(name){
-            const key = Object.keys(r).find(k=>k.trim().toLowerCase()===name.toLowerCase());
-            return key ? r[key] : "---";
-        }
+        const ts = r.Timestamp || "---";
+        const id = r.ID || "---";
+        const name = r.Name || "---";
+        const inTime = r.InTime || "---";
+        const outTime = r.OutTime || "---";
+        const status = (r.Status || "").trim();
+        let cls = "absent";
+        if(status === "Present") cls = "present";
+        if(status === "Late") cls = "late";
 
-        let status = (col("Status") || "").trim();
-        let cls="absent";
-        if(status==="Present") cls="present";
-        if(status==="Late") cls="late";
-
-        let tr = document.createElement("tr");
+        const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${col("Timestamp")}</td>
-            <td>${col("ID")}</td>
-            <td>${col("Name")}</td>
-            <td>${col("InTime")}</td>
-            <td>${col("OutTime")}</td>
-            <td class="${cls}">${status}</td>
+            <td>${ts}</td>
+            <td>${id}</td>
+            <td>${name}</td>
+            <td>${inTime}</td>
+            <td>${outTime}</td>
+            <td class="${cls}">${status || "---"}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-/* =============== LOGOUT =============== */
 function logout(){
     localStorage.clear();
     location.href="index.html";
 }
 
-/* =============== START =============== */
 loadData();
 </script>
-
 </body>
 </html>
