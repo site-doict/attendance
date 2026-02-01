@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Office Attendance Login</title>
+<title>Staff Login</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -52,7 +52,6 @@ button:hover{
 }
 </style>
 </head>
-
 <body>
 
 <div class="login-box">
@@ -80,7 +79,7 @@ function login() {
         header: true,
         skipEmptyLines: true,
         complete: function(res) {
-            const users = res.data;
+            const users = res.data.filter(u => u.ID && u.Password); // remove empty rows
             let found = false;
 
             users.forEach(u => {
