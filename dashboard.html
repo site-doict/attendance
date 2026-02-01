@@ -176,17 +176,36 @@ async function verifyWithServer() {
 
 async function loadHistoryFromServer() {
     try {
+
         const proxyUrl = "https://corsproxy.io/?" + SUMMARY_CSV;
         const res = await fetch(proxyUrl);
         const text = await res.text();
+
+        console.log("RAW FILE:", text); // debug
+
         Papa.parse(text, {
             header: true,
+            delimiter: "\t",   // <<< IMPORTANT FIX
+            skipEmptyLines: true,
+
             complete: function(results) {
-                loadHistory(results.data);
+
+                console.log("PARSED DATA:", results.data);
+
+                if(results.data.length === 0){
+                    statusTxt.innerText = "⚠️ No history found";
+                }else{
+                    loadHistory(results.data);
+                }
+
             }
         });
-    } catch (e) { console.log("History load failed."); }
+
+    } catch (e) {
+        console.log("History load failed:", e);
+    }
 }
+
 
 
 function updateClock() {
@@ -296,6 +315,7 @@ verifyWithServer(); // Initial sync
 
 </body>
 </html>
+
 
 
 
