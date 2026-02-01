@@ -232,12 +232,16 @@ function markOut(){
 
 function logout(){ localStorage.removeItem("userid"); localStorage.removeItem("name"); window.location.href="index.html"; }
 
-setInterval(updateClock, 1000);
+setInterval(() => {
+    updateClock();
+}, 1000);
+
 verifyWithServer(); // Initial sync
 </script>
 
 </body>
 </html>
+
 
 
 
