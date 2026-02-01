@@ -3,6 +3,46 @@
 <head>
 <title>Attendance Dashboard</title>
 <style>
+    @media (max-width: 600px){
+
+    body{
+        padding:15px;
+    }
+
+    h2{
+        font-size:22px;
+    }
+
+    #clock{
+        font-size:20px;
+        padding:8px 15px;
+    }
+
+    button{
+        width:100%;
+        font-size:18px;
+        padding:15px;
+        margin:12px 0;
+    }
+
+    #historyArea{
+        width:100%;
+        padding:12px;
+    }
+
+    .history-item{
+        font-size:13px;
+        flex-direction:column;
+        gap:4px;
+    }
+
+    .logout-btn{
+        width:100%;
+        padding:12px;
+        font-size:16px;
+    }
+
+}
     body{ font-family:Arial; background:#f9f9f9; padding:30px; text-align: center; }
     h2{ color:#0056b3; }
     #clock { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 20px; background: #eee; display: inline-block; padding: 10px 20px; border-radius: 10px; }
@@ -198,6 +238,7 @@ verifyWithServer(); // Initial sync
 
 </body>
 </html>
+
 
 
 
