@@ -175,36 +175,55 @@ async function verifyWithServer() {
 }
 
 async function loadHistoryFromServer() {
+    statusTxt.innerText = "🔄 Loading history...";
+
     try {
 
         const proxyUrl = "https://corsproxy.io/?" + SUMMARY_CSV;
+
+        console.log("Fetching:", proxyUrl);
+
         const res = await fetch(proxyUrl);
+
+        console.log("Response Status:", res.status);
+
         const text = await res.text();
 
-        console.log("RAW FILE:", text); // debug
+        console.log("RAW TEXT ↓↓↓");
+        console.log(text);
 
         Papa.parse(text, {
             header: true,
-            delimiter: "\t",   // <<< IMPORTANT FIX
+            delimiter: "\t",   // TAB
             skipEmptyLines: true,
 
             complete: function(results) {
 
-                console.log("PARSED DATA:", results.data);
+                console.log("PARSED RESULT ↓↓↓");
+                console.log(results);
 
-                if(results.data.length === 0){
-                    statusTxt.innerText = "⚠️ No history found";
-                }else{
-                    loadHistory(results.data);
+                if (!results.data || results.data.length === 0) {
+                    statusTxt.innerText = "⚠️ No history parsed";
+                    return;
                 }
 
+                statusTxt.innerText = "✅ History Loaded";
+
+                loadHistory(results.data);
+            },
+
+            error: function(err){
+                console.log("Papa Error:", err);
             }
         });
 
     } catch (e) {
-        console.log("History load failed:", e);
+
+        console.log("Fetch Failed:", e);
+        statusTxt.innerText = "❌ History fetch failed";
     }
 }
+
 
 
 
@@ -315,6 +334,7 @@ verifyWithServer(); // Initial sync
 
 </body>
 </html>
+
 
 
 
