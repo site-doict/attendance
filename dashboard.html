@@ -42,6 +42,7 @@ button{
     text-align:left;
 }
 .history-item{ border-bottom:1px solid #eee; padding:5px 0; }
+#status{ margin-top:10px; font-weight:bold; }
 </style>
 </head>
 <body>
@@ -64,18 +65,14 @@ button{
 <button class="logout-btn" onclick="logout()">Logout</button>
 
 <script>
+const id = localStorage.getItem("userid");
+const name = localStorage.getItem("name");
+const WEB_APP_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL"; // <-- replace with your Apps Script URL
 const ATTENDANCE_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?output=csv";
 const PROXY = "https://api.allorigins.win/raw?url=";
 
-const id = localStorage.getItem("userid");
-const name = localStorage.getItem("name");
-
 if(!id){ window.location.href="index.html"; }
 document.getElementById("user").innerText = `ID: ${id} | Name: ${name}`;
-
-const inBtn = document.getElementById("inBtn");
-const outBtn = document.getElementById("outBtn");
-const statusTxt = document.getElementById("status");
 
 // Clock
 function updateClock(){
@@ -121,19 +118,43 @@ function displayHistory(rows){
     }
 }
 
-// Attendance Buttons (local only for demo)
-function markIn(){ 
+// ---------------- SEND ATTENDANCE TO GOOGLE SHEET ----------------
+function sendData(status, type){
     const now = new Date();
-    const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
-    statusTxt.innerText = `✅ Marked IN at ${timeStr}`;
-    inBtn.disabled=true;
+    const fd = new FormData();
+    fd.append("id", id);
+    fd.append("name", name);
+    fd.append("status", status);
+    fd.append("type", type);
+
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: fd
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        if(data.success){
+            statusTxt.innerText = type==="in" 
+                ? `✅ Marked IN at ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`
+                : `✅ Marked OUT at ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+            type==="in" ? inBtn.disabled=true : outBtn.disabled=true;
+            loadHistory(); // refresh history
+        }
+    })
+    .catch(err=>{
+        console.error("Attendance submit failed", err);
+        statusTxt.innerText = "❌ Submission Failed!";
+    });
+}
+
+function markIn(){
+    let status = "Present"; // can add logic for Late
+    sendData(status, "in");
 }
 
 function markOut(){
-    const now = new Date();
-    const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
-    statusTxt.innerText = `✅ Marked OUT at ${timeStr}`;
-    outBtn.disabled=true;
+    let status = "Present"; // can add logic for Early Leave
+    sendData(status, "out");
 }
 
 function logout(){
