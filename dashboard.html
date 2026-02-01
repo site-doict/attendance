@@ -121,7 +121,7 @@ async function verifyWithServer() {
 
 async function loadHistoryFromServer() {
     try {
-        const proxyUrl = "https://corsproxy.io" + encodeURIComponent(SUMMARY_CSV);
+        const proxyUrl = "https://corsproxy.io/?" + SUMMARY_CSV;
         const res = await fetch(proxyUrl);
         const text = await res.text();
         Papa.parse(text, {
@@ -238,6 +238,7 @@ verifyWithServer(); // Initial sync
 
 </body>
 </html>
+
 
 
 
