@@ -1,150 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Summary</title>
-    <!-- PapaParse Library for CSV parsing -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f0f2f5; text-align: center; }
-        .header { display: flex; justify-content: space-between; align-items: center; max-width: 1100px; margin: 0 auto 20px; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h2 { color: #0056b3; margin: 0; }
-        .table-container { max-width: 1100px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .summary-table { width: 100%; border-collapse: collapse; }
-        .summary-table th, .summary-table td { border: 1px solid #eee; padding: 12px; text-align: center; font-size: 13px; }
-        .summary-table th { background: #0056b3; color: white; text-transform: uppercase; }
-        /* Status Colors */
-        .status-present { background: #d4edda !important; color: #155724; font-weight: bold; }
-        .status-late { background: #fff3cd !important; color: #856404; font-weight: bold; }
-        .status-absent { background: #f8d7da !important; color: #721c24; font-weight: bold; }
-        .logout-btn { padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #loader { margin: 30px; font-style: italic; color: #666; font-size: 18px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin Dashboard</title>
+
+<!-- PapaParse -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f2f4f7;
+    padding:20px;
+    text-align:center;
+}
+
+.header{
+    max-width:1100px;
+    margin:auto;
+    background:white;
+    padding:15px 25px;
+    border-radius:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+h2{
+    margin:0;
+    color:#0056b3;
+}
+
+.logout{
+    padding:8px 16px;
+    background:#dc3545;
+    border:none;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+#loader{
+    margin:30px;
+    font-size:18px;
+    color:#555;
+}
+
+.table-box{
+    max-width:1100px;
+    margin:auto;
+    background:white;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 4px 10px rgba(0,0,0,.1);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    border:1px solid #eee;
+    padding:10px;
+    font-size:13px;
+    text-align:center;
+}
+
+th{
+    background:#0056b3;
+    color:white;
+}
+
+.present{ background:#d4edda; color:#155724; font-weight:bold;}
+.late{ background:#fff3cd; color:#856404; font-weight:bold;}
+.absent{ background:#f8d7da; color:#721c24; font-weight:bold;}
+
+</style>
 </head>
+
 <body>
 
-    <div class="header">
-        <h2>Admin Summary</h2>
-        <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
 
-    <div id="loader">🔄 Synchronizing with Google Sheets...</div>
+<div class="header">
+    <h2>Admin Attendance Summary</h2>
+    <button class="logout" onclick="logout()">Logout</button>
+</div>
 
-    <div class="table-container">
-        <table class="summary-table">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>In Time</th>
-                    <th>Out Time</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-    </div>
 
-    <script>
-        // --- 1. CONFIGURATION ---
-        const MY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?output=csv";
-        
-        // Proxies to bypass CORS security
-        const PROXIES = [
-            "https://corsproxy.io", 
-            "https://api.allorigins.win"
-        ];
+<div id="loader">🔄 Loading Data...</div>
 
-        // Security Check
-        if(localStorage.getItem("role") !== "admin") { 
-            window.location.href = "index.html"; 
+
+<div class="table-box">
+
+<table>
+
+<thead>
+<tr>
+    <th>Timestamp</th>
+    <th>ID</th>
+    <th>Name</th>
+    <th>In Time</th>
+    <th>Out Time</th>
+    <th>Status</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+</div>
+
+
+
+<script>
+
+/* ================= CONFIG ================= */
+
+const CSV_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?output=csv";
+
+const PROXIES = [
+    "https://corsproxy.io",
+    "https://api.allorigins.win"
+];
+
+
+/* =============== SECURITY =============== */
+
+if(localStorage.getItem("role") !== "admin"){
+    location.href="index.html";
+}
+
+
+/* =============== FETCH DATA =============== */
+
+function loadData(proxyIndex=0){
+
+    if(proxyIndex >= PROXIES.length){
+        document.getElementById("loader").innerText =
+        "❌ Failed to load data. Check Sheet Publish.";
+        return;
+    }
+
+
+    let url="";
+
+    if(PROXIES[proxyIndex].includes("corsproxy")){
+        url = PROXIES[proxyIndex] + "/?" + CSV_URL;
+    }
+    else{
+        url = PROXIES[proxyIndex] + "/get?url=" + encodeURIComponent(CSV_URL);
+    }
+
+
+    fetch(url)
+
+    .then(res => res.text())
+
+    .then(data => {
+
+        if(url.includes("allorigins")){
+            data = JSON.parse(data).contents;
         }
 
-        // --- 2. DATA LOADING LOGIC ---
-        async function fetchAttendance(proxyIndex = 0) {
-            if (proxyIndex >= PROXIES.length) {
-                document.getElementById("loader").innerText = "⚠️ All connection methods failed. Check Sheet 'Publish' status.";
-                return;
+        Papa.parse(data,{
+            header:true,
+            skipEmptyLines:true,
+
+            complete: function(result){
+                render(result.data);
             }
+        });
 
-            try {
-                let proxyUrl = "";
+    })
 
-                    if (PROXIES[proxyIndex].includes("corsproxy")) {
-                        proxyUrl = PROXIES[proxyIndex] + "/?" + MY_CSV_URL;
-                    } else {
-                        proxyUrl = PROXIES[proxyIndex] + "/get?url=" + encodeURIComponent(MY_CSV_URL);
-                    }
+    .catch(err=>{
+        console.log("Proxy Failed:",proxyIndex);
+        loadData(proxyIndex+1);
+    });
 
-                const response = await fetch(proxyUrl);
-                let rawText = "";
+}
 
-                if (proxyUrl.includes("allorigins")) {
-                    const json = await response.json();
-                    rawText = json.contents;
-                } else {
-                    rawText = await response.text();
-                }
 
-                // Parse the fetched text
-                Papa.parse(rawText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        renderData(results.data);
-                    }
-                });
+/* =============== RENDER TABLE =============== */
 
-            } catch (err) {
-                console.warn(`Proxy ${proxyIndex} failed, trying next...`);
-                fetchAttendance(proxyIndex + 1);
-            }
+function render(rows){
+
+    document.getElementById("loader").style.display="none";
+
+    const tbody=document.getElementById("tbody");
+
+    tbody.innerHTML="";
+
+
+    if(!rows || rows.length===0){
+
+        document.getElementById("loader").style.display="block";
+        document.getElementById("loader").innerText="⚠️ No Data Found";
+        return;
+    }
+
+
+    rows.reverse().forEach(r=>{
+
+        function col(name){
+
+            let key = Object.keys(r)
+            .find(k=>k.trim().toLowerCase()===name.toLowerCase());
+
+            return key ? r[key] : "---";
         }
 
-        function renderData(data) {
-            document.getElementById("loader").style.display = "none";
-            const tbody = document.getElementById("tableBody");
-            tbody.innerHTML = ""; 
 
-            if (!data || data.length === 0) {
-                document.getElementById("loader").style.display = "block";
-                document.getElementById("loader").innerText = "⚠️ No records found.";
-                return;
-            }
+        let status = col("Status").trim();
 
-            // Show newest records first
-            data.reverse().forEach(row => {
-                // Helper to find column regardless of hidden tabs/spaces
-                const getCol = (name) => {
-                    const key = Object.keys(row).find(k => k.trim().toLowerCase() === name.toLowerCase());
-                    return key ? row[key] : "---";
-                };
+        let cls="absent";
 
-                const status = String(getCol("Status")).trim();
-                let sClass = (status === "Present") ? "status-present" : (status === "Late" ? "status-late" : "status-absent");
+        if(status==="Present") cls="present";
+        if(status==="Late") cls="late";
 
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${getCol("Timestamp")}</td>
-                    <td>${getCol("ID")}</td>
-                    <td>${getCol("Name")}</td>
-                    <td>${getCol("InTime")}</td>
-                    <td>${getCol("OutTime")}</td>
-                    <td class="${sClass}">${status}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
 
-        function logout() { 
-            localStorage.clear(); 
-            window.location.href = "index.html"; 
-        }
+        let tr=document.createElement("tr");
 
-        // Start the process
-        fetchAttendance();
-    </script>
+        tr.innerHTML=`
+
+        <td>${col("Timestamp")}</td>
+        <td>${col("ID")}</td>
+        <td>${col("Name")}</td>
+        <td>${col("InTime")}</td>
+        <td>${col("OutTime")}</td>
+        <td class="${cls}">${status}</td>
+
+        `;
+
+        tbody.appendChild(tr);
+
+    });
+
+}
+
+
+/* =============== LOGOUT =============== */
+
+function logout(){
+
+    localStorage.clear();
+    location.href="index.html";
+
+}
+
+
+/* =============== START =============== */
+
+loadData();
+
+
+</script>
+
 </body>
 </html>
