@@ -3,13 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Office Attendance Login</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-
 body{
     font-family: Arial, sans-serif;
     background:#f0f2f5;
@@ -18,7 +16,6 @@ body{
     align-items:center;
     height:100vh;
 }
-
 .login-box{
     background:white;
     padding:30px;
@@ -26,12 +23,10 @@ body{
     border-radius:6px;
     box-shadow:0 0 10px rgba(0,0,0,.1);
 }
-
 h2{
     text-align:center;
     margin-bottom:20px;
 }
-
 input{
     width:100%;
     padding:10px;
@@ -39,7 +34,6 @@ input{
     border:1px solid #ccc;
     border-radius:4px;
 }
-
 button{
     width:100%;
     padding:10px;
@@ -48,50 +42,40 @@ button{
     border:none;
     cursor:pointer;
 }
-
 button:hover{
     background:#004099;
 }
-
 #error{
     color:red;
     text-align:center;
     margin-top:10px;
 }
-
 </style>
 </head>
 
 <body>
 
 <div class="login-box">
-
 <h2>Staff Login</h2>
 
 <input type="text" id="userid" placeholder="Enter ID">
-
 <input type="password" id="password" placeholder="Enter Password">
-
 <button onclick="login()">Login</button>
 
 <div id="error"></div>
-
 </div>
-
 
 <script>
 const USER_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?gid=32388154&single=true&output=csv";
+const PROXY = "https://api.allorigins.win/raw?url=";
 
 function login() {
     const id = document.getElementById("userid").value.trim();
     const pass = document.getElementById("password").value.trim();
 
-    if (!id || !pass) {
-        showError("Enter ID and Password");
-        return;
-    }
+    if (!id || !pass) { showError("Enter ID and Password"); return; }
 
-    Papa.parse(USER_SHEET, {
+    Papa.parse(PROXY + encodeURIComponent(USER_SHEET), {
         download: true,
         header: true,
         skipEmptyLines: true,
@@ -102,16 +86,15 @@ function login() {
             users.forEach(u => {
                 const uID = (u.ID || "").trim();
                 const uPass = (u.Password || "").trim();
-                const uRole = (u.Role || "user").trim().toLowerCase(); // Make sure your Sheet has a "Role" column
-                
-                if (uID === id && uPass === pass) {
+                const uRole = (u.Role || "user").trim().toLowerCase();
+
+                if(uID === id && uPass === pass){
                     found = true;
                     localStorage.setItem("userid", uID);
                     localStorage.setItem("name", (u.Name || "").trim());
                     localStorage.setItem("role", uRole);
 
-                    // ADMIN REDIRECT
-                    if (uRole === "admin" || uRole === "superadmin") {
+                    if(uRole === "admin" || uRole === "superadmin"){
                         window.location.href = "admin.html";
                     } else {
                         window.location.href = "dashboard.html";
@@ -119,20 +102,19 @@ function login() {
                 }
             });
 
-            if (!found) showError("Wrong ID or Password");
+            if(!found) showError("Wrong ID or Password");
+        },
+        error: function(err){
+            showError("Failed to fetch user data. Try again later.");
+            console.error(err);
         }
     });
 }
 
-
-function showError(msg) {
+function showError(msg){
     document.getElementById("error").innerText = msg;
 }
 </script>
 
 </body>
 </html>
-
-
-
-
