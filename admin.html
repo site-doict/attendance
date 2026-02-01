@@ -70,7 +70,14 @@
             }
 
             try {
-                const proxyUrl = PROXIES[proxyIndex] + encodeURIComponent(MY_CSV_URL);
+                let proxyUrl = "";
+
+                    if (PROXIES[proxyIndex].includes("corsproxy")) {
+                        proxyUrl = PROXIES[proxyIndex] + "/?" + MY_CSV_URL;
+                    } else {
+                        proxyUrl = PROXIES[proxyIndex] + "/get?url=" + encodeURIComponent(MY_CSV_URL);
+                    }
+
                 const response = await fetch(proxyUrl);
                 let rawText = "";
 
