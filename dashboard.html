@@ -102,24 +102,75 @@ function loadHistory(){
 }
 
 function displayHistory(rows){
+
     const list = document.getElementById("historyList");
-    list.innerHTML="";
+    list.innerHTML = "";
+
+    const inBtn = document.getElementById("inBtn");
+    const outBtn = document.getElementById("outBtn");
+
+    // Default: allow BOTH
+    inBtn.style.display = "inline-block";
+    outBtn.style.display = "inline-block";
+
+
     const today = new Date();
+    const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
+
+    // Find today's record
+    const todayRecord = rows.find(r =>
+        (r.ID||"").trim() === id &&
+        (r.Date||"").trim() === todayStr
+    );
+
+
+    // ---- BUTTON CONTROL ----
+    if(todayRecord){
+
+        // If OUT already done → hide both
+        if(todayRecord.OutTime){
+
+            inBtn.style.display = "none";
+            outBtn.style.display = "none";
+        }
+
+        // If IN done but OUT not done → only OUT
+        else if(todayRecord.InTime){
+
+            inBtn.style.display = "none";
+            outBtn.style.display = "inline-block";
+        }
+
+        // If neither IN nor OUT → allow both (default)
+    }
+
+
+    // ---- HISTORY (7 DAYS) ----
     for(let i=0;i<7;i++){
-        let d = new Date(); d.setDate(today.getDate()-i);
+
+        let d = new Date();
+        d.setDate(today.getDate()-i);
+
         let dayStr = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
 
-        let record = rows.find(r=> (r.ID||"").trim() === id && (r.Date||"").trim() === dayStr);
-        let html = record 
-            ? `✅ In: ${record.InTime || '---'} | Out: ${record.OutTime || '---'} | Status: ${record.Status || '---'}`
+        let record = rows.find(r =>
+            (r.ID||"").trim() === id &&
+            (r.Date||"").trim() === dayStr
+        );
+
+        let html = record
+            ? `✅ In: ${record.InTime||'---'} | Out: ${record.OutTime||'---'} | Status: ${record.Status||'---'}`
             : "❌ No Record";
 
         const div = document.createElement("div");
-        div.className="history-item";
+        div.className = "history-item";
+
         div.innerHTML = `<strong>${i===0?"Today":dayStr}:</strong> ${html}`;
+
         list.appendChild(div);
     }
 }
+
 
 // ---------------- SEND ATTENDANCE TO GOOGLE SHEET ----------------
 function sendData(status, type){
@@ -170,5 +221,6 @@ loadHistory();
 
 </body>
 </html>
+
 
 
