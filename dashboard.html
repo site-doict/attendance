@@ -65,6 +65,9 @@ button{
 <button class="logout-btn" onclick="logout()">Logout</button>
 
 <script>
+const statusTxt = document.getElementById("status");
+
+
 const id = localStorage.getItem("userid");
 const name = localStorage.getItem("name");
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzDA0dF7iZ8hWRXmURTplyxIKZnMOa9MRNupyPWSHd00ys4aeJ1Jk4c37gfYqXbDk3I/exec"; // <-- replace with your Apps Script URL
@@ -167,4 +170,5 @@ loadHistory();
 
 </body>
 </html>
+
 
