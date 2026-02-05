@@ -14,11 +14,13 @@ body{
     padding:20px;
     text-align:center;
 }
+
 #clock{
     font-size:28px;
     font-weight:bold;
     margin:15px 0;
 }
+
 button{
     padding:15px 25px;
     font-size:18px;
@@ -27,31 +29,44 @@ button{
     border:none;
     border-radius:8px;
 }
+
 #inBtn{ background:#28a745; color:white; }
 #outBtn{ background:#dc3545; color:white; }
+
 .logout-btn{ background:#6c757d; color:white; }
+
 #historyArea{
     margin-top:20px;
     background:white;
     padding:15px;
     border-radius:10px;
     max-width:600px;
-    margin-left:auto;
-    margin-right:auto;
+    margin:auto;
     box-shadow:0 2px 5px rgba(0,0,0,.1);
     text-align:left;
 }
-.history-item{ border-bottom:1px solid #eee; padding:5px 0; }
-#status{ margin-top:10px; font-weight:bold; }
+
+.history-item{
+    border-bottom:1px solid #eee;
+    padding:6px 0;
+}
+
+#status{
+    margin-top:10px;
+    font-weight:bold;
+}
 </style>
 </head>
+
 <body>
 
 <h2>Welcome</h2>
 <p id="user"></p>
+
 <div id="clock">00:00:00</div>
 
 <h3>Attendance</h3>
+
 <button id="inBtn" onclick="markIn()">✅ I am in Office</button>
 <button id="outBtn" onclick="markOut()">🚪 I am Leaving</button>
 
@@ -64,163 +79,277 @@ button{
 
 <button class="logout-btn" onclick="logout()">Logout</button>
 
+
 <script>
-const statusTxt = document.getElementById("status");
 
+// ================= CONFIG =================
 
-const id = localStorage.getItem("userid");
-const name = localStorage.getItem("name");
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzDA0dF7iZ8hWRXmURTplyxIKZnMOa9MRNupyPWSHd00ys4aeJ1Jk4c37gfYqXbDk3I/exec"; // <-- replace with your Apps Script URL
-const ATTENDANCE_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?output=csv";
+const WEB_APP_URL =
+"https://script.google.com/macros/s/AKfycbzDA0dF7iZ8hWRXmURTplyxIKZnMOa9MRNupyPWSHd00ys4aeJ1Jk4c37gfYqXbDk3I/exec";
+
+const ATTENDANCE_SHEET =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?output=csv";
+
 const PROXY = "https://api.allorigins.win/raw?url=";
 
-if(!id){ window.location.href="index.html"; }
-document.getElementById("user").innerText = `ID: ${id} | Name: ${name}`;
 
-// Clock
-function updateClock(){
-    const now = new Date();
-    document.getElementById("clock").innerText = now.toLocaleTimeString();
+// ================= USER =================
+
+const id   = localStorage.getItem("userid");
+const name = localStorage.getItem("name");
+
+if(!id){
+    location.href="index.html";
 }
-setInterval(updateClock, 1000);
+
+document.getElementById("user").innerText =
+`ID: ${id} | Name: ${name}`;
+
+
+// ================= ELEMENTS =================
+
+const inBtn    = document.getElementById("inBtn");
+const outBtn   = document.getElementById("outBtn");
+const statusTx = document.getElementById("status");
+
+
+// ================= CLOCK =================
+
+function updateClock(){
+
+    const now = new Date();
+
+    document.getElementById("clock")
+    .innerText = now.toLocaleTimeString();
+}
+
+setInterval(updateClock,1000);
 updateClock();
 
-// Load Attendance History
+
+// ================= LOAD HISTORY =================
+
 function loadHistory(){
+
     const url = PROXY + encodeURIComponent(ATTENDANCE_SHEET);
+
     fetch(url)
-    .then(res=>res.text())
+    .then(r=>r.text())
     .then(data=>{
+
         Papa.parse(data,{
+
             header:true,
             skipEmptyLines:true,
+
             complete:function(res){
+
                 displayHistory(res.data);
             }
         });
-    }).catch(err=>console.error(err));
+
+    })
+    .catch(err=>console.log(err));
 }
 
-function displayHistory(rows){
 
-    const list = document.getElementById("historyList");
-    list.innerHTML = "";
+// ================= BUTTON CONTROL =================
 
-    const inBtn = document.getElementById("inBtn");
-    const outBtn = document.getElementById("outBtn");
+function controlButtons(rows){
 
-    // Default: allow BOTH
-    inBtn.style.display = "inline-block";
-    outBtn.style.display = "inline-block";
+    const now = new Date();
+
+    const mins = now.getHours()*60 + now.getMinutes();
 
 
+    // TIME RULES (minutes)
+
+    const IN_START   = 8*60;        // 08:00
+    const LATE_TIME  = 10*60;       // 10:00
+    const IN_CLOSE   = 10*60+30;    // 10:30
+
+    const OUT_START  = 15*60;       // 15:00
+    const NORMAL_OUT = 16*60+40;    // 16:40
+    const OUT_CLOSE  = 18*60;       // 18:00
+
+
+    // Hide first
+    inBtn.style.display  = "none";
+    outBtn.style.display = "none";
+
+
+    // Today
     const today = new Date();
-    const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
 
-    // Find today's record
-    const todayRecord = rows.find(r =>
+    const todayStr =
+    `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
+
+
+    // Find record
+    const rec = rows.find(r =>
         (r.ID||"").trim() === id &&
         (r.Date||"").trim() === todayStr
     );
 
 
-    // ---- BUTTON CONTROL ----
-    if(todayRecord){
+    // -------- IN BUTTON --------
 
-        // If OUT already done → hide both
-        if(todayRecord.OutTime){
+    if(!rec || !rec.InTime){
 
-            inBtn.style.display = "none";
-            outBtn.style.display = "none";
+        if(mins >= IN_START && mins <= IN_CLOSE){
+
+            inBtn.style.display="inline-block";
         }
-
-        // If IN done but OUT not done → only OUT
-        else if(todayRecord.InTime){
-
-            inBtn.style.display = "none";
-            outBtn.style.display = "inline-block";
-        }
-
-        // If neither IN nor OUT → allow both (default)
     }
 
 
-    // ---- HISTORY (7 DAYS) ----
+    // -------- OUT BUTTON --------
+
+    if(rec && rec.InTime && !rec.OutTime){
+
+        if(mins >= OUT_START && mins <= OUT_CLOSE){
+
+            outBtn.style.display="inline-block";
+        }
+    }
+
+}
+
+
+// ================= DISPLAY =================
+
+function displayHistory(rows){
+
+    const list = document.getElementById("historyList");
+
+    list.innerHTML="";
+
+
+    const today = new Date();
+
+
     for(let i=0;i<7;i++){
 
         let d = new Date();
+
         d.setDate(today.getDate()-i);
 
-        let dayStr = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+        let dayStr =
+        `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
 
-        let record = rows.find(r =>
+
+        let rec = rows.find(r =>
             (r.ID||"").trim() === id &&
             (r.Date||"").trim() === dayStr
         );
 
-        let html = record
-            ? `✅ In: ${record.InTime||'---'} | Out: ${record.OutTime||'---'} | Status: ${record.Status||'---'}`
-            : "❌ No Record";
+
+        let html = rec
+        ? `✅ In: ${rec.InTime||'---'} | Out: ${rec.OutTime||'---'} | Status: ${rec.Status||'---'}`
+        : "❌ No Record";
+
 
         const div = document.createElement("div");
-        div.className = "history-item";
 
-        div.innerHTML = `<strong>${i===0?"Today":dayStr}:</strong> ${html}`;
+        div.className="history-item";
+
+        div.innerHTML =
+        `<strong>${i===0?"Today":dayStr}:</strong> ${html}`;
 
         list.appendChild(div);
     }
+
+
+    // Update buttons
+    controlButtons(rows);
 }
 
 
-// ---------------- SEND ATTENDANCE TO GOOGLE SHEET ----------------
-function sendData(status, type){
-    const now = new Date();
-    const fd = new FormData();
-    fd.append("id", id);
-    fd.append("name", name);
-    fd.append("status", status);
-    fd.append("type", type);
+// ================= SEND DATA =================
 
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: fd
+function sendData(status,type){
+
+    const now = new Date();
+
+    const fd = new FormData();
+
+    fd.append("id",id);
+    fd.append("name",name);
+    fd.append("status",status);
+    fd.append("type",type);
+
+
+    fetch(WEB_APP_URL,{
+        method:"POST",
+        body:fd
     })
-    .then(res=>res.json())
-    .then(data=>{
-        if(data.success){
-            statusTxt.innerText = type==="in" 
-                ? `✅ Marked IN at ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`
-                : `✅ Marked OUT at ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
-            type==="in" ? inBtn.disabled=true : outBtn.disabled=true;
-            loadHistory(); // refresh history
+
+    .then(r=>r.json())
+
+    .then(d=>{
+
+        if(d.success){
+
+            const t =
+            `${now.getHours()}:${String(now.getMinutes()).padStart(2,"0")}`;
+
+            statusTx.innerText =
+            type==="in"
+            ? `✅ Marked IN at ${t}`
+            : `✅ Marked OUT at ${t}`;
+
+            loadHistory();
         }
     })
-    .catch(err=>{
-        console.error("Attendance submit failed", err);
-        statusTxt.innerText = "❌ Submission Failed!";
+
+    .catch(()=>{
+        statusTx.innerText="❌ Submit Failed";
     });
+
 }
+
+
+// ================= BUTTON ACTION =================
 
 function markIn(){
-    let status = "Present"; // can add logic for Late
-    sendData(status, "in");
+
+    const now = new Date();
+
+    let mins = now.getHours()*60 + now.getMinutes();
+
+    let status = mins >= 600 ? "Late" : "Present"; // after 10:00
+
+    sendData(status,"in");
 }
+
 
 function markOut(){
-    let status = "Present"; // can add logic for Early Leave
-    sendData(status, "out");
+
+    const now = new Date();
+
+    let mins = now.getHours()*60 + now.getMinutes();
+
+    let status = mins < 1000 ? "Early Leave" : "Present"; // before 16:40
+
+    sendData(status,"out");
 }
+
+
+// ================= LOGOUT =================
 
 function logout(){
+
     localStorage.clear();
-    window.location.href="index.html";
+
+    location.href="index.html";
 }
 
+
+// ================= START =================
+
 loadHistory();
+
 </script>
 
 </body>
 </html>
-
-
-
