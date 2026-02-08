@@ -189,13 +189,11 @@ function controlButtons(rows){
 
     // TIME RULES (minutes)
 
-// TIME RULES (minutes) - TESTING MODE
+    const IN_START   = 8*60;        // 08:00
+    const IN_CLOSE   = 10*60+30;    // 10:30
 
-const IN_START   = 0*60;        // 00:00 (midnight)
-const IN_CLOSE   = 23*60+59;    // 23:59 (end of day)
-
-const OUT_START  = 0*60;        // 00:00
-const OUT_CLOSE  = 23*60+59;    // 23:59
+    const OUT_START  = 15*60;       // 15:00
+    const OUT_CLOSE  = 18*60;       // 18:00
 
 
     // Hide first
@@ -338,8 +336,13 @@ function sendData(status,type){
 
         if(d.success){
 
-            const t =
-            `${now.getHours()}:${String(now.getMinutes()).padStart(2,"0")}`;
+            let hours = now.getHours();
+            let minutes = String(now.getMinutes()).padStart(2,"0");
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            
+            const t = `${hours}:${minutes} ${ampm}`;
 
             statusTx.innerText =
             type==="in"
@@ -420,4 +423,3 @@ loadHistory();
 
 </body>
 </html>
-
