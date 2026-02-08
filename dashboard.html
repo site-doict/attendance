@@ -187,13 +187,13 @@ function controlButtons(rows){
     const mins = now.getHours()*60 + now.getMinutes();
 
 
-    // TIME RULES (minutes)
+    // TIME RULES (minutes) - TESTING MODE (allows all day)
 
-    const IN_START   = 8*60;        // 08:00
-    const IN_CLOSE   = 10*60+30;    // 10:30
+    const IN_START   = 0*60;        // 00:00
+    const IN_CLOSE   = 23*60+59;    // 23:59
 
-    const OUT_START  = 15*60;       // 15:00
-    const OUT_CLOSE  = 18*60;       // 18:00
+    const OUT_START  = 0*60;        // 00:00
+    const OUT_CLOSE  = 23*60+59;    // 23:59
 
 
     // Hide first
