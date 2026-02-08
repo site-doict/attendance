@@ -106,7 +106,7 @@ button{
 // ================= CONFIG =================
 
 const WEB_APP_URL =
-"https://script.google.com/macros/s/AKfycbzFi8N-bhA9y9NCbZPnq8m1e0nmVfuUA1YxTxaJcNEbK63Qfl3eOcmf8Qr9hvCYndyh/exec";
+"https://script.google.com/macros/s/AKfycbyBFqDyMNpKtbD3w4RNAjZ13BKkhl8pvFUEhrHsC-PzBvL-SV274jKCkClsY6pkKjMo/exec";
 
 
 // ================= USER =================
@@ -160,6 +160,8 @@ function loadHistory(){
 
     .then(rows => {
 
+        console.log("Fetched rows:", rows); // DEBUG
+
         displayHistory(rows);
 
     })
@@ -200,12 +202,14 @@ function controlButtons(rows){
     outBtn.style.display = "none";
 
 
-    // Today string
+    // Today string - CHANGED FORMAT to match sheet (d/M/yyyy)
 
     const today = new Date();
 
     const todayStr =
-    `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
+    `${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()}`;
+
+    console.log("Today string:", todayStr); // DEBUG
 
 
     // Find today's record
@@ -214,6 +218,8 @@ function controlButtons(rows){
         String(r.id).trim() === id &&
         String(r.date).trim() === todayStr
     );
+
+    console.log("Today's record:", rec); // DEBUG
 
 
     // ---------- IN BUTTON ----------
@@ -261,8 +267,11 @@ function displayHistory(rows){
 
         d.setDate(today.getDate()-i);
 
+        // CHANGED FORMAT to match sheet (d/M/yyyy)
         let dayStr =
-        `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+        `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+
+        console.log(`Day ${i} string:`, dayStr); // DEBUG
 
 
         // Find record
@@ -271,6 +280,8 @@ function displayHistory(rows){
             String(r.id).trim() === id &&
             String(r.date).trim() === dayStr
         );
+
+        console.log(`Day ${i} record:`, rec); // DEBUG
 
 
         let html = rec
@@ -407,4 +418,3 @@ loadHistory();
 
 </body>
 </html>
-
