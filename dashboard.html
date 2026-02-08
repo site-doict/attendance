@@ -3,11 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Staff Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
+
 body{
     font-family: Arial, sans-serif;
     background:#f9f9f9;
@@ -30,10 +32,20 @@ button{
     border-radius:8px;
 }
 
-#inBtn{ background:#28a745; color:white; }
-#outBtn{ background:#dc3545; color:white; }
+#inBtn{
+    background:#28a745;
+    color:white;
+}
 
-.logout-btn{ background:#6c757d; color:white; }
+#outBtn{
+    background:#dc3545;
+    color:white;
+}
+
+.logout-btn{
+    background:#6c757d;
+    color:white;
+}
 
 #historyArea{
     margin-top:20px;
@@ -55,12 +67,14 @@ button{
     margin-top:10px;
     font-weight:bold;
 }
+
 </style>
 </head>
 
 <body>
 
 <h2>Welcome</h2>
+
 <p id="user"></p>
 
 <div id="clock">00:00:00</div>
@@ -68,13 +82,18 @@ button{
 <h3>Attendance</h3>
 
 <button id="inBtn" onclick="markIn()">✅ I am in Office</button>
+
 <button id="outBtn" onclick="markOut()">🚪 I am Leaving</button>
 
 <div id="status"></div>
 
+
 <div id="historyArea">
+
 <h4>📅 Last 7 Days History</h4>
+
 <div id="historyList"></div>
+
 </div>
 
 <button class="logout-btn" onclick="logout()">Logout</button>
@@ -86,6 +105,7 @@ button{
 
 const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbxV9O-bqmzeKzF8nA1xOSITJ4EbeiDtzgBhgiOxMQLeHhiSQmrNNF5xLfKwJq_DyF54/exec";
+
 
 // ================= USER =================
 
@@ -100,14 +120,18 @@ document.getElementById("user").innerText =
 `ID: ${id} | Name: ${name}`;
 
 
+//
 // ================= ELEMENTS =================
+//
 
 const inBtn    = document.getElementById("inBtn");
 const outBtn   = document.getElementById("outBtn");
 const statusTx = document.getElementById("status");
 
 
+//
 // ================= CLOCK =================
+//
 
 function updateClock(){
 
@@ -118,32 +142,39 @@ function updateClock(){
 }
 
 setInterval(updateClock,1000);
+
 updateClock();
 
 
+//
 // ================= LOAD HISTORY =================
+//
 
 function loadHistory(){
 
-  fetch(WEB_APP_URL + "?id=" + id)
+    fetch(WEB_APP_URL + "?id=" + id)
 
-  .then(r=>r.json())
+    .then(r => r.json())
 
-  .then(rows=>{
+    .then(rows => {
 
-    displayHistory(rows);
+        displayHistory(rows);
 
-  })
+    })
 
-  .catch(e=>{
-    console.log(e);
-    statusTx.innerText="❌ Load Failed";
-  });
+    .catch(err => {
+
+        console.log(err);
+
+        statusTx.innerText = "❌ Load Failed";
+    });
 }
 
 
 
+//
 // ================= BUTTON CONTROL =================
+//
 
 function controlButtons(rows){
 
@@ -155,64 +186,68 @@ function controlButtons(rows){
     // TIME RULES (minutes)
 
     const IN_START   = 8*60;        // 08:00
-    const LATE_TIME  = 10*60;       // 10:00
     const IN_CLOSE   = 10*60+30;    // 10:30
 
     const OUT_START  = 15*60;       // 15:00
-    const NORMAL_OUT = 16*60+40;    // 16:40
     const OUT_CLOSE  = 18*60;       // 18:00
 
 
     // Hide first
+
     inBtn.style.display  = "none";
     outBtn.style.display = "none";
 
 
-    // Today
+    // Today string
+
     const today = new Date();
 
     const todayStr =
     `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
 
 
-    // Find record
+    // Find today's record
+
     const rec = rows.find(r =>
-        (r.ID||"").trim() === id &&
-        (r.Date||"").trim() === todayStr
+        String(r.id).trim() === id &&
+        String(r.date).trim() === todayStr
     );
 
 
-    // -------- IN BUTTON --------
+    // ---------- IN BUTTON ----------
 
-    if(!rec || !rec.InTime){
+    if(!rec || !rec.inTime){
 
         if(mins >= IN_START && mins <= IN_CLOSE){
 
-            inBtn.style.display="inline-block";
+            inBtn.style.display = "inline-block";
         }
     }
 
 
-    // -------- OUT BUTTON --------
+    // ---------- OUT BUTTON ----------
 
-    if(rec && rec.InTime && !rec.OutTime){
+    if(rec && rec.inTime && !rec.outTime){
 
         if(mins >= OUT_START && mins <= OUT_CLOSE){
 
-            outBtn.style.display="inline-block";
+            outBtn.style.display = "inline-block";
         }
     }
 
 }
 
 
-// ================= DISPLAY =================
+
+//
+// ================= DISPLAY HISTORY =================
+//
 
 function displayHistory(rows){
 
     const list = document.getElementById("historyList");
 
-    list.innerHTML="";
+    list.innerHTML = "";
 
 
     const today = new Date();
@@ -228,20 +263,24 @@ function displayHistory(rows){
         `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
 
 
+        // Find record
+
         let rec = rows.find(r =>
-            (r.ID||"").trim() === id &&
-            (r.Date||"").trim() === dayStr
+            String(r.id).trim() === id &&
+            String(r.date).trim() === dayStr
         );
 
 
         let html = rec
-        ? `✅ In: ${rec.InTime||'---'} | Out: ${rec.OutTime||'---'} | Status: ${rec.Status||'---'}`
+
+        ? `✅ In: ${rec.inTime||'---'} | Out: ${rec.outTime||'---'} | Status: ${rec.status||'---'}`
+
         : "❌ No Record";
 
 
         const div = document.createElement("div");
 
-        div.className="history-item";
+        div.className = "history-item";
 
         div.innerHTML =
         `<strong>${i===0?"Today":dayStr}:</strong> ${html}`;
@@ -250,12 +289,14 @@ function displayHistory(rows){
     }
 
 
-    // Update buttons
     controlButtons(rows);
 }
 
 
+
+//
 // ================= SEND DATA =================
+//
 
 function sendData(status,type){
 
@@ -270,13 +311,15 @@ function sendData(status,type){
 
 
     fetch(WEB_APP_URL,{
+
         method:"POST",
+
         body:fd
     })
 
-    .then(r=>r.json())
+    .then(r => r.json())
 
-    .then(d=>{
+    .then(d => {
 
         if(d.success){
 
@@ -290,16 +333,21 @@ function sendData(status,type){
 
             loadHistory();
         }
+
     })
 
     .catch(()=>{
-        statusTx.innerText="❌ Submit Failed";
+
+        statusTx.innerText = "❌ Submit Failed";
     });
 
 }
 
 
+
+//
 // ================= BUTTON ACTION =================
+//
 
 function markIn(){
 
@@ -307,10 +355,14 @@ function markIn(){
 
     let mins = now.getHours()*60 + now.getMinutes();
 
-    let status = mins >= 600 ? "Late" : "Present"; // after 10:00
+    let status =
+      mins >= (10*60)
+      ? "Late"
+      : "Present";
 
     sendData(status,"in");
 }
+
 
 
 function markOut(){
@@ -319,13 +371,19 @@ function markOut(){
 
     let mins = now.getHours()*60 + now.getMinutes();
 
-    let status = mins < 1000 ? "Early Leave" : "Present"; // before 16:40
+    let status =
+      mins < (16*60+40)
+      ? "Early Leave"
+      : "Present";
 
     sendData(status,"out");
 }
 
 
+
+//
 // ================= LOGOUT =================
+//
 
 function logout(){
 
@@ -335,14 +393,15 @@ function logout(){
 }
 
 
+
+//
 // ================= START =================
+//
 
 loadHistory();
+
 
 </script>
 
 </body>
 </html>
-
-
-
