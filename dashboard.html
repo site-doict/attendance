@@ -202,12 +202,12 @@ function controlButtons(rows){
     outBtn.style.display = "none";
 
 
-    // Today string - CHANGED FORMAT to match sheet (d/M/yyyy)
+    // Today string - M/d/yyyy to match sheet format
 
     const today = new Date();
 
     const todayStr =
-    `${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()}`;
+    `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
 
     console.log("Today string:", todayStr); // DEBUG
 
@@ -267,9 +267,9 @@ function displayHistory(rows){
 
         d.setDate(today.getDate()-i);
 
-        // CHANGED FORMAT to match sheet (d/M/yyyy)
+        // M/d/yyyy to match sheet format
         let dayStr =
-        `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+        `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
 
         console.log(`Day ${i} string:`, dayStr); // DEBUG
 
