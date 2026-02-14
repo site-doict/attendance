@@ -187,16 +187,19 @@ updateClock();
 
 // ================= DEVICE FINGERPRINT =================
 function getDeviceFingerprint(){
-    const nav = window.navigator;
     const scr = window.screen;
+    const nav = window.navigator;
+
+    // Only hardware-based values - same across ALL browsers on same device
     const raw = [
-        nav.userAgent,
-        nav.language,
-        scr.width,
-        scr.height,
-        scr.colorDepth,
-        new Date().getTimezoneOffset(),
-        nav.platform || ""
+        scr.width,                       // screen width - same in all browsers
+        scr.height,                      // screen height - same in all browsers
+        scr.colorDepth,                  // color depth - same in all browsers
+        scr.pixelDepth,                  // pixel depth - same in all browsers
+        new Date().getTimezoneOffset(),  // timezone - same in all browsers
+        nav.language,                    // system language - same in all browsers
+        nav.hardwareConcurrency || "",   // CPU cores - same in all browsers
+        window.devicePixelRatio || ""    // screen DPI - same in all browsers
     ].join("|");
 
     let hash = 0;
