@@ -1,12 +1,10 @@
 {
-  "name": "Office Attendance",
-  "short_name": "Attendance",
-  "description": "Office Attendance Management System",
-  "start_url": "./",
+  "name": "Upazila ICT Attendance",
+  "short_name": "ICT Attendance",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#1a1a1a",
+  "background_color": "#f4f6f9",
   "theme_color": "#1a1a1a",
-  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
