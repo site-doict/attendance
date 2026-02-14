@@ -130,6 +130,12 @@ button{
 const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
+// ================= OFFICE LOCATION =================
+// TODO: Replace with your actual office coordinates
+const OFFICE_LAT = 24.8946369;  // Office latitude
+const OFFICE_LNG = 89.7183403;  // Office longitude
+const MAX_DISTANCE_METERS = 100; // 100 meters radius
+
 
 // ================= USER =================
 
@@ -279,6 +285,63 @@ function loadHistory(allowed){
 
 
 
+// ================= DISTANCE CALCULATOR =================
+//
+
+function getDistance(lat1, lng1, lat2, lng2){
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+
+//
+// ================= GET LOCATION & MARK =================
+//
+
+function getLocationAndMark(type, status){
+
+    statusTx.innerText = "📍 Getting your location...";
+
+    if(!navigator.geolocation){
+        statusTx.innerText = "❌ Geolocation not supported on this device!";
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(pos){
+
+            const userLat = pos.coords.latitude;
+            const userLng = pos.coords.longitude;
+            const dist    = getDistance(userLat, userLng, OFFICE_LAT, OFFICE_LNG);
+
+            console.log("Distance from office:", dist, "meters");
+
+            if(dist <= MAX_DISTANCE_METERS){
+                sendData(status, type, userLat, userLng);
+            } else {
+                statusTx.innerText =
+                `❌ You are ${Math.round(dist)}m away from office. Must be within ${MAX_DISTANCE_METERS}m!`;
+            }
+        },
+
+        function(err){
+            statusTx.innerText = "❌ Location access denied! Please allow location to mark attendance.";
+        },
+
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
+
 //
 // ================= BUTTON CONTROL =================
 //
@@ -288,11 +351,11 @@ function controlButtons(rows){
     const now  = new Date();
     const mins = now.getHours()*60 + now.getMinutes();
 
-    // TIME RULES (minutes) - TESTING MODE (allows all day)
-    const IN_START  = 0*60;      // 00:00
-    const IN_CLOSE  = 23*60+59;  // 23:59
-    const OUT_START = 0*60;      // 00:00
-    const OUT_CLOSE = 23*60+59;  // 23:59
+    // TIME RULES (minutes)
+    const IN_START  = 8*60+15;   // 08:15 AM - button appears
+    const IN_CLOSE  = 10*60+30;  // 10:30 AM - button disappears
+    const OUT_START = 15*60+30;  // 03:30 PM - button appears
+    const OUT_CLOSE = 20*60;     // 08:00 PM - button disappears
 
     // Hide first
     inBtn.style.display  = "none";
@@ -371,7 +434,7 @@ function displayHistory(rows){
 // ================= SEND DATA =================
 //
 
-function sendData(status,type){
+function sendData(status, type, lat, lng){
 
     const now = new Date();
     const fd  = new FormData();
@@ -380,6 +443,8 @@ function sendData(status,type){
     fd.append("name",name);
     fd.append("status",status);
     fd.append("type",type);
+    fd.append("lat", lat || "");
+    fd.append("lng", lng || "");
 
     fetch(WEB_APP_URL,{
         method:"POST",
@@ -426,7 +491,7 @@ function markIn(){
     const now  = new Date();
     let mins   = now.getHours()*60 + now.getMinutes();
     let status = mins >= (10*60) ? "Late Entry" : "Present";
-    sendData(status,"in");
+    getLocationAndMark("in", status);
 }
 
 
@@ -434,8 +499,8 @@ function markOut(){
 
     const now  = new Date();
     let mins   = now.getHours()*60 + now.getMinutes();
-    let status = mins < (16*60+40) ? "Early Leave" : "Present";
-    sendData(status,"out");
+    let status = mins < (16*60+45) ? "Early Leave" : "Present";
+    getLocationAndMark("out", status);
 }
 
 
