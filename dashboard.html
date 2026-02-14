@@ -378,6 +378,11 @@ function controlButtons(rows){
     if(!rec || !rec.inTime || rec.inTime === "---" || rec.inTime === ""){
         if(mins >= IN_START && mins <= IN_CLOSE){
             inBtn.style.display = "inline-block";
+            statusTx.innerText  = "";
+        } else if(mins < IN_START){
+            statusTx.innerText = "⏰ Sign In button opens at 8:15 AM";
+        } else if(mins > IN_CLOSE){
+            statusTx.innerText = "⏰ Sign In closed. Opens tomorrow at 8:15 AM";
         }
     }
 
@@ -386,7 +391,18 @@ function controlButtons(rows){
       (!rec.outTime || rec.outTime === "---" || rec.outTime === "")){
         if(mins >= OUT_START && mins <= OUT_CLOSE){
             outBtn.style.display = "inline-block";
+            statusTx.innerText   = "";
+        } else if(mins < OUT_START){
+            statusTx.innerText = "⏰ Sign Out button opens at 3:30 PM";
+        } else if(mins > OUT_CLOSE){
+            statusTx.innerText = "⏰ Sign Out closed for today";
         }
+    }
+
+    // ---------- ALREADY SIGNED IN AND OUT ----------
+    if(rec && rec.inTime && rec.inTime !== "---" &&
+       rec.outTime && rec.outTime !== "---"){
+        statusTx.innerText = "✅ Attendance complete for today!";
     }
 }
 
