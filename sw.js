@@ -1,9 +1,9 @@
 const CACHE_NAME = "attendance-v1";
 
 const CACHED_FILES = [
-  "/",
-  "/index.html",
-  "/dashboard.html"
+  "./",
+  "index.html",
+  "dashboard.html"
 ];
 
 // Install - cache files
