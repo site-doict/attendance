@@ -70,6 +70,25 @@ button{
     font-weight:bold;
 }
 
+#deviceMsg{
+    display:none;
+    background:#fff3cd;
+    border:1px solid #ffc107;
+    border-radius:8px;
+    padding:15px 20px;
+    margin:15px auto;
+    max-width:400px;
+    font-size:16px;
+    color:#856404;
+    line-height:1.6;
+}
+
+#loadingMsg{
+    color:#888;
+    font-size:15px;
+    margin:10px 0;
+}
+
 </style>
 </head>
 
@@ -83,19 +102,22 @@ button{
 
 <h3>Attendance</h3>
 
-<button id="inBtn" onclick="markIn()">✅ I am in Office</button>
+<div id="loadingMsg">⏳ Checking device...</div>
 
+<button id="inBtn" onclick="markIn()">✅ I am in Office</button>
 <button id="outBtn" onclick="markOut()">🚪 I am Leaving</button>
+
+<div id="deviceMsg">
+    ⚠️ This is not your registered device.<br><br>
+    Please use your own device to mark attendance.<br>
+    If you have an issue, please contact your officer.
+</div>
 
 <div id="status"></div>
 
-
 <div id="historyArea">
-
-<h4>📅 Last 7 Days History</h4>
-
-<div id="historyList"></div>
-
+    <h4>📅 Last 7 Days History</h4>
+    <div id="historyList"></div>
 </div>
 
 <button class="logout-btn" onclick="logout()">Logout</button>
@@ -126,9 +148,11 @@ document.getElementById("user").innerText =
 // ================= ELEMENTS =================
 //
 
-const inBtn    = document.getElementById("inBtn");
-const outBtn   = document.getElementById("outBtn");
-const statusTx = document.getElementById("status");
+const inBtn     = document.getElementById("inBtn");
+const outBtn    = document.getElementById("outBtn");
+const statusTx  = document.getElementById("status");
+const deviceMsg = document.getElementById("deviceMsg");
+const loadingMsg= document.getElementById("loadingMsg");
 
 
 //
@@ -136,31 +160,111 @@ const statusTx = document.getElementById("status");
 //
 
 function updateClock(){
-
     const now = new Date();
-
-    document.getElementById("clock")
-    .innerText = now.toLocaleTimeString();
+    document.getElementById("clock").innerText = now.toLocaleTimeString();
 }
 
 setInterval(updateClock,1000);
-
 updateClock();
+
+
+//
+// ================= DEVICE FINGERPRINT =================
+//
+
+function getDeviceFingerprint(){
+
+    const nav = window.navigator;
+    const scr = window.screen;
+
+    const raw = [
+        nav.userAgent,
+        nav.language,
+        scr.width,
+        scr.height,
+        scr.colorDepth,
+        new Date().getTimezoneOffset(),
+        nav.hardwareConcurrency || "",
+        nav.platform || ""
+    ].join("|");
+
+    // Simple hash
+    let hash = 0;
+    for(let i = 0; i < raw.length; i++){
+        const char = raw.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+
+    return Math.abs(hash).toString(16);
+}
+
+
+//
+// ================= CHECK DEVICE VIA SHEET =================
+//
+
+function checkDeviceAndLoad(){
+
+    const fp = getDeviceFingerprint();
+
+    const url = `${WEB_APP_URL}?action=checkdevice&id=${id}&fp=${fp}`;
+
+    fetch(url)
+
+    .then(r => r.json())
+
+    .then(res => {
+
+        loadingMsg.style.display = "none";
+
+        if(res.status === "blocked"){
+
+            // Wrong device - show message
+            deviceMsg.style.display = "block";
+            inBtn.style.display     = "none";
+            outBtn.style.display    = "none";
+
+            // Still load history so they can see records
+            loadHistory(false);
+
+        } else {
+
+            // allowed or registered (first time)
+            deviceMsg.style.display = "none";
+            loadHistory(true);
+        }
+
+    })
+
+    .catch(err => {
+
+        console.log("Device check failed:", err);
+        loadingMsg.style.display = "none";
+
+        // On error, still load history but hide buttons for safety
+        loadHistory(false);
+    });
+}
 
 
 //
 // ================= LOAD HISTORY =================
 //
 
-function loadHistory(){
+let deviceAllowed = false;
 
-    fetch(WEB_APP_URL + "?id=" + id)
+function loadHistory(allowed){
+
+    if(allowed !== undefined){
+        deviceAllowed = allowed;
+    }
+
+    fetch(WEB_APP_URL + "?action=history&id=" + id)
 
     .then(r => r.json())
 
     .then(rows => {
-
-        console.log("Fetched rows:", rows); // DEBUG
 
         displayHistory(rows);
 
@@ -169,7 +273,6 @@ function loadHistory(){
     .catch(err => {
 
         console.log(err);
-
         statusTx.innerText = "❌ Load Failed";
     });
 }
@@ -182,67 +285,46 @@ function loadHistory(){
 
 function controlButtons(rows){
 
-    const now = new Date();
-
+    const now  = new Date();
     const mins = now.getHours()*60 + now.getMinutes();
 
-
     // TIME RULES (minutes) - TESTING MODE (allows all day)
-
-    const IN_START   = 0*60;        // 00:00
-    const IN_CLOSE   = 23*60+59;    // 23:59
-
-    const OUT_START  = 0*60;        // 00:00
-    const OUT_CLOSE  = 23*60+59;    // 23:59
-
+    const IN_START  = 0*60;      // 00:00
+    const IN_CLOSE  = 23*60+59;  // 23:59
+    const OUT_START = 0*60;      // 00:00
+    const OUT_CLOSE = 23*60+59;  // 23:59
 
     // Hide first
-
     inBtn.style.display  = "none";
     outBtn.style.display = "none";
 
+    // If device not allowed, don't show buttons
+    if(!deviceAllowed) return;
 
-    // Today string - M/d/yyyy to match sheet format
-
-    const today = new Date();
-
-    const todayStr =
-    `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
-
-    console.log("Today string:", todayStr); // DEBUG
-
+    // Today string
+    const today    = new Date();
+    const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
 
     // Find today's record
-
     const rec = rows.find(r =>
         String(r.id).trim() === id &&
         String(r.date).trim() === todayStr
     );
 
-    console.log("Today's record:", rec); // DEBUG
-
-
     // ---------- IN BUTTON ----------
-
-    if(!rec || !rec.inTime){
-
+    if(!rec || !rec.inTime || rec.inTime === "---" || rec.inTime === ""){
         if(mins >= IN_START && mins <= IN_CLOSE){
-
             inBtn.style.display = "inline-block";
         }
     }
 
-
     // ---------- OUT BUTTON ----------
-
-    if(rec && rec.inTime && !rec.outTime){
-
+    if(rec && rec.inTime && rec.inTime !== "---" && rec.inTime !== "" &&
+      (!rec.outTime || rec.outTime === "---" || rec.outTime === "")){
         if(mins >= OUT_START && mins <= OUT_CLOSE){
-
             outBtn.style.display = "inline-block";
         }
     }
-
 }
 
 
@@ -254,53 +336,31 @@ function controlButtons(rows){
 function displayHistory(rows){
 
     const list = document.getElementById("historyList");
-
     list.innerHTML = "";
 
-
     const today = new Date();
-
 
     for(let i=0;i<7;i++){
 
         let d = new Date();
-
         d.setDate(today.getDate()-i);
 
-        // M/d/yyyy to match sheet format
-        let dayStr =
-        `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
-
-        console.log(`Day ${i} string:`, dayStr); // DEBUG
-
-
-        // Find record
+        let dayStr = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
 
         let rec = rows.find(r =>
             String(r.id).trim() === id &&
             String(r.date).trim() === dayStr
         );
 
-        console.log(`Day ${i} record:`, rec); // DEBUG
-
-
         let html = rec
-
         ? `✅ In: ${rec.inTime||'---'} | Out: ${rec.outTime||'---'} | Status: ${rec.status||'---'}`
-
         : "❌ No Record";
 
-
         const div = document.createElement("div");
-
         div.className = "history-item";
-
-        div.innerHTML =
-        `<strong>${i===0?"Today":dayStr}:</strong> ${html}`;
-
+        div.innerHTML = `<strong>${i===0?"Today":dayStr}:</strong> ${html}`;
         list.appendChild(div);
     }
-
 
     controlButtons(rows);
 }
@@ -314,19 +374,15 @@ function displayHistory(rows){
 function sendData(status,type){
 
     const now = new Date();
-
-    const fd = new FormData();
+    const fd  = new FormData();
 
     fd.append("id",id);
     fd.append("name",name);
     fd.append("status",status);
     fd.append("type",type);
 
-
     fetch(WEB_APP_URL,{
-
         method:"POST",
-
         body:fd
     })
 
@@ -336,12 +392,12 @@ function sendData(status,type){
 
         if(d.success){
 
-            let hours = now.getHours();
+            let hours   = now.getHours();
             let minutes = String(now.getMinutes()).padStart(2,"0");
-            let ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12;
-            hours = hours ? hours : 12; // 0 should be 12
-            
+            let ampm    = hours >= 12 ? 'PM' : 'AM';
+            hours       = hours % 12;
+            hours       = hours ? hours : 12;
+
             const t = `${hours}:${minutes} ${ampm}`;
 
             statusTx.innerText =
@@ -355,10 +411,8 @@ function sendData(status,type){
     })
 
     .catch(()=>{
-
         statusTx.innerText = "❌ Submit Failed";
     });
-
 }
 
 
@@ -369,31 +423,18 @@ function sendData(status,type){
 
 function markIn(){
 
-    const now = new Date();
-
-    let mins = now.getHours()*60 + now.getMinutes();
-
-    let status =
-      mins >= (10*60)
-      ? "Late"
-      : "Present";
-
+    const now  = new Date();
+    let mins   = now.getHours()*60 + now.getMinutes();
+    let status = mins >= (10*60) ? "Late" : "Present";
     sendData(status,"in");
 }
 
 
-
 function markOut(){
 
-    const now = new Date();
-
-    let mins = now.getHours()*60 + now.getMinutes();
-
-    let status =
-      mins < (16*60+40)
-      ? "Early Leave"
-      : "Present";
-
+    const now  = new Date();
+    let mins   = now.getHours()*60 + now.getMinutes();
+    let status = mins < (16*60+40) ? "Early Leave" : "Present";
     sendData(status,"out");
 }
 
@@ -404,9 +445,7 @@ function markOut(){
 //
 
 function logout(){
-
     localStorage.clear();
-
     location.href="index.html";
 }
 
@@ -414,9 +453,9 @@ function logout(){
 
 //
 // ================= START =================
-//
+// Check device first, then load history
 
-loadHistory();
+checkDeviceAndLoad();
 
 
 </script>
