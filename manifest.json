@@ -2,7 +2,7 @@
   "name": "Office Attendance",
   "short_name": "Attendance",
   "description": "Office Attendance Management System",
-  "start_url": "/index.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#1a1a1a",
   "theme_color": "#1a1a1a",
