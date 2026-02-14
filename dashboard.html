@@ -80,6 +80,16 @@ button{
     font-size: 15px;
 }
 
+#statusBox{
+    display: none;
+    margin: 15px auto;
+    max-width: 420px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
 #loadingMsg{
     color: #888;
     font-size: 15px;
@@ -115,8 +125,6 @@ button{
 <p id="user"></p>
 <div id="clock">00:00:00</div>
 
-<h3>Attendance</h3>
-
 <div id="loadingMsg">⏳ Checking device...</div>
 
 <button id="inBtn"  onclick="markIn()">✅ I am in Office</button>
@@ -136,6 +144,7 @@ button{
 
 <div id="fraudMsg"></div>
 
+<div id="statusBox"></div>
 <div id="status"></div>
 
 <div id="historyArea">
@@ -308,6 +317,26 @@ function getLocationAndMark(type, status){
 }
 
 // ================= BUTTON CONTROL =================
+function showStatusBox(msg, type){
+    const box = document.getElementById("statusBox");
+    box.style.display = "block";
+    box.innerText = msg;
+
+    if(type === "red"){
+        box.style.background   = "#fff0f0";
+        box.style.color        = "#cc0000";
+        box.style.border       = "2px solid #cc0000";
+    } else if(type === "green"){
+        box.style.background   = "#f0fff4";
+        box.style.color        = "#1a7a2e";
+        box.style.border       = "2px solid #28a745";
+    } else if(type === "blue"){
+        box.style.background   = "#f0f4ff";
+        box.style.color        = "#0044cc";
+        box.style.border       = "2px solid #0056b3";
+    }
+}
+
 function controlButtons(rows){
     const now  = new Date();
     const mins = now.getHours() * 60 + now.getMinutes();
@@ -319,6 +348,8 @@ function controlButtons(rows){
 
     inBtn.style.display  = "none";
     outBtn.style.display = "none";
+    document.getElementById("statusBox").style.display = "none";
+    statusTx.innerText = "";
 
     if(!deviceAllowed) return;
 
@@ -334,11 +365,10 @@ function controlButtons(rows){
     if(!rec || !rec.inTime || rec.inTime === "---" || rec.inTime === ""){
         if(mins >= IN_START && mins <= IN_CLOSE){
             inBtn.style.display = "inline-block";
-            statusTx.innerText  = "";
         } else if(mins < IN_START){
-            statusTx.innerText = "⏰ Sign In button opens at 8:15 AM";
+            showStatusBox("🔴 Sign In button opens at 8:15 AM", "red");
         } else {
-            statusTx.innerText = "⏰ Sign In closed. Opens tomorrow at 8:15 AM";
+            showStatusBox("🔴 Sign In closed. Opens tomorrow at 8:15 AM", "red");
         }
     }
 
@@ -347,18 +377,17 @@ function controlButtons(rows){
       (!rec.outTime || rec.outTime === "---" || rec.outTime === "")){
         if(mins >= OUT_START && mins <= OUT_CLOSE){
             outBtn.style.display = "inline-block";
-            statusTx.innerText   = "";
         } else if(mins < OUT_START){
-            statusTx.innerText = "⏰ Sign Out button opens at 3:30 PM";
+            showStatusBox("🔵 Sign Out button opens at 3:30 PM", "blue");
         } else {
-            statusTx.innerText = "⏰ Sign Out closed for today";
+            showStatusBox("🔴 Sign Out closed for today", "red");
         }
     }
 
     // BOTH DONE
     if(rec && rec.inTime && rec.inTime !== "---" &&
        rec.outTime && rec.outTime !== "---"){
-        statusTx.innerText = "✅ Attendance complete for today!";
+        showStatusBox("✅ Attendance complete for today!", "green");
     }
 }
 
