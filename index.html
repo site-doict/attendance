@@ -1,77 +1,209 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Office Attendance</title>
 
+<!-- PWA manifest -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a1a1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="Office Attendance">
 <link rel="apple-touch-icon" href="icon-192.png">
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-body{ font-family: Arial, sans-serif; background:#f0f2f5; display:flex; justify-content:center; align-items:center; height:100vh; }
-.login-box{ background:white; padding:30px; width:300px; border-radius:6px; box-shadow:0 0 10px rgba(0,0,0,.1); }
-h2{text-align:center; margin-bottom:20px;}
-input{width:100%; padding:10px; margin:10px 0; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;}
-button{width:100%; padding:10px; background:#0056b3; color:white; border:none; cursor:pointer; border-radius:4px;}
-button:hover{ background:#004099; }
-#error{ color:red; text-align:center; margin-top:10px; }
+body{font-family:Arial,sans-serif;background:#f9f9f9;padding:20px;text-align:center;}
+#clock{font-size:28px;font-weight:bold;margin:15px 0;}
+button{padding:15px 25px;font-size:18px;margin:10px;cursor:pointer;border:none;border-radius:8px;}
+#inBtn{background:#28a745;color:white;display:none;}
+#outBtn{background:#dc3545;color:white;display:none;}
+.logout-btn{background:#6c757d;color:white;}
+#historyArea{margin-top:20px;background:white;padding:15px;border-radius:10px;max-width:600px;margin:auto;box-shadow:0 2px 5px rgba(0,0,0,.1);text-align:left;}
+.history-item{border-bottom:1px solid #eee;padding:6px 0;}
+#status{margin-top:10px;font-weight:bold;}
+#deviceMsg,#fraudMsg{display:none;background:#dc3545;border-radius:12px;padding:20px;margin:15px auto;max-width:400px;color:white;font-size:18px;font-weight:bold;line-height:1.8;box-shadow:0 4px 15px rgba(220,53,69,0.5);animation:pulse 1s infinite;}
+@keyframes pulse {0%{box-shadow:0 0 0 0 rgba(220,53,69,0.7);}70%{box-shadow:0 0 0 15px rgba(220,53,69,0);}100%{box-shadow:0 0 0 0 rgba(220,53,69,0);}}
 </style>
 </head>
 <body>
-<div class="login-box">
-<h2>Staff Login</h2>
-<input type="text" id="userid" placeholder="Enter ID">
-<input type="password" id="password" placeholder="Enter Password">
-<button onclick="login()">Login</button>
-<div id="error"></div>
+
+<h2>Welcome</h2>
+<p id="user"></p>
+<div id="clock">00:00:00</div>
+<h3>Attendance</h3>
+<div id="loadingMsg">⏳ Checking device...</div>
+<button id="inBtn" onclick="markIn()">✅ I am in Office</button>
+<button id="outBtn" onclick="markOut()">🚪 I am Leaving</button>
+
+<div id="fraudMsg"></div>
+<div id="deviceMsg"></div>
+<div id="status"></div>
+
+<div id="historyArea">
+    <h4>📅 Last 7 Days History</h4>
+    <div id="historyList"></div>
 </div>
 
+<button class="logout-btn" onclick="logout()">Logout</button>
+
 <script>
-const USER_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?gid=32388154&single=true&output=csv";
+// ================= CONFIG =================
+const WEB_APP_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+const OFFICE_LAT = 24.8946369;
+const OFFICE_LNG = 89.7183403;
+const MAX_DISTANCE_METERS = 100;
 
-// Register Service Worker
-if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').then(()=>console.log("SW registered")).catch(err=>console.log(err));
+// ================= USER =================
+const id = localStorage.getItem("userid");
+const name = localStorage.getItem("name");
+if(!id){ location.href="index.html"; }
+document.getElementById("user").innerText = `ID: ${id} | Name: ${name}`;
+
+// ================= ELEMENTS =================
+const inBtn = document.getElementById("inBtn");
+const outBtn = document.getElementById("outBtn");
+const statusTx = document.getElementById("status");
+const deviceMsg = document.getElementById("deviceMsg");
+const loadingMsg = document.getElementById("loadingMsg");
+const fraudMsg = document.getElementById("fraudMsg");
+
+// ================= CLOCK =================
+function updateClock(){ document.getElementById("clock").innerText = new Date().toLocaleTimeString(); }
+setInterval(updateClock,1000);
+updateClock();
+
+// ================= DEVICE FINGERPRINT =================
+function getDeviceFingerprint(){
+    const nav = navigator, scr = screen;
+    const raw = [nav.userAgent,nav.language,scr.width,scr.height,scr.colorDepth,new Date().getTimezoneOffset(),nav.platform||""].join("|");
+    let hash=0;
+    for(let i=0;i<raw.length;i++){hash=((hash<<5)-hash)+raw.charCodeAt(i);hash=hash&hash;}
+    return Math.abs(hash).toString(16);
 }
 
-function login(){
-    const id   = document.getElementById("userid").value.trim();
-    const pass = document.getElementById("password").value.trim();
-    if(!id || !pass){ showError("Enter ID and Password"); return; }
-
-    Papa.parse(USER_SHEET, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(res){
-            const users = res.data.filter(u => u.ID && u.Password);
-            let found = false;
-            users.forEach(u => {
-                const uID = (u.ID || "").trim();
-                const uPass = (u.Password || "").trim();
-                const uRole = (u.Role || "user").trim().toLowerCase();
-                if(uID===id && uPass===pass){
-                    found = true;
-                    localStorage.setItem("userid", uID);
-                    localStorage.setItem("name", (u.Name||"").trim());
-                    localStorage.setItem("role", uRole);
-                    location.href = (uRole==="admin"||uRole==="superadmin") ? "admin.html" : "dashboard.html";
-                }
-            });
-            if(!found) showError("Wrong ID or Password");
-        },
-        error: function(err){ console.error(err); showError("Cannot load user database"); }
-    });
+// ================= CHECK DEVICE =================
+let deviceAllowed=false;
+function checkDeviceAndLoad(){
+    const fp = getDeviceFingerprint();
+    fetch(`${WEB_APP_URL}?action=checkdevice&id=${id}&fp=${fp}`)
+    .then(r=>r.json())
+    .then(res=>{
+        loadingMsg.style.display="none";
+        if(res.status==="blocked"){
+            deviceMsg.style.display="block"; inBtn.style.display="none"; outBtn.style.display="none";
+            loadHistory(false);
+        }else{ deviceMsg.style.display="none"; loadHistory(true); }
+    })
+    .catch(err=>{console.log("Device check failed:",err); loadingMsg.style.display="none"; loadHistory(false); });
 }
 
-function showError(msg){ document.getElementById("error").innerText = msg; }
+// ================= LOAD HISTORY =================
+function loadHistory(allowed){
+    if(allowed!==undefined) deviceAllowed=allowed;
+    fetch(WEB_APP_URL + "?action=history&id=" + id)
+    .then(r=>r.json())
+    .then(rows=>{ displayHistory(rows); })
+    .catch(err=>{ console.log(err); statusTx.innerText="❌ Load Failed. Please try again."; });
+}
+
+// ================= DISTANCE =================
+function getDistance(lat1,lng1,lat2,lng2){
+    const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+    const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ================= GET LOCATION & MARK =================
+function getLocationAndMark(type,status){
+    statusTx.innerText="📍 আপনার অবস্থান নির্ণয় করা হচ্ছে...";
+    fraudMsg.style.display="none";
+    if(!navigator.geolocation){ statusTx.innerText="❌ Geolocation not supported!"; return; }
+    navigator.geolocation.getCurrentPosition(pos=>{
+        const userLat=pos.coords.latitude, userLng=pos.coords.longitude;
+        const dist=getDistance(userLat,userLng,OFFICE_LAT,OFFICE_LNG);
+        if(dist<=MAX_DISTANCE_METERS){ sendData(status,type,userLat,userLng); }
+        else{
+            fraudMsg.style.display="block";
+            fraudMsg.innerHTML=`🚨 সতর্কতা! 🚨<br><br>আপনি অফিস থেকে <strong>${Math.round(dist)} মিটার</strong> দূরে আছেন!<br><br>এই তথ্য রেকর্ড করা হয়েছে।`;
+            statusTx.innerText="";
+        }
+    }, err=>{ statusTx.innerText="❌ লোকেশন অ্যাক্সেস বন্ধ আছে!";},{enableHighAccuracy:true,timeout:10000});
+}
+
+// ================= BUTTON CONTROL =================
+function controlButtons(rows){
+    const now=new Date(), mins=now.getHours()*60+now.getMinutes();
+    const IN_START=8*60+15, IN_CLOSE=10*60+30, OUT_START=15*60+30, OUT_CLOSE=20*60;
+    inBtn.style.display="none"; outBtn.style.display="none"; if(!deviceAllowed) return;
+
+    const today=new Date();
+    const todayStr=`${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
+    const rec=rows.find(r=>String(r.id).trim()===id && String(r.date).trim()===todayStr);
+
+    if(!rec||!rec.inTime||rec.inTime==="---"){ if(mins>=IN_START&&mins<=IN_CLOSE){ inBtn.style.display="inline-block"; statusTx.innerText=""; } 
+    else if(mins<IN_START) statusTx.innerText="⏰ Sign In button opens at 8:15 AM"; 
+    else if(mins>IN_CLOSE) statusTx.innerText="⏰ Sign In closed. Opens tomorrow at 8:15 AM"; }
+
+    if(rec&&rec.inTime&&rec.inTime!=="---"&&(!rec.outTime||rec.outTime==="---")){ 
+        if(mins>=OUT_START&&mins<=OUT_CLOSE){ outBtn.style.display="inline-block"; statusTx.innerText=""; } 
+        else if(mins<OUT_START) statusTx.innerText="⏰ Sign Out button opens at 3:30 PM"; 
+        else if(mins>OUT_CLOSE) statusTx.innerText="⏰ Sign Out closed for today"; 
+    }
+
+    if(rec&&rec.inTime&&rec.inTime!=="---"&&rec.outTime&&rec.outTime!=="---"){ statusTx.innerText="✅ Attendance complete for today!"; }
+}
+
+// ================= DISPLAY HISTORY =================
+function displayHistory(rows){
+    const list=document.getElementById("historyList"); list.innerHTML="";
+    const today=new Date();
+    for(let i=0;i<7;i++){
+        let d=new Date(); d.setDate(today.getDate()-i);
+        let dayStr=`${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+        let rec=rows.find(r=>String(r.id).trim()===id && String(r.date).trim()===dayStr);
+        let html=rec?`✅ In: ${rec.inTime||'---'} | Out: ${rec.outTime||'---'} | Status: ${rec.status||'---'}`:"❌ No Record";
+        const div=document.createElement("div"); div.className="history-item"; div.innerHTML=`<strong>${i===0?"Today":dayStr}:</strong> ${html}`;
+        list.appendChild(div);
+    }
+    controlButtons(rows);
+}
+
+// ================= SEND DATA =================
+function sendData(status,type,lat,lng){
+    const now=new Date(), fd=new FormData();
+    fd.append("id",id); fd.append("name",name); fd.append("status",status); fd.append("type",type); fd.append("lat",lat||""); fd.append("lng",lng||"");
+    fetch(WEB_APP_URL,{method:"POST",body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.success){
+            const hours=now.getHours(), minutes=String(now.getMinutes()).padStart(2,"0"), ampm=hours>=12?'PM':'AM', hrs=hours%12||12;
+            const t=`${hrs}:${minutes} ${ampm}`;
+            statusTx.innerText = type==="in"?`✅ Marked IN at ${t}`:`✅ Marked OUT at ${t}`;
+            loadHistory();
+            // Push notification trigger
+            if(Notification.permission==="granted"){ new Notification("Attendance Updated", {body: statusTx.innerText, icon:'/icon-192.png'}); }
+        }
+    }).catch(()=>{statusTx.innerText="❌ Submit Failed. Please try again.";});
+}
+
+// ================= BUTTON ACTION =================
+function markIn(){ const now=new Date(), mins=now.getHours()*60+now.getMinutes(); let status=mins>10*60?"Late Entry":"Present"; getLocationAndMark("in",status);}
+function markOut(){ const now=new Date(), mins=now.getHours()*60+now.getMinutes(); let status=mins<16*60+45?"Early Leave":"Present"; getLocationAndMark("out",status);}
+
+// ================= LOGOUT =================
+function logout(){ localStorage.clear(); location.href="index.html"; }
+
+// ================= SERVICE WORKER REGISTER =================
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').then(()=>console.log("SW registered")).catch(err=>console.log(err)); }
+// ================= PUSH PERMISSION =================
+if(Notification.permission!=="granted" && Notification.permission!=="denied"){ Notification.requestPermission(); }
+
+// ================= START =================
+checkDeviceAndLoad();
 </script>
+
 </body>
 </html>
