@@ -177,15 +177,15 @@ function getDeviceFingerprint(){
     const nav = window.navigator;
     const scr = window.screen;
 
+    // Only use values that stay SAME in normal and incognito mode
     const raw = [
-        nav.userAgent,
-        nav.language,
-        scr.width,
-        scr.height,
-        scr.colorDepth,
-        new Date().getTimezoneOffset(),
-        nav.hardwareConcurrency || "",
-        nav.platform || ""
+        nav.userAgent,                  // same in incognito
+        nav.language,                   // same in incognito
+        scr.width,                      // same in incognito
+        scr.height,                     // same in incognito
+        scr.colorDepth,                 // same in incognito
+        new Date().getTimezoneOffset(), // same in incognito
+        nav.platform || ""              // same in incognito
     ].join("|");
 
     // Simple hash
@@ -462,4 +462,3 @@ checkDeviceAndLoad();
 
 </body>
 </html>
-
