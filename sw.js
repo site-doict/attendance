@@ -1,12 +1,15 @@
-const CACHE_NAME = "attendance-v1";
+const CACHE_NAME = "attendance-v2";
 
 const CACHED_FILES = [
   "./",
   "index.html",
-  "dashboard.html"
+  "dashboard.html",
+  "admin.html",
+  "manifest.json",
+  "icon-192.png",
+  "icon-512.png"
 ];
 
-// Install - cache files
 self.addEventListener("install", e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -16,7 +19,6 @@ self.addEventListener("install", e => {
   self.skipWaiting();
 });
 
-// Activate - clean old caches
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -28,12 +30,10 @@ self.addEventListener("activate", e => {
   self.clients.claim();
 });
 
-// Fetch - network first, fallback to cache
 self.addEventListener("fetch", e => {
   e.respondWith(
     fetch(e.request)
       .then(res => {
-        // Update cache with fresh response
         const resClone = res.clone();
         caches.open(CACHE_NAME).then(cache => {
           cache.put(e.request, resClone);
