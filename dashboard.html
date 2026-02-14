@@ -425,7 +425,7 @@ function markIn(){
 
     const now  = new Date();
     let mins   = now.getHours()*60 + now.getMinutes();
-    let status = mins >= (10*60) ? "Late" : "Present";
+    let status = mins >= (10*60) ? "Late Entry" : "Present";
     sendData(status,"in");
 }
 
