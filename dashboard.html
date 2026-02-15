@@ -199,16 +199,13 @@ function getDeviceFingerprint(){
     const scr = window.screen;
     const nav = window.navigator;
 
-    // Only hardware-based values - same across ALL browsers on same device
+    // These values are GUARANTEED same in ALL browsers on same device
     const raw = [
-        scr.width,                       // screen width - same in all browsers
-        scr.height,                      // screen height - same in all browsers
-        scr.colorDepth,                  // color depth - same in all browsers
-        scr.pixelDepth,                  // pixel depth - same in all browsers
-        new Date().getTimezoneOffset(),  // timezone - same in all browsers
-        nav.language,                    // system language - same in all browsers
-        nav.hardwareConcurrency || "",   // CPU cores - same in all browsers
-        window.devicePixelRatio || ""    // screen DPI - same in all browsers
+        scr.width,                       // physical screen width
+        scr.height,                      // physical screen height
+        scr.colorDepth,                  // color depth
+        new Date().getTimezoneOffset(),  // timezone offset
+        nav.language || nav.userLanguage || "" // system language
     ].join("|");
 
     let hash = 0;
@@ -316,6 +313,26 @@ function getLocationAndMark(type, status){
     );
 }
 
+// ================= MARK VERY LATE =================
+let veryLateMarked = false; // prevent multiple calls
+
+function markVeryLate(){
+    if(veryLateMarked) return;
+    veryLateMarked = true;
+
+    const fd = new FormData();
+    fd.append("id",     id);
+    fd.append("name",   name);
+    fd.append("status", "Very Late");
+    fd.append("type",   "verylate");
+
+    fetch(WEB_APP_URL, { method: "POST", body: fd })
+    .then(r => r.json())
+    .then(d => { if(d.success) loadHistory(); })
+    .catch(err => console.log("Very late mark failed:", err));
+}
+
+
 // ================= BUTTON CONTROL =================
 function showStatusBox(msg, type){
     const box = document.getElementById("statusBox");
@@ -361,22 +378,55 @@ function controlButtons(rows){
         String(r.date).trim() === todayStr
     );
 
-    // IN BUTTON
+    // IN BUTTON - no record or no inTime yet
     if(!rec || !rec.inTime || rec.inTime === "---" || rec.inTime === ""){
+
         if(mins >= IN_START && mins <= IN_CLOSE){
+            // Normal sign in window
             inBtn.style.display = "inline-block";
+
         } else if(mins < IN_START){
+            // Too early
             showStatusBox("🔴 Sign In button opens at 8:15 AM", "red");
+
+        } else if(mins > IN_CLOSE && mins < OUT_START){
+            // After 10:30, before 3:30 - very late, mark automatically & show message
+            showStatusBox(
+                "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
+                "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
+                "✅ আপনার Sign Out বাটন সক্রিয় হবে বিকাল ৩:৩০ টায়।",
+            "red");
+            markVeryLate();
+
+        } else if(mins >= OUT_START && mins <= OUT_CLOSE){
+            // After 3:30 - very late but sign out window open
+            showStatusBox(
+                "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
+                "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
+                "✅ আপনার Sign Out বাটন নিচে সক্রিয় আছে।",
+            "red");
+            markVeryLate();
+
         } else {
-            showStatusBox("🔴 Sign In closed. Opens tomorrow at 8:15 AM", "red");
+            // After 8 PM - everything closed
+            showStatusBox("🔴 আজকের উপস্থিতির সময় শেষ। আগামীকাল সকাল ৮:১৫ থেকে শুরু হবে।", "red");
         }
     }
 
-    // OUT BUTTON
+    // OUT BUTTON - has inTime (including Very Late), no outTime yet
     if(rec && rec.inTime && rec.inTime !== "---" && rec.inTime !== "" &&
       (!rec.outTime || rec.outTime === "---" || rec.outTime === "")){
+
         if(mins >= OUT_START && mins <= OUT_CLOSE){
             outBtn.style.display = "inline-block";
+            // If very late, show extra note above sign out button
+            if(rec.status === "Very Late"){
+                showStatusBox(
+                    "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
+                    "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
+                    "✅ আপনার Sign Out বাটন নিচে সক্রিয় আছে।",
+                "red");
+            }
         } else if(mins < OUT_START){
             showStatusBox("🔵 Sign Out button opens at 3:30 PM", "blue");
         } else {
