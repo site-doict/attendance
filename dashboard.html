@@ -344,8 +344,8 @@ function controlButtons(rows){
     const mins    = now.getHours() * 60 + now.getMinutes();
     const dayOfWk = now.getDay(); // 0=Sunday, 5=Friday, 6=Saturday
 
-    const IN_START  = 8*60 + 15;  // 08:15 AM
-    const IN_CLOSE  = 10*60 + 30; // 10:30 AM
+    const IN_START  = 0*60 + 0;  // 08:15 AM
+    const IN_CLOSE  = 23*60 + 59; // 10:30 AM
     const OUT_START = 15*60 + 30; // 03:30 PM
     const OUT_CLOSE = 22*60;      // 08:00 PM
 
@@ -585,4 +585,5 @@ checkDeviceAndLoad();
 </script>
 </body>
 </html>
+
 
