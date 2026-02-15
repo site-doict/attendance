@@ -313,26 +313,6 @@ function getLocationAndMark(type, status){
     );
 }
 
-// ================= MARK VERY LATE =================
-let veryLateMarked = false; // prevent multiple calls
-
-function markVeryLate(){
-    if(veryLateMarked) return;
-    veryLateMarked = true;
-
-    const fd = new FormData();
-    fd.append("id",     id);
-    fd.append("name",   name);
-    fd.append("status", "Very Late");
-    fd.append("type",   "verylate");
-
-    fetch(WEB_APP_URL, { method: "POST", body: fd })
-    .then(r => r.json())
-    .then(d => { if(d.success) loadHistory(); })
-    .catch(err => console.log("Very late mark failed:", err));
-}
-
-
 // ================= BUTTON CONTROL =================
 function showStatusBox(msg, type){
     const box = document.getElementById("statusBox");
@@ -340,23 +320,28 @@ function showStatusBox(msg, type){
     box.innerText = msg;
 
     if(type === "red"){
-        box.style.background   = "#fff0f0";
-        box.style.color        = "#cc0000";
-        box.style.border       = "2px solid #cc0000";
+        box.style.background = "#fff0f0";
+        box.style.color      = "#cc0000";
+        box.style.border     = "2px solid #cc0000";
     } else if(type === "green"){
-        box.style.background   = "#f0fff4";
-        box.style.color        = "#1a7a2e";
-        box.style.border       = "2px solid #28a745";
+        box.style.background = "#f0fff4";
+        box.style.color      = "#1a7a2e";
+        box.style.border     = "2px solid #28a745";
     } else if(type === "blue"){
-        box.style.background   = "#f0f4ff";
-        box.style.color        = "#0044cc";
-        box.style.border       = "2px solid #0056b3";
+        box.style.background = "#f0f4ff";
+        box.style.color      = "#0044cc";
+        box.style.border     = "2px solid #0056b3";
+    } else if(type === "orange"){
+        box.style.background = "#fff8f0";
+        box.style.color      = "#cc6600";
+        box.style.border     = "2px solid #e67e00";
     }
 }
 
 function controlButtons(rows){
-    const now  = new Date();
-    const mins = now.getHours() * 60 + now.getMinutes();
+    const now     = new Date();
+    const mins    = now.getHours() * 60 + now.getMinutes();
+    const dayOfWk = now.getDay(); // 0=Sunday, 5=Friday, 6=Saturday
 
     const IN_START  = 8*60 + 15;  // 08:15 AM
     const IN_CLOSE  = 10*60 + 30; // 10:30 AM
@@ -370,6 +355,16 @@ function controlButtons(rows){
 
     if(!deviceAllowed) return;
 
+    // ========== HOLIDAY CHECK (Friday=5, Saturday=6) ==========
+    if(dayOfWk === 5 || dayOfWk === 6){
+        const dayName = dayOfWk === 5 ? "Friday" : "Saturday";
+        showStatusBox(
+            "🏖️ আজ সরকারি ছুটির দিন (" + dayName + ")!\n\n" +
+            "অফিস বন্ধ আছে। আগামী কার্যদিবসে উপস্থিত থাকুন।",
+        "orange");
+        return;
+    }
+
     const today    = new Date();
     const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
 
@@ -378,66 +373,68 @@ function controlButtons(rows){
         String(r.date).trim() === todayStr
     );
 
-    // IN BUTTON - no record or no inTime yet
+    // ========== ALREADY COMPLETE ==========
+    if(rec && rec.inTime && rec.inTime !== "---" &&
+       rec.outTime && rec.outTime !== "---"){
+        showStatusBox("✅ Attendance complete for today!", "green");
+        return;
+    }
+
+    // ========== NO SIGN IN YET ==========
     if(!rec || !rec.inTime || rec.inTime === "---" || rec.inTime === ""){
 
         if(mins >= IN_START && mins <= IN_CLOSE){
-            // Normal sign in window
+            // Normal sign in window - show button
             inBtn.style.display = "inline-block";
 
         } else if(mins < IN_START){
-            // Too early
             showStatusBox("🔴 Sign In button opens at 8:15 AM", "red");
 
         } else if(mins > IN_CLOSE && mins < OUT_START){
-            // After 10:30, before 3:30 - very late, mark automatically & show message
+            // Very late - show message only, NO sheet entry yet
             showStatusBox(
                 "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                 "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
                 "✅ আপনার Sign Out বাটন সক্রিয় হবে বিকাল ৩:৩০ টায়।",
             "red");
-            markVeryLate();
+            // Show sign out button below message
+            outBtn.style.display = "inline-block";
 
         } else if(mins >= OUT_START && mins <= OUT_CLOSE){
-            // After 3:30 - very late but sign out window open
+            // Very late, sign out window open - show message then button
             showStatusBox(
                 "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                 "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                "✅ আপনার Sign Out বাটন নিচে সক্রিয় আছে।",
+                "✅ নিচের বাটন দিয়ে Sign Out করুন।",
             "red");
-            markVeryLate();
+            outBtn.style.display = "inline-block";
 
         } else {
-            // After 8 PM - everything closed
             showStatusBox("🔴 আজকের উপস্থিতির সময় শেষ। আগামীকাল সকাল ৮:১৫ থেকে শুরু হবে।", "red");
         }
+        return;
     }
 
-    // OUT BUTTON - has inTime (including Very Late), no outTime yet
-    if(rec && rec.inTime && rec.inTime !== "---" && rec.inTime !== "" &&
+    // ========== SIGNED IN, NOT SIGNED OUT YET ==========
+    if(rec && rec.inTime && rec.inTime !== "---" &&
       (!rec.outTime || rec.outTime === "---" || rec.outTime === "")){
 
         if(mins >= OUT_START && mins <= OUT_CLOSE){
-            outBtn.style.display = "inline-block";
-            // If very late, show extra note above sign out button
+            // Message first, then button
             if(rec.status === "Very Late"){
                 showStatusBox(
                     "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                     "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                    "✅ আপনার Sign Out বাটন নিচে সক্রিয় আছে।",
+                    "✅ নিচের বাটন দিয়ে Sign Out করুন।",
                 "red");
             }
+            outBtn.style.display = "inline-block";
+
         } else if(mins < OUT_START){
             showStatusBox("🔵 Sign Out button opens at 3:30 PM", "blue");
         } else {
             showStatusBox("🔴 Sign Out closed for today", "red");
         }
-    }
-
-    // BOTH DONE
-    if(rec && rec.inTime && rec.inTime !== "---" &&
-       rec.outTime && rec.outTime !== "---"){
-        showStatusBox("✅ Attendance complete for today!", "green");
     }
 }
 
@@ -482,9 +479,23 @@ function sendData(status, type, lat, lng){
     fd.append("lat",    lat || "");
     fd.append("lng",    lng || "");
 
-    fetch(WEB_APP_URL, { method: "POST", body: fd })
-    .then(r => r.json())
-    .then(d => {
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: fd,
+        redirect: "follow"
+    })
+    .then(r => r.text())
+    .then(text => {
+        let d;
+        try {
+            // Strip any BOM or extra chars before JSON
+            const clean = text.replace(/^\uFEFF/, "").trim();
+            d = JSON.parse(clean);
+        } catch(e){
+            // If not JSON but request went through, treat as success
+            d = { success: true };
+        }
+
         if(d.success){
             let hours   = now.getHours();
             let minutes = String(now.getMinutes()).padStart(2, "0");
@@ -492,7 +503,7 @@ function sendData(status, type, lat, lng){
             hours       = hours % 12 || 12;
             const t     = `${hours}:${minutes} ${ampm}`;
 
-            statusTx.innerText = type === "in"
+            statusTx.innerText = type.includes("in")
                 ? `✅ Marked IN at ${t}`
                 : `✅ Marked OUT at ${t}`;
 
@@ -507,7 +518,9 @@ function sendData(status, type, lat, lng){
         }
     })
     .catch(() => {
-        statusTx.innerText = "❌ Submit Failed. Please try again.";
+        // Network error - but data may have been saved, reload to check
+        setTimeout(() => loadHistory(), 2000);
+        statusTx.innerText = "⏳ Please wait...";
     });
 }
 
@@ -523,7 +536,33 @@ function markOut(){
     const now  = new Date();
     const mins = now.getHours() * 60 + now.getMinutes();
     const status = mins < (16*60 + 45) ? "Early Leave" : "Present";
-    getLocationAndMark("out", status);
+
+    // Check if there's a today record - if no inTime, it's very late
+    const today    = new Date();
+    const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
+
+    // Get latest rows from history
+    fetch(`${WEB_APP_URL}?action=history&id=${id}`)
+    .then(r => r.json())
+    .then(rows => {
+        const rec = rows.find(r =>
+            String(r.id).trim() === id &&
+            String(r.date).trim() === todayStr
+        );
+
+        const hasSignIn = rec && rec.inTime && rec.inTime !== "---" && rec.inTime !== "";
+
+        if(!hasSignIn){
+            // Very late - no sign in recorded yet, send as verylate+out combined
+            getLocationAndMark("out-verylate", status);
+        } else {
+            getLocationAndMark("out", status);
+        }
+    })
+    .catch(() => {
+        // On error, just send normal out
+        getLocationAndMark("out", status);
+    });
 }
 
 // ================= LOGOUT =================
