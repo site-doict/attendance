@@ -6,12 +6,12 @@
 <title>Office Attendance</title>
 
 <!-- PWA -->
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#1a1a1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Office Attendance">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -118,7 +118,7 @@ const USER_SHEET =
 
 // Register Service Worker
 if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js')
+    navigator.serviceWorker.register('./sw.js')
     .then(() => console.log("SW registered"))
     .catch(err => console.log("SW error:", err));
 }
@@ -128,9 +128,9 @@ const existingId = localStorage.getItem("userid");
 const existingRole = localStorage.getItem("role");
 if(existingId){
     if(existingRole === "admin" || existingRole === "superadmin"){
-        location.href = "admin.html";
+        location.href = "./admin.html";
     } else {
-        location.href = "dashboard.html";
+        location.href = "./dashboard.html";
     }
 }
 
@@ -208,3 +208,4 @@ document.addEventListener("keydown", function(e){
 
 </body>
 </html>
+
