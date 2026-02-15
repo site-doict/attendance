@@ -125,9 +125,8 @@ button{
 <p id="user"></p>
 <div id="clock">00:00:00</div>
 
+<!-- ===== সব মেসেজ আগে ===== -->
 <div id="loadingMsg">⏳ Checking device...</div>
-
-<button id="inBtn"  onclick="markIn()">✅ I am in Office</button>
 
 <div id="deviceMsg">
     🚨 সতর্কতা! 🚨<br><br>
@@ -142,10 +141,11 @@ button{
 </div>
 
 <div id="fraudMsg"></div>
-
 <div id="statusBox"></div>
 <div id="status"></div>
 
+<!-- ===== সব বাটন পরে ===== -->
+<button id="inBtn"  onclick="markIn()">✅ I am in Office</button>
 <button id="outBtn" onclick="markOut()">🚪 I am Leaving</button>
 
 <div id="historyArea">
@@ -347,7 +347,7 @@ function controlButtons(rows){
     const IN_START  = 8*60 + 15;  // 08:15 AM
     const IN_CLOSE  = 10*60 + 30; // 10:30 AM
     const OUT_START = 15*60 + 30; // 03:30 PM
-    const OUT_CLOSE = 20*60 + 0;      // 08:00 PM
+    const OUT_CLOSE = 20*60;      // 08:00 PM
 
     inBtn.style.display  = "none";
     outBtn.style.display = "none";
@@ -406,7 +406,7 @@ function controlButtons(rows){
             showStatusBox(
                 "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                 "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                "✅ নিচের বাটন দিয়ে Sign Out করুন ↓।",
+                "✅ নিচের বাটন দিয়ে Sign Out করুন।",
             "red");
             outBtn.style.display = "inline-block";
 
@@ -426,7 +426,7 @@ function controlButtons(rows){
                 showStatusBox(
                     "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                     "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                    "✅ নিচের বাটন দিয়ে Sign Out করুন ↓।",
+                    "✅ নিচের বাটন দিয়ে Sign Out করুন।",
                 "red");
             }
             outBtn.style.display = "inline-block";
@@ -585,9 +585,3 @@ checkDeviceAndLoad();
 </script>
 </body>
 </html>
-
-
-
-
-
-
