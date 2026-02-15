@@ -128,7 +128,6 @@ button{
 <div id="loadingMsg">⏳ Checking device...</div>
 
 <button id="inBtn"  onclick="markIn()">✅ I am in Office</button>
-<button id="outBtn" onclick="markOut()">🚪 I am Leaving</button>
 
 <div id="deviceMsg">
     🚨 সতর্কতা! 🚨<br><br>
@@ -146,6 +145,8 @@ button{
 
 <div id="statusBox"></div>
 <div id="status"></div>
+
+<button id="outBtn" onclick="markOut()">🚪 I am Leaving</button>
 
 <div id="historyArea">
     <h4>📅 Last 7 Days History</h4>
@@ -405,7 +406,7 @@ function controlButtons(rows){
             showStatusBox(
                 "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                 "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                "✅ নিচের বাটন দিয়ে Sign Out করুন।",
+                "✅ নিচের বাটন দিয়ে Sign Out করুন ↓।",
             "red");
             outBtn.style.display = "inline-block";
 
@@ -425,7 +426,7 @@ function controlButtons(rows){
                 showStatusBox(
                     "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                     "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                    "✅ নিচের বাটন দিয়ে Sign Out করুন।",
+                    "✅ নিচের বাটন দিয়ে Sign Out করুন ↓।",
                 "red");
             }
             outBtn.style.display = "inline-block";
