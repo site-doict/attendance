@@ -5,153 +5,419 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Attendance Dashboard</title>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <style>
-body{
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
     font-family: Arial, sans-serif;
-    background:#f2f4f7;
-    padding:20px;
-    text-align:center;
+    background: #f2f4f7;
+    padding: 20px;
 }
-.header{
-    max-width:1100px;
-    margin:auto;
-    background:white;
-    padding:15px 25px;
-    border-radius:10px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    box-shadow:0 2px 6px rgba(0,0,0,.1);
+
+.header {
+    max-width: 1100px;
+    margin: 0 auto 20px;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.1);
 }
-h2{ margin:0; color:#0056b3; }
-.logout{
-    padding:8px 16px;
-    background:#dc3545;
-    border:none;
-    color:white;
-    border-radius:5px;
-    cursor:pointer;
-    font-weight:bold;
+
+h2 { color: #0056b3; }
+
+.logout {
+    padding: 8px 16px;
+    background: #dc3545;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
 }
-#loader{ margin:30px; font-size:18px; color:#555; }
-.table-box{
-    max-width:1100px;
-    margin:auto;
-    background:white;
-    border-radius:10px;
-    overflow-x:auto;
-    box-shadow:0 4px 10px rgba(0,0,0,.1);
+
+.logout:hover { background: #b02a37; }
+
+/* ===== SUMMARY CARDS ===== */
+.summary-cards {
+    max-width: 1100px;
+    margin: 0 auto 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
-table{ width:100%; border-collapse:collapse; }
-th,td{ border:1px solid #eee; padding:10px; font-size:14px; text-align:center; }
-th{ background:#0056b3; color:white; }
-.present{ background:#d4edda; color:#155724; font-weight:bold; }
-.late{ background:#fff3cd; color:#856404; font-weight:bold; }
-.absent{ background:#f8d7da; color:#721c24; font-weight:bold; }
+
+.card {
+    flex: 1;
+    min-width: 120px;
+    background: white;
+    border-radius: 10px;
+    padding: 15px 10px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.08);
+    border-top: 4px solid #ccc;
+}
+
+.card .count { font-size: 32px; font-weight: bold; }
+.card .label { font-size: 12px; color: #555; margin-top: 4px; line-height: 1.4; }
+
+.card.present  { border-color: #28a745; } .card.present  .count { color: #28a745; }
+.card.late     { border-color: #e67e00; } .card.late     .count { color: #e67e00; }
+.card.early    { border-color: #e67e00; } .card.early    .count { color: #e67e00; }
+.card.verylate { border-color: #dc3545; } .card.verylate .count { color: #dc3545; }
+.card.absent   { border-color: #dc3545; } .card.absent   .count { color: #dc3545; }
+.card.nosign   { border-color: #ffc107; } .card.nosign   .count { color: #856404; }
+.card.total    { border-color: #0056b3; } .card.total    .count { color: #0056b3; }
+
+/* ===== FILTERS ===== */
+.filters {
+    max-width: 1100px;
+    margin: 0 auto 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filters input, .filters select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+}
+
+.filters input:focus, .filters select:focus { border-color: #0056b3; }
+
+.btn-refresh {
+    padding: 8px 18px;
+    background: #0056b3;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.btn-refresh:hover { background: #004099; }
+
+/* ===== TABLE ===== */
+.table-box {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 10px;
+    overflow-x: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,.1);
+}
+
+table { width: 100%; border-collapse: collapse; }
+
+th, td {
+    border: 1px solid #eee;
+    padding: 11px 12px;
+    font-size: 14px;
+    text-align: center;
+}
+
+th { background: #0056b3; color: white; white-space: nowrap; }
+
+tr:nth-child(even) { background: #f9f9f9; }
+tr:hover { background: #eef4ff; }
+
+/* ===== STATUS BADGES ===== */
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+
+.badge-present   { background: #28a745; }
+.badge-late      { background: #e67e00; }
+.badge-early     { background: #e67e00; }
+.badge-verylate  { background: #dc3545; }
+.badge-absent    { background: #dc3545; }
+.badge-nosignout { background: #ffc107; color: #333; }
+.badge-default   { background: #888; }
+
+/* ===== LOADER & MESSAGES ===== */
+#loader {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    color: #555;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+    font-size: 16px;
+}
+
+/* ===== DATE PICKER ===== */
+.date-display {
+    font-size: 13px;
+    color: #555;
+    margin-left: auto;
+    padding: 8px 12px;
+    background: #f0f4ff;
+    border-radius: 6px;
+    border: 1px solid #c8d8ff;
+}
 </style>
 </head>
 
 <body>
+
+<!-- ===== HEADER ===== -->
 <div class="header">
-    <h2>Admin Attendance Summary</h2>
-    <button class="logout" onclick="logout()">Logout</button>
+    <h2>🏢 Admin Attendance Dashboard</h2>
+    <div style="display:flex;align-items:center;gap:12px;">
+        <span id="lastUpdated" class="date-display">⏳ Loading...</span>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
 </div>
 
-<div id="loader">🔄 Loading Data...</div>
+<!-- ===== SUMMARY CARDS ===== -->
+<div class="summary-cards">
+    <div class="card total">
+        <div class="count" id="cTotal">-</div>
+        <div class="label">Total Staff</div>
+    </div>
+    <div class="card present">
+        <div class="count" id="cPresent">-</div>
+        <div class="label">Present<br>উপস্থিত</div>
+    </div>
+    <div class="card late">
+        <div class="count" id="cLate">-</div>
+        <div class="label">Late Entry<br>দেরিতে প্রবেশ</div>
+    </div>
+    <div class="card early">
+        <div class="count" id="cEarly">-</div>
+        <div class="label">Early Leave<br>আগে প্রস্থান</div>
+    </div>
+    <div class="card verylate">
+        <div class="count" id="cVLate">-</div>
+        <div class="label">Very Late<br>অনেক দেরি</div>
+    </div>
+    <div class="card absent">
+        <div class="count" id="cAbsent">-</div>
+        <div class="label">Absent<br>অনুপস্থিত</div>
+    </div>
+    <div class="card nosign">
+        <div class="count" id="cNoSign">-</div>
+        <div class="label">No Sign Out<br>Sign Out নেই</div>
+    </div>
+</div>
 
+<!-- ===== FILTERS ===== -->
+<div class="filters">
+    <input type="text" id="searchInput" placeholder="🔍 Search by name or ID..." oninput="applyFilters()" style="min-width:220px;">
+    <select id="statusFilter" onchange="applyFilters()">
+        <option value="">All Status</option>
+        <option value="Present">Present</option>
+        <option value="Late Entry">Late Entry</option>
+        <option value="Early Leave">Early Leave</option>
+        <option value="Late Entry | Early Leave">Late + Early Leave</option>
+        <option value="Very Late">Very Late</option>
+        <option value="Absent">Absent</option>
+        <option value="No Sign Out">No Sign Out</option>
+    </select>
+    <input type="date" id="dateFilter" onchange="applyFilters()">
+    <button class="btn-refresh" onclick="loadData()">🔄 Refresh</button>
+</div>
+
+<!-- ===== TABLE ===== -->
 <div class="table-box">
-<table>
-<thead>
-<tr>
-    <th>Timestamp</th>
-    <th>ID</th>
-    <th>Name</th>
-    <th>In Time</th>
-    <th>Out Time</th>
-    <th>Status</th>
-</tr>
-</thead>
-<tbody id="tbody"></tbody>
-</table>
+    <div id="loader">🔄 Loading attendance data...</div>
+    <table id="mainTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Sign In</th>
+                <th>Sign Out</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+    </table>
+    <div id="noData" class="no-data" style="display:none;">⚠️ No records found.</div>
 </div>
+
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?output=csv";
-const PROXY = "https://api.allorigins.win/raw?url=";
+// =============================================
+// ⚠️ CHANGE THIS to your Apps Script Web App URL
+// =============================================
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
-if(localStorage.getItem("role") !== "admin" && localStorage.getItem("role") !== "superadmin"){
-    location.href="index.html";
+// ===== AUTH CHECK =====
+const role = localStorage.getItem("role");
+if(role !== "admin" && role !== "superadmin"){
+    location.href = "index.html";
 }
 
+let allRows = []; // store all fetched rows
+
+// ===== LOAD DATA FROM APPS SCRIPT =====
 function loadData(){
-    const url = PROXY + encodeURIComponent(CSV_URL);
-    fetch(url)
-    .then(res => res.text())
-    .then(data => {
-        Papa.parse(data, {
-            header:true,
-            skipEmptyLines:true,
-            complete: function(result){
-                renderTable(result.data);
-            },
-            error: function(err){
-                document.getElementById("loader").innerText = "❌ Failed to parse CSV";
-                console.error(err);
-            }
-        });
+    const loader    = document.getElementById("loader");
+    const table     = document.getElementById("mainTable");
+    const noData    = document.getElementById("noData");
+
+    loader.style.display = "block";
+    table.style.display  = "none";
+    noData.style.display = "none";
+
+    // Use action=history but fetch ALL users (no id filter)
+    fetch(`${WEB_APP_URL}?action=admindata`, { redirect: "follow" })
+    .then(r => r.text())
+    .then(text => JSON.parse(text))
+    .then(rows => {
+        allRows = rows || [];
+        document.getElementById("lastUpdated").innerText =
+            "Updated: " + new Date().toLocaleTimeString();
+        applyFilters();
+        loader.style.display = "none";
     })
-    .catch(err=>{
-        document.getElementById("loader").innerText = "❌ Failed to fetch data";
-        console.error(err);
+    .catch(err => {
+        console.error("Load error:", err);
+        loader.innerText = "❌ Failed to load data. Check your WEB_APP_URL or network.";
     });
 }
 
-function renderTable(rows){
-    document.getElementById("loader").style.display="none";
-    const tbody = document.getElementById("tbody");
-    tbody.innerHTML="";
+// ===== APPLY FILTERS =====
+function applyFilters(){
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const status = document.getElementById("statusFilter").value;
+    const date   = document.getElementById("dateFilter").value; // yyyy-mm-dd
 
-    if(!rows || rows.length===0){
-        document.getElementById("loader").style.display="block";
-        document.getElementById("loader").innerText="⚠️ No Data Found";
+    let filtered = allRows.filter(r => {
+        const matchSearch =
+            !search ||
+            String(r.id   || "").toLowerCase().includes(search) ||
+            String(r.name || "").toLowerCase().includes(search);
+
+        const matchStatus =
+            !status ||
+            String(r.status || "").includes(status);
+
+        const matchDate =
+            !date ||
+            String(r.date || "").includes(convertDateFilter(date));
+
+        return matchSearch && matchStatus && matchDate;
+    });
+
+    renderTable(filtered);
+    updateCards(filtered);
+}
+
+// Convert yyyy-mm-dd → M/D/YYYY format used in sheet
+function convertDateFilter(d){
+    if(!d) return "";
+    const parts = d.split("-");
+    return parseInt(parts[1]) + "/" + parseInt(parts[2]) + "/" + parts[0];
+}
+
+// ===== RENDER TABLE =====
+function renderTable(rows){
+    const tbody  = document.getElementById("tbody");
+    const table  = document.getElementById("mainTable");
+    const noData = document.getElementById("noData");
+
+    tbody.innerHTML = "";
+
+    if(!rows || rows.length === 0){
+        table.style.display  = "none";
+        noData.style.display = "block";
         return;
     }
 
-    // Remove empty rows automatically
-    rows = rows.filter(r => r.ID && r.ID.trim() !== "");
+    table.style.display  = "table";
+    noData.style.display = "none";
 
-    rows.reverse().forEach(r=>{
-        const ts = r.Timestamp || "---";
-        const id = r.ID || "---";
-        const name = r.Name || "---";
-        const inTime = r.InTime || "---";
-        const outTime = r.OutTime || "---";
-        const status = (r.Status || "").trim();
-        let cls = "absent";
-        if(status === "Present") cls = "present";
-        if(status === "Late") cls = "late";
+    // Show newest first
+    const sorted = [...rows].reverse();
+
+    sorted.forEach(r => {
+        const status  = String(r.status || "").trim();
+        const badgeCls = getBadgeClass(status);
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${ts}</td>
-            <td>${id}</td>
-            <td>${name}</td>
-            <td>${inTime}</td>
-            <td>${outTime}</td>
-            <td class="${cls}">${status || "---"}</td>
+            <td style="font-size:12px;color:#777;">${r.timestamp || "---"}</td>
+            <td><strong>${r.id || "---"}</strong></td>
+            <td style="text-align:left;">${r.name || "---"}</td>
+            <td>${r.date || "---"}</td>
+            <td>${r.inTime || "---"}</td>
+            <td>${r.outTime || "---"}</td>
+            <td><span class="badge ${badgeCls}">${status || "---"}</span></td>
         `;
         tbody.appendChild(tr);
     });
 }
 
+// ===== BADGE CLASS =====
+function getBadgeClass(status){
+    if(!status) return "badge-default";
+    const s = status.toLowerCase();
+    if(s === "present")                        return "badge-present";
+    if(s.includes("very late"))                return "badge-verylate";
+    if(s.includes("late entry") && s.includes("early leave")) return "badge-verylate";
+    if(s.includes("late"))                     return "badge-late";
+    if(s.includes("early"))                    return "badge-early";
+    if(s === "absent")                         return "badge-absent";
+    if(s.includes("no sign out"))              return "badge-nosignout";
+    return "badge-default";
+}
+
+// ===== UPDATE SUMMARY CARDS =====
+function updateCards(rows){
+    const total   = rows.length;
+    const present = rows.filter(r => r.status === "Present").length;
+    const late    = rows.filter(r => r.status === "Late Entry").length;
+    const early   = rows.filter(r => r.status === "Early Leave" || r.status === "Late Entry | Early Leave").length;
+    const vlate   = rows.filter(r => String(r.status).includes("Very Late")).length;
+    const absent  = rows.filter(r => r.status === "Absent" || !r.status).length;
+    const nosign  = rows.filter(r => String(r.status).includes("No Sign Out")).length;
+
+    document.getElementById("cTotal").innerText   = total;
+    document.getElementById("cPresent").innerText = present;
+    document.getElementById("cLate").innerText    = late;
+    document.getElementById("cEarly").innerText   = early;
+    document.getElementById("cVLate").innerText   = vlate;
+    document.getElementById("cAbsent").innerText  = absent;
+    document.getElementById("cNoSign").innerText  = nosign;
+}
+
+// ===== LOGOUT =====
 function logout(){
     localStorage.clear();
-    location.href="index.html";
+    location.href = "index.html";
 }
+
+// ===== START =====
+// Set today's date in filter by default
+const today = new Date();
+const yyyy  = today.getFullYear();
+const mm    = String(today.getMonth()+1).padStart(2,"0");
+const dd    = String(today.getDate()).padStart(2,"0");
+document.getElementById("dateFilter").value = `${yyyy}-${mm}-${dd}`;
 
 loadData();
 </script>
+
 </body>
 </html>
