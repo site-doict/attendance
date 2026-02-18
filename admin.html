@@ -105,6 +105,17 @@ h2 { color: #0056b3; }
 
 .btn-refresh:hover { background: #004099; }
 
+.btn-clear {
+    padding: 8px 14px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.btn-clear:hover { background: #545b62; }
+
 /* ===== TABLE ===== */
 .table-box {
     max-width: 1100px;
@@ -231,7 +242,11 @@ tr:hover { background: #eef4ff; }
         <option value="Absent">Absent</option>
         <option value="No Sign Out">No Sign Out</option>
     </select>
-    <input type="date" id="dateFilter" onchange="applyFilters()">
+    <label style="font-size:13px;color:#555;white-space:nowrap;">📅 From:</label>
+    <input type="date" id="dateFrom" onchange="applyFilters()">
+    <label style="font-size:13px;color:#555;white-space:nowrap;">To:</label>
+    <input type="date" id="dateTo" onchange="applyFilters()">
+    <button class="btn-clear" onclick="clearDates()">✖ Clear Dates</button>
     <button class="btn-refresh" onclick="loadData()">🔄 Refresh</button>
 </div>
 
@@ -299,9 +314,10 @@ function loadData(){
 
 // ===== APPLY FILTERS =====
 function applyFilters(){
-    const search = document.getElementById("searchInput").value.toLowerCase();
-    const status = document.getElementById("statusFilter").value;
-    const date   = document.getElementById("dateFilter").value; // yyyy-mm-dd
+    const search   = document.getElementById("searchInput").value.toLowerCase();
+    const status   = document.getElementById("statusFilter").value;
+    const dateFrom = document.getElementById("dateFrom").value; // yyyy-mm-dd
+    const dateTo   = document.getElementById("dateTo").value;   // yyyy-mm-dd
 
     let filtered = allRows.filter(r => {
         const matchSearch =
@@ -313,9 +329,16 @@ function applyFilters(){
             !status ||
             String(r.status || "").includes(status);
 
+        // Convert sheet date "M/D/YYYY" to comparable format
+        const rowDate = parseSheetDate(String(r.date || ""));
+        const fromDate = dateFrom ? new Date(dateFrom) : null;
+        const toDate   = dateTo   ? new Date(dateTo)   : null;
+        // Set toDate to end of day
+        if(toDate) toDate.setHours(23, 59, 59);
+
         const matchDate =
-            !date ||
-            String(r.date || "").includes(convertDateFilter(date));
+            (!fromDate && !toDate) ||
+            (rowDate && (!fromDate || rowDate >= fromDate) && (!toDate || rowDate <= toDate));
 
         return matchSearch && matchStatus && matchDate;
     });
@@ -324,11 +347,19 @@ function applyFilters(){
     updateCards(filtered);
 }
 
-// Convert yyyy-mm-dd → M/D/YYYY format used in sheet
-function convertDateFilter(d){
-    if(!d) return "";
-    const parts = d.split("-");
-    return parseInt(parts[1]) + "/" + parseInt(parts[2]) + "/" + parts[0];
+// Parse "M/D/YYYY" → Date object
+function parseSheetDate(d){
+    if(!d) return null;
+    const parts = d.split("/");
+    if(parts.length !== 3) return null;
+    return new Date(parseInt(parts[2]), parseInt(parts[0])-1, parseInt(parts[1]));
+}
+
+// Clear date filters
+function clearDates(){
+    document.getElementById("dateFrom").value = "";
+    document.getElementById("dateTo").value   = "";
+    applyFilters();
 }
 
 // ===== RENDER TABLE =====
