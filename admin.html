@@ -422,7 +422,10 @@ function updateCards(rows){
     const early   = rows.filter(r => r.status === "Early Leave" || r.status === "Late Entry | Early Leave").length;
     const vlate   = rows.filter(r => String(r.status).includes("Very Late")).length;
     const absent  = rows.filter(r => r.status === "Absent" || !r.status).length;
-    const nosign  = rows.filter(r => String(r.status).includes("No Sign Out")).length;
+    const nosign  = rows.filter(r => 
+    String(r.status).includes("No Sign Out") || 
+    (String(r.outTime).replace(/^'+/, "").trim() === "---" && r.status !== "Absent")
+).length;
 
     document.getElementById("cTotal").innerText   = total;
     document.getElementById("cPresent").innerText = present;
