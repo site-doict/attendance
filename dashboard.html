@@ -392,17 +392,16 @@ function controlButtons(rows){
             showStatusBox("🔴 Sign In button opens at 8:15 AM", "red");
 
         } else if(mins > IN_CLOSE && mins < OUT_START){
-            // Very late - show message only, NO sheet entry yet
+            // Very late, BEFORE 3:30 - show message only, NO button yet
             showStatusBox(
                 "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                 "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
                 "✅ আপনার Sign Out বাটন সক্রিয় হবে বিকাল ৩:৩০ টায়।",
             "red");
-            // Show sign out button below message
-            outBtn.style.display = "inline-block";
+            // DO NOT show button before 3:30
 
         } else if(mins >= OUT_START && mins <= OUT_CLOSE){
-            // Very late, sign out window open - show message then button
+            // Very late, AFTER 3:30 - show message + button
             showStatusBox(
                 "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                 "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
@@ -585,5 +584,3 @@ checkDeviceAndLoad();
 </script>
 </body>
 </html>
-
-
