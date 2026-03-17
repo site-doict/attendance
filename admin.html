@@ -443,6 +443,18 @@ tr:hover { background: #eef4ff; }
             <div class="save-status" id="status-email"></div>
         </div>
 
+        <!-- Weekend/Holiday Settings -->
+        <div class="settings-card">
+            <h3>🏖️ Weekend/Holidays</h3>
+            <div class="form-group">
+                <label>Weekly Off Days</label>
+                <input type="text" id="customHolidays" placeholder="Friday,Saturday">
+                <small>Enter day names separated by commas</small>
+            </div>
+            <button class="btn btn-success" onclick="saveSettings('holidays')">💾 Save Holidays</button>
+            <div class="save-status" id="status-holidays"></div>
+        </div>
+
     </div>
 
 </div>
@@ -670,6 +682,7 @@ function loadSettings(){
         document.getElementById("officeClosedFrom").value = settings.officeClosedFrom || "";
         document.getElementById("officeClosedTo").value = settings.officeClosedTo || "";
         document.getElementById("emailsPaused").value = settings.emailsPaused || "no";
+        document.getElementById("customHolidays").value = settings.customHolidays || "Friday,Saturday";
     })
     .catch(err => console.error("Failed to load settings:", err));
 }
@@ -705,6 +718,11 @@ function saveSettings(type){
             {key: "emailsPaused", value: document.getElementById("emailsPaused").value}
         ];
         statusId = "status-email";
+    } else if(type === "holidays"){
+        updates = [
+            {key: "customHolidays", value: document.getElementById("customHolidays").value}
+        ];
+        statusId = "status-holidays";
     }
 
     const statusEl = document.getElementById(statusId);
@@ -722,11 +740,14 @@ function saveSettings(type){
         .then(d => {
             completed++;
             if(completed === updates.length){
-                statusEl.className = "save-status success";
-                statusEl.innerText = "✅ Saved successfully!";
-                statusEl.style.display = "block";
-                setTimeout(() => statusEl.style.display = "none", 3000);
-            }
+    statusEl.className = "save-status success";
+    statusEl.innerText = "✅ Saved successfully!";
+    statusEl.style.display = "block";
+    setTimeout(() => {
+        statusEl.style.display = "none";
+        loadSettings(); // This reloads values from sheet
+    }, 2000);
+}
         })
         .catch(err => {
             statusEl.className = "save-status error";
@@ -792,7 +813,7 @@ function sendCustomEmail(){
     .then(d => {
         if(d.success){
             statusEl.className = "save-status success";
-            statusEl.innerText = `✅ Email sent to ${d.sent} recipient(s)!`;
+            statusEl.innerText = `✅ Email sent to ${d.sent || 0} recipient(s)!`;
             document.getElementById("emailSubject").value = "";
             document.getElementById("emailMessage").value = "";
             document.getElementById("customIds").value = "";
