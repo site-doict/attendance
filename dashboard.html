@@ -399,14 +399,16 @@ async function controlButtons(rows){
     } else if(mins < IN_START){
             const startDisplay = settings.officeStartTime;
             const [winMins] = String(settings.signInWindowMins).split(":").map(Number);
-            showStatusBox("🔴 Sign In button opens at " + startDisplay, "red");
+            const ampm1 = startHour >= 12 ? "PM" : "AM";
+            const displayStart = convertTo12Hour(startHour, startMin) + " " + ampm1;
+            showStatusBox("🔴 Sign In button opens at " + displayStart, "red");
 
         } else if(mins > IN_CLOSE && mins < OUT_START){
             // Very late, BEFORE 3:30 - show message only, NO button yet
             showStatusBox(
                 "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                 "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                "✅ আপনার Sign Out বাটন সক্রিয় হবে " + settings.officeEndTime + " এর আগে।",
+                "✅ আপনার Sign Out বাটন সক্রিয় হবে " + formatTimeWithAMPM(settings.officeEndTime) + " এর আগে।",
             "red");
             // DO NOT show button before 3:30
 
@@ -420,7 +422,7 @@ async function controlButtons(rows){
             outBtn.style.display = "inline-block";
 
         } else {
-            showStatusBox("🔴 আজকের উপস্থিতির সময় শেষ। আগামীকাল " + settings.officeStartTime + " থেকে শুরু হবে।", "red");
+            showStatusBox("🔴 আজকের উপস্থিতির সময় শেষ। আগামীকাল " + formatTimeWithAMPM(settings.officeStartTime) + " থেকে শুরু হবে।", "red");
         }
         return;
     }
@@ -618,7 +620,22 @@ function getSettingsSync(){
             return result;
         });
 }
+// Convert 24-hour to 12-hour format
+function convertTo12Hour(hour, min){
+    let h = hour;
+    if(h > 12) h = h - 12;
+    if(h === 0) h = 12;
+    return String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0");
+}
 
+// Format time with AM/PM
+function formatTimeWithAMPM(timeStr){
+    if(!timeStr) return "";
+    const [hour, min] = String(timeStr).split(":").map(Number);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+    return String(displayHour).padStart(2, "0") + ":" + String(min).padStart(2, "0") + " " + ampm;
+}
 </script>
 </body>
 </html>
