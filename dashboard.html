@@ -339,15 +339,23 @@ function showStatusBox(msg, type){
     }
 }
 
-function controlButtons(rows){
+async function controlButtons(rows){
     const now     = new Date();
     const mins    = now.getHours() * 60 + now.getMinutes();
     const dayOfWk = now.getDay(); // 0=Sunday, 5=Friday, 6=Saturday
 
-    const IN_START  = 8*60 + 15;  // 08:15 AM
-    const IN_CLOSE  = 10*60 + 30; // 10:30 AM
-    const OUT_START = 15*60 + 30; // 03:30 PM
-    const OUT_CLOSE = 20*60;      // 08:00 PM
+// Get settings from Google Sheet
+    const settings = await getSettingsSync();
+    
+    // Parse office hours
+    const [startHour, startMin] = String(settings.officeStartTime).split(":").map(Number);
+    const [endHour, endMin] = String(settings.officeEndTime).split(":").map(Number);
+    
+    // Calculate window times (in minutes from midnight)
+    const IN_START = startHour * 60 + startMin;  // Office start time
+    const IN_CLOSE = IN_START + (parseInt(settings.signInWindowMins) || 60);  // Start + window
+    const OUT_START = endHour * 60 + endMin - (parseInt(settings.signOutGraceMins) || 10);  // End - grace
+    const OUT_CLOSE = endHour * 60 + endMin + 60;  // End + 1 hour
 
     inBtn.style.display  = "none";
     outBtn.style.display = "none";
@@ -388,15 +396,17 @@ function controlButtons(rows){
             // Normal sign in window - show button
             inBtn.style.display = "inline-block";
 
-        } else if(mins < IN_START){
-            showStatusBox("🔴 Sign In button opens at 8:15 AM", "red");
+    } else if(mins < IN_START){
+            const startDisplay = settings.officeStartTime;
+            const [winMins] = String(settings.signInWindowMins).split(":").map(Number);
+            showStatusBox("🔴 Sign In button opens at " + startDisplay, "red");
 
         } else if(mins > IN_CLOSE && mins < OUT_START){
             // Very late, BEFORE 3:30 - show message only, NO button yet
             showStatusBox(
                 "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
                 "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                "✅ আপনার Sign Out বাটন সক্রিয় হবে বিকাল ৩:৩০ টায়।",
+                "✅ আপনার Sign Out বাটন সক্রিয় হবে " + settings.officeEndTime + " এর আগে।",
             "red");
             // DO NOT show button before 3:30
 
@@ -410,7 +420,7 @@ function controlButtons(rows){
             outBtn.style.display = "inline-block";
 
         } else {
-            showStatusBox("🔴 আজকের উপস্থিতির সময় শেষ। আগামীকাল সকাল ৮:১৫ থেকে শুরু হবে।", "red");
+            showStatusBox("🔴 আজকের উপস্থিতির সময় শেষ। আগামীকাল " + settings.officeStartTime + " থেকে শুরু হবে।", "red");
         }
         return;
     }
@@ -580,6 +590,34 @@ if("Notification" in window &&
 
 // ================= START =================
 checkDeviceAndLoad();
+
+// Function to fetch settings synchronously
+function getSettingsSync(){
+    return fetch("https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec?action=getsettings")
+        .then(r => r.json())
+        .then(settings => {
+            // Convert Date objects to proper format (same as admin)
+            let result = { ...settings };
+            
+            // Fix officeStartTime if it's a date object
+            if(typeof settings.officeStartTime === 'object' && settings.officeStartTime){
+                const d = new Date(settings.officeStartTime);
+                const hours = String(d.getHours()).padStart(2, "0");
+                const mins = String(d.getMinutes()).padStart(2, "0");
+                result.officeStartTime = hours + ":" + mins;
+            }
+            
+            // Fix officeEndTime if it's a date object
+            if(typeof settings.officeEndTime === 'object' && settings.officeEndTime){
+                const d = new Date(settings.officeEndTime);
+                const hours = String(d.getHours()).padStart(2, "0");
+                const mins = String(d.getMinutes()).padStart(2, "0");
+                result.officeEndTime = hours + ":" + mins;
+            }
+            
+            return result;
+        });
+}
 
 </script>
 </body>
