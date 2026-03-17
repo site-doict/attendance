@@ -674,13 +674,46 @@ function loadSettings(){
     fetch(`${WEB_APP_URL}?action=getsettings`)
     .then(r => r.json())
     .then(settings => {
-        document.getElementById("officeStartTime").value = settings.officeStartTime || "09:00";
-        document.getElementById("officeEndTime").value = settings.officeEndTime || "17:00";
+        // Time fields - format HH:MM
+        let startTime = settings.officeStartTime || "09:00";
+        if(startTime.includes(":")) startTime = startTime.substring(0, 5);
+        document.getElementById("officeStartTime").value = startTime;
+        
+        let endTime = settings.officeEndTime || "17:00";
+        if(endTime.includes(":")) endTime = endTime.substring(0, 5);
+        document.getElementById("officeEndTime").value = endTime;
+        
+        // Number fields
         document.getElementById("signInGraceMins").value = settings.signInGraceMins || 15;
         document.getElementById("signInWindowMins").value = settings.signInWindowMins || 60;
         document.getElementById("signOutGraceMins").value = settings.signOutGraceMins || 10;
-        document.getElementById("officeClosedFrom").value = settings.officeClosedFrom || "";
-        document.getElementById("officeClosedTo").value = settings.officeClosedTo || "";
+        
+        // Date fields - format YYYY-MM-DD
+        let closedFrom = settings.officeClosedFrom || "";
+        if(closedFrom){
+            // If it's in M/D/YYYY format, convert to YYYY-MM-DD
+            if(closedFrom.includes("/")){
+                let parts = closedFrom.split("/");
+                if(parts.length === 3){
+                    closedFrom = parts[2] + "-" + String(parts[0]).padStart(2,"0") + "-" + String(parts[1]).padStart(2,"0");
+                }
+            }
+        }
+        document.getElementById("officeClosedFrom").value = closedFrom;
+        
+        let closedTo = settings.officeClosedTo || "";
+        if(closedTo){
+            // If it's in M/D/YYYY format, convert to YYYY-MM-DD
+            if(closedTo.includes("/")){
+                let parts = closedTo.split("/");
+                if(parts.length === 3){
+                    closedTo = parts[2] + "-" + String(parts[0]).padStart(2,"0") + "-" + String(parts[1]).padStart(2,"0");
+                }
+            }
+        }
+        document.getElementById("officeClosedTo").value = closedTo;
+        
+        // Select fields
         document.getElementById("emailsPaused").value = settings.emailsPaused || "no";
         document.getElementById("customHolidays").value = settings.customHolidays || "Friday,Saturday";
     })
@@ -707,10 +740,23 @@ function saveSettings(type){
             {key: "signOutGraceMins", value: document.getElementById("signOutGraceMins").value}
         ];
         statusId = "status-grace";
-    } else if(type === "closure"){
+} else if(type === "closure"){
+        let fromVal = document.getElementById("officeClosedFrom").value;
+        let toVal = document.getElementById("officeClosedTo").value;
+        
+        // Convert YYYY-MM-DD to M/D/YYYY format for storage
+        if(fromVal){
+            let parts = fromVal.split("-");
+            fromVal = parseInt(parts[1]) + "/" + parseInt(parts[2]) + "/" + parts[0];
+        }
+        if(toVal){
+            let parts = toVal.split("-");
+            toVal = parseInt(parts[1]) + "/" + parseInt(parts[2]) + "/" + parts[0];
+        }
+        
         updates = [
-            {key: "officeClosedFrom", value: document.getElementById("officeClosedFrom").value},
-            {key: "officeClosedTo", value: document.getElementById("officeClosedTo").value}
+            {key: "officeClosedFrom", value: fromVal},
+            {key: "officeClosedTo", value: toVal}
         ];
         statusId = "status-closure";
     } else if(type === "email"){
