@@ -1,626 +1,760 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
 
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-body {
-    font-family: Arial, sans-serif;
-    background: #f2f4f7;
-    padding: 15px;
-}
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f4f7;
+            padding: 15px;
+        }
 
-/* ===== HEADER ===== */
-.header {
-    max-width: 1200px;
-    margin: 0 auto 15px;
-    background: white;
-    padding: 15px 25px;
-    border-radius: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,.1);
-}
+        /* ===== HEADER ===== */
+        .header {
+            max-width: 1200px;
+            margin: 0 auto 15px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+        }
 
-h2 { color: #0056b3; font-size: 20px; }
+        h2 {
+            color: #0056b3;
+            font-size: 20px;
+        }
 
-.header-btns {
-    display: flex;
-    gap: 10px;
-}
+        .header-btns {
+            display: flex;
+            gap: 10px;
+        }
 
-.btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-}
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
 
-.btn-primary { background: #0056b3; color: white; }
-.btn-primary:hover { background: #004099; }
-.btn-danger { background: #dc3545; color: white; }
-.btn-danger:hover { background: #b02a37; }
-.btn-success { background: #28a745; color: white; }
-.btn-success:hover { background: #1e7e34; }
+        .btn-primary {
+            background: #0056b3;
+            color: white;
+        }
 
-/* ===== TABS ===== */
-.tabs {
-    max-width: 1200px;
-    margin: 0 auto 15px;
-    display: flex;
-    gap: 5px;
-    background: white;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.1);
-}
+        .btn-primary:hover {
+            background: #004099;
+        }
 
-.tab {
-    flex: 1;
-    padding: 10px;
-    background: #f0f0f0;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    color: #666;
-}
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
 
-.tab.active {
-    background: #0056b3;
-    color: white;
-}
+        .btn-danger:hover {
+            background: #b02a37;
+        }
 
-/* ===== TAB CONTENT ===== */
-.tab-content {
-    display: none;
-}
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
 
-.tab-content.active {
-    display: block;
-}
+        .btn-success:hover {
+            background: #1e7e34;
+        }
 
-/* ===== SETTINGS PANEL ===== */
-.settings-grid {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 15px;
-}
+        /* ===== TABS ===== */
+        .tabs {
+            max-width: 1200px;
+            margin: 0 auto 15px;
+            display: flex;
+            gap: 5px;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+        }
 
-.settings-card {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.1);
-}
+        .tab {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+        }
 
-.settings-card h3 {
-    color: #0056b3;
-    margin-bottom: 15px;
-    font-size: 16px;
-    border-bottom: 2px solid #0056b3;
-    padding-bottom: 8px;
-}
+        .tab.active {
+            background: #0056b3;
+            color: white;
+        }
 
-.form-group {
-    margin-bottom: 15px;
-}
+        /* ===== TAB CONTENT ===== */
+        .tab-content {
+            display: none;
+        }
 
-.form-group label {
-    display: block;
-    font-size: 13px;
-    color: #555;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
+        .tab-content.active {
+            display: block;
+        }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-}
+        /* ===== SETTINGS PANEL ===== */
+        .settings-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 15px;
+        }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #0056b3;
-}
+        .settings-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+        }
 
-.form-group small {
-    display: block;
-    color: #888;
-    font-size: 12px;
-    margin-top: 3px;
-}
+        .settings-card h3 {
+            color: #0056b3;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 8px;
+        }
 
-.save-status {
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    margin-top: 10px;
-    display: none;
-}
+        .form-group {
+            margin-bottom: 15px;
+        }
 
-.save-status.success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
 
-.save-status.error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
 
-/* ===== EMAIL COMPOSER ===== */
-.email-card {
-    max-width: 800px;
-    margin: 0 auto;
-    background: white;
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.1);
-}
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #0056b3;
+        }
 
-/* ===== SUMMARY CARDS ===== */
-.summary-cards {
-    max-width: 1200px;
-    margin: 0 auto 15px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 10px;
-}
+        .form-group small {
+            display: block;
+            color: #888;
+            font-size: 12px;
+            margin-top: 3px;
+        }
 
-.card {
-    background: white;
-    border-radius: 10px;
-    padding: 15px 10px;
-    text-align: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,.08);
-    border-top: 4px solid #ccc;
-}
+        .save-status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
 
-.card .count { font-size: 28px; font-weight: bold; }
-.card .label { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.3; }
+        .save-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
 
-.card.present  { border-color: #28a745; } .card.present  .count { color: #28a745; }
-.card.late     { border-color: #e67e00; } .card.late     .count { color: #e67e00; }
-.card.early    { border-color: #e67e00; } .card.early    .count { color: #e67e00; }
-.card.verylate { border-color: #dc3545; } .card.verylate .count { color: #dc3545; }
-.card.absent   { border-color: #dc3545; } .card.absent   .count { color: #dc3545; }
-.card.nosign   { border-color: #ffc107; } .card.nosign   .count { color: #856404; }
-.card.total    { border-color: #0056b3; } .card.total    .count { color: #0056b3; }
+        .save-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
 
-/* ===== FILTERS ===== */
-.filters {
-    max-width: 1200px;
-    margin: 0 auto 15px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-}
+        /* ===== EMAIL COMPOSER ===== */
+        .email-card {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+        }
 
-.filters input, .filters select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 13px;
-}
+        /* ===== SUMMARY CARDS ===== */
+        .summary-cards {
+            max-width: 1200px;
+            margin: 0 auto 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
 
-/* ===== TABLE ===== */
-.table-box {
-    max-width: 1200px;
-    margin: 0 auto;
-    background: white;
-    border-radius: 10px;
-    overflow-x: auto;
-    box-shadow: 0 4px 10px rgba(0,0,0,.1);
-}
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 10px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+            border-top: 4px solid #ccc;
+        }
 
-table { width: 100%; border-collapse: collapse; }
-th, td { border: 1px solid #eee; padding: 10px; font-size: 13px; text-align: center; }
-th { background: #0056b3; color: white; white-space: nowrap; position: sticky; top: 0; }
-tr:nth-child(even) { background: #f9f9f9; }
-tr:hover { background: #eef4ff; }
+        .card .count {
+            font-size: 28px;
+            font-weight: bold;
+        }
 
-.badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: bold;
-    color: white;
-}
+        .card .label {
+            font-size: 11px;
+            color: #555;
+            margin-top: 4px;
+            line-height: 1.3;
+        }
 
-.badge-present   { background: #28a745; }
-.badge-late      { background: #e67e00; }
-.badge-early     { background: #e67e00; }
-.badge-verylate  { background: #dc3545; }
-.badge-absent    { background: #dc3545; }
-.badge-nosignout { background: #ffc107; color: #333; }
-.badge-default   { background: #888; }
+        .card.present {
+            border-color: #28a745;
+        }
 
-#loader {
-    text-align: center;
-    padding: 40px;
-    font-size: 16px;
-    color: #555;
-}
+        .card.present .count {
+            color: #28a745;
+        }
 
-.no-data {
-    text-align: center;
-    padding: 40px;
-    color: #888;
-}
-</style>
+        .card.late {
+            border-color: #e67e00;
+        }
+
+        .card.late .count {
+            color: #e67e00;
+        }
+
+        .card.early {
+            border-color: #e67e00;
+        }
+
+        .card.early .count {
+            color: #e67e00;
+        }
+
+        .card.verylate {
+            border-color: #dc3545;
+        }
+
+        .card.verylate .count {
+            color: #dc3545;
+        }
+
+        .card.absent {
+            border-color: #dc3545;
+        }
+
+        .card.absent .count {
+            color: #dc3545;
+        }
+
+        .card.nosign {
+            border-color: #ffc107;
+        }
+
+        .card.nosign .count {
+            color: #856404;
+        }
+
+        .card.total {
+            border-color: #0056b3;
+        }
+
+        .card.total .count {
+            color: #0056b3;
+        }
+
+        /* ===== FILTERS ===== */
+        .filters {
+            max-width: 1200px;
+            margin: 0 auto 15px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filters input,
+        .filters select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        /* ===== TABLE ===== */
+        .table-box {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, .1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #eee;
+            padding: 10px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        th {
+            background: #0056b3;
+            color: white;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        tr:hover {
+            background: #eef4ff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .badge-present {
+            background: #28a745;
+        }
+
+        .badge-late {
+            background: #e67e00;
+        }
+
+        .badge-early {
+            background: #e67e00;
+        }
+
+        .badge-verylate {
+            background: #dc3545;
+        }
+
+        .badge-absent {
+            background: #dc3545;
+        }
+
+        .badge-nosignout {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .badge-default {
+            background: #888;
+        }
+
+        #loader {
+            text-align: center;
+            padding: 40px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+    </style>
 </head>
 
 <body>
 
-<!-- ===== HEADER ===== -->
-<div class="header">
-    <h2>🏢 Admin Dashboard</h2>
-    <div class="header-btns">
-        <span id="lastUpdated" style="font-size:12px;color:#888;">⏳ Loading...</span>
-        <button class="btn btn-danger" onclick="logout()">Logout</button>
-    </div>
-</div>
-
-<!-- ===== TABS ===== -->
-<div class="tabs">
-    <button class="tab active" onclick="showTab('attendance')">📊 Attendance</button>
-    <button class="tab" onclick="showTab('settings')">⚙️ Settings</button>
-    <button class="tab" onclick="showTab('email')">📧 Send Email</button>
-</div>
-
-<!-- ===== TAB: ATTENDANCE ===== -->
-<div id="tab-attendance" class="tab-content active">
-    
-    <!-- Summary Cards -->
-    <div class="summary-cards">
-        <div class="card total">
-            <div class="count" id="cTotal">-</div>
-            <div class="label">Total Records</div>
-        </div>
-        <div class="card present">
-            <div class="count" id="cPresent">-</div>
-            <div class="label">Present<br>উপস্থিত</div>
-        </div>
-        <div class="card late">
-            <div class="count" id="cLate">-</div>
-            <div class="label">Late Entry<br>দেরিতে প্রবেশ</div>
-        </div>
-        <div class="card early">
-            <div class="count" id="cEarly">-</div>
-            <div class="label">Early Leave<br>আগে প্রস্থান</div>
-        </div>
-        <div class="card verylate">
-            <div class="count" id="cVLate">-</div>
-            <div class="label">Very Late<br>অনেক দেরি</div>
-        </div>
-        <div class="card absent">
-            <div class="count" id="cAbsent">-</div>
-            <div class="label">Absent<br>অনুপস্থিত</div>
-        </div>
-        <div class="card nosign">
-            <div class="count" id="cNoSign">-</div>
-            <div class="label">No Sign Out<br>Sign Out নেই</div>
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <h2>🏢 Admin Dashboard</h2>
+        <div class="header-btns">
+            <span id="lastUpdated" style="font-size:12px;color:#888;">⏳ Loading...</span>
+            <button class="btn btn-danger" onclick="logout()">Logout</button>
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="filters">
-        <input type="text" id="searchInput" placeholder="🔍 Search by name or ID..." oninput="applyFilters()" style="min-width:200px;">
-        <select id="statusFilter" onchange="applyFilters()">
-            <option value="">All Status</option>
-            <option value="Present">Present</option>
-            <option value="Late Entry">Late Entry</option>
-            <option value="Early Leave">Early Leave</option>
-            <option value="Very Late">Very Late</option>
-            <option value="Absent">Absent</option>
-            <option value="No Sign Out">No Sign Out</option>
-        </select>
-        <label style="font-size:12px;color:#555;">From:</label>
-        <input type="date" id="dateFrom" onchange="applyFilters()">
-        <label style="font-size:12px;color:#555;">To:</label>
-        <input type="date" id="dateTo" onchange="applyFilters()">
-        <button class="btn btn-primary" onclick="clearFilters()" style="padding:8px 12px;font-size:13px;">✖ Clear</button>
-        <button class="btn btn-success" onclick="loadData()" style="padding:8px 12px;font-size:13px;">🔄 Refresh</button>
+    <!-- ===== TABS ===== -->
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('attendance')">📊 Attendance</button>
+        <button class="tab" onclick="showTab('settings')">⚙️ Settings</button>
+        <button class="tab" onclick="showTab('email')">📧 Send Email</button>
     </div>
 
-    <!-- Table -->
-    <div class="table-box">
-        <div id="loader">🔄 Loading attendance data...</div>
-        <table id="mainTable" style="display:none;">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Date</th>
-                    <th>Sign In</th>
-                    <th>Sign Out</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-        </table>
-        <div id="noData" class="no-data" style="display:none;">⚠️ No records found.</div>
-    </div>
+    <!-- ===== TAB: ATTENDANCE ===== -->
+    <div id="tab-attendance" class="tab-content active">
 
-</div>
-
-<!-- ===== TAB: SETTINGS ===== -->
-<div id="tab-settings" class="tab-content">
-    
-    <div class="settings-grid">
-        
-        <!-- Office Hours -->
-        <div class="settings-card">
-            <h3>🕐 Office Hours</h3>
-            <div class="form-group">
-                <label>Office Start Time</label>
-                <input type="time" id="officeStartTime">
-                <small>When does office officially start?</small>
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="card total">
+                <div class="count" id="cTotal">-</div>
+                <div class="label">Total Records</div>
             </div>
-            <div class="form-group">
-                <label>Office End Time</label>
-                <input type="time" id="officeEndTime">
-                <small>When does office officially end?</small>
+            <div class="card present">
+                <div class="count" id="cPresent">-</div>
+                <div class="label">Present<br>উপস্থিত</div>
             </div>
-            <button class="btn btn-success" onclick="saveSettings('hours')">💾 Save Hours</button>
-            <div class="save-status" id="status-hours"></div>
+            <div class="card late">
+                <div class="count" id="cLate">-</div>
+                <div class="label">Late Entry<br>দেরিতে প্রবেশ</div>
+            </div>
+            <div class="card early">
+                <div class="count" id="cEarly">-</div>
+                <div class="label">Early Leave<br>আগে প্রস্থান</div>
+            </div>
+            <div class="card verylate">
+                <div class="count" id="cVLate">-</div>
+                <div class="label">Very Late<br>অনেক দেরি</div>
+            </div>
+            <div class="card absent">
+                <div class="count" id="cAbsent">-</div>
+                <div class="label">Absent<br>অনুপস্থিত</div>
+            </div>
+            <div class="card nosign">
+                <div class="count" id="cNoSign">-</div>
+                <div class="label">No Sign Out<br>Sign Out নেই</div>
+            </div>
         </div>
 
-        <!-- Grace Periods -->
-        <div class="settings-card">
-            <h3>⏱️ Grace Periods</h3>
-            <div class="form-group">
-                <label>Sign In Grace (minutes)</label>
-                <input type="number" id="signInGraceMins" min="0" max="120">
-                <small>Late Entry after: Start Time + Grace</small>
-            </div>
-            <div class="form-group">
-                <label>Sign In Window (minutes)</label>
-                <input type="number" id="signInWindowMins" min="30" max="180">
-                <small>Button closes after: Start Time + Window</small>
-            </div>
-            <div class="form-group">
-                <label>Sign Out Grace (minutes)</label>
-                <input type="number" id="signOutGraceMins" min="0" max="120">
-                <small>Early Leave before: End Time - Grace</small>
-            </div>
-            <button class="btn btn-success" onclick="saveSettings('grace')">💾 Save Grace</button>
-            <div class="save-status" id="status-grace"></div>
-        </div>
-
-        <!-- Office Closure -->
-        <div class="settings-card">
-            <h3>🏖️ Office Closure</h3>
-            <div class="form-group">
-                <label>Closed From</label>
-                <input type="date" id="officeClosedFrom">
-            </div>
-            <div class="form-group">
-                <label>Closed To</label>
-                <input type="date" id="officeClosedTo">
-                <small>Office closed during this period</small>
-            </div>
-            <button class="btn btn-success" onclick="saveSettings('closure')">💾 Save Closure</button>
-            <button class="btn btn-danger" onclick="clearClosure()" style="margin-left:5px;">✖ Clear</button>
-            <div class="save-status" id="status-closure"></div>
-        </div>
-
-        <!-- Email Control -->
-        <div class="settings-card">
-            <h3>📧 Email Control</h3>
-            <div class="form-group">
-                <label>Pause All Emails?</label>
-                <select id="emailsPaused">
-                    <option value="no">No - Send Normally</option>
-                    <option value="yes">Yes - Pause All Emails</option>
-                </select>
-                <small>Stop daily & holiday emails temporarily</small>
-            </div>
-            <button class="btn btn-success" onclick="saveSettings('email')">💾 Save Email Setting</button>
-            <div class="save-status" id="status-email"></div>
-        </div>
-
-        <!-- Weekend/Holiday Settings -->
-        <div class="settings-card">
-            <h3>🏖️ Weekend/Holidays</h3>
-            <div class="form-group">
-                <label>Weekly Off Days</label>
-                <input type="text" id="customHolidays" placeholder="Friday,Saturday">
-                <small>Enter day names separated by commas</small>
-            </div>
-            <button class="btn btn-success" onclick="saveSettings('holidays')">💾 Save Holidays</button>
-            <div class="save-status" id="status-holidays"></div>
-        </div>
-
-    </div>
-
-</div>
-
-<!-- ===== TAB: SEND EMAIL ===== -->
-<div id="tab-email" class="tab-content">
-    
-    <div class="email-card">
-        <h3 style="color:#0056b3;margin-bottom:20px;border-bottom:2px solid #0056b3;padding-bottom:10px;">📧 Send Custom Email</h3>
-        
-        <div class="form-group">
-            <label>Send To</label>
-            <select id="emailRecipients">
-                <option value="all">All Users (Staff + Admins)</option>
-                <option value="staff">All Staff Only</option>
-                <option value="custom">Specific IDs (comma separated)</option>
+        <!-- Filters -->
+        <div class="filters">
+            <input type="text" id="searchInput" placeholder="🔍 Search by name or ID..." oninput="applyFilters()"
+                style="min-width:200px;">
+            <select id="statusFilter" onchange="applyFilters()">
+                <option value="">All Status</option>
+                <option value="Present">Present</option>
+                <option value="Late Entry">Late Entry</option>
+                <option value="Early Leave">Early Leave</option>
+                <option value="Very Late">Very Late</option>
+                <option value="Absent">Absent</option>
+                <option value="No Sign Out">No Sign Out</option>
             </select>
+            <label style="font-size:12px;color:#555;">From:</label>
+            <input type="date" id="dateFrom" onchange="applyFilters()">
+            <label style="font-size:12px;color:#555;">To:</label>
+            <input type="date" id="dateTo" onchange="applyFilters()">
+            <button class="btn btn-primary" onclick="clearFilters()" style="padding:8px 12px;font-size:13px;">✖
+                Clear</button>
+            <button class="btn btn-success" onclick="loadData()" style="padding:8px 12px;font-size:13px;">🔄
+                Refresh</button>
         </div>
 
-        <div class="form-group" id="customIdsGroup" style="display:none;">
-            <label>Employee IDs (comma separated)</label>
-            <input type="text" id="customIds" placeholder="1001, 1002, 1003">
-            <small>Enter employee IDs separated by commas</small>
+        <!-- Table -->
+        <div class="table-box">
+            <div id="loader">🔄 Loading attendance data...</div>
+            <table id="mainTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Sign In</th>
+                        <th>Sign Out</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+            <div id="noData" class="no-data" style="display:none;">⚠️ No records found.</div>
         </div>
 
-        <div class="form-group">
-            <label>Subject</label>
-            <input type="text" id="emailSubject" placeholder="Enter email subject">
-        </div>
-
-        <div class="form-group">
-            <label>Message</label>
-            <textarea id="emailMessage" rows="8" placeholder="Type your message here..."></textarea>
-        </div>
-
-        <button class="btn btn-success" onclick="sendCustomEmail()">📤 Send Email</button>
-        <div class="save-status" id="status-sendmail"></div>
     </div>
 
-</div>
+    <!-- ===== TAB: SETTINGS ===== -->
+    <div id="tab-settings" class="tab-content">
 
-<script>
-// =============================================
-// CONFIG
-// =============================================
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
+        <div class="settings-grid">
 
-// Auth check
-const role = localStorage.getItem("role");
-if(role !== "admin" && role !== "superadmin"){
-    location.href = "index.html";
-}
+            <!-- Office Hours -->
+            <div class="settings-card">
+                <h3>🕐 Office Hours</h3>
+                <div class="form-group">
+                    <label>Office Start Time</label>
+                    <input type="time" id="officeStartTime">
+                    <small>When does office officially start?</small>
+                </div>
+                <div class="form-group">
+                    <label>Office End Time</label>
+                    <input type="time" id="officeEndTime">
+                    <small>When does office officially end?</small>
+                </div>
+                <button class="btn btn-success" onclick="saveSettings('hours')">💾 Save Hours</button>
+                <div class="save-status" id="status-hours"></div>
+            </div>
 
-let allRows = [];
+            <!-- Grace Periods -->
+            <div class="settings-card">
+                <h3>⏱️ Grace Periods</h3>
+                <div class="form-group">
+                    <label>Sign In Grace (minutes)</label>
+                    <input type="number" id="signInGraceMins" min="0" max="120">
+                    <small>Late Entry after: Start Time + Grace</small>
+                </div>
+                <div class="form-group">
+                    <label>Sign In Window (minutes)</label>
+                    <input type="number" id="signInWindowMins" min="30" max="180">
+                    <small>Button closes after: Start Time + Window</small>
+                </div>
+                <div class="form-group">
+                    <label>Sign Out Grace (minutes)</label>
+                    <input type="number" id="signOutGraceMins" min="0" max="120">
+                    <small>Early Leave before: End Time - Grace</small>
+                </div>
+                <button class="btn btn-success" onclick="saveSettings('grace')">💾 Save Grace</button>
+                <div class="save-status" id="status-grace"></div>
+            </div>
 
-// =============================================
-// TAB SWITCHING
-// =============================================
-function showTab(tabName){
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    
-    event.target.classList.add('active');
-    document.getElementById('tab-' + tabName).classList.add('active');
-    
-    if(tabName === 'attendance'){
-        loadData();
-    } else if(tabName === 'settings'){
-        loadSettings();
-    }
-}
+            <!-- Office Closure -->
+            <div class="settings-card">
+                <h3>🏖️ Office Closure</h3>
+                <div class="form-group">
+                    <label>Closed From</label>
+                    <input type="date" id="officeClosedFrom">
+                </div>
+                <div class="form-group">
+                    <label>Closed To</label>
+                    <input type="date" id="officeClosedTo">
+                    <small>Office closed during this period</small>
+                </div>
+                <button class="btn btn-success" onclick="saveSettings('closure')">💾 Save Closure</button>
+                <button class="btn btn-danger" onclick="clearClosure()" style="margin-left:5px;">✖ Clear</button>
+                <div class="save-status" id="status-closure"></div>
+            </div>
 
-// =============================================
-// LOAD ATTENDANCE DATA
-// =============================================
-function loadData(){
-    const loader = document.getElementById("loader");
-    const table = document.getElementById("mainTable");
-    const noData = document.getElementById("noData");
+            <!-- Email Control -->
+            <div class="settings-card">
+                <h3>📧 Email Control</h3>
+                <div class="form-group">
+                    <label>Pause All Emails?</label>
+                    <select id="emailsPaused">
+                        <option value="no">No - Send Normally</option>
+                        <option value="yes">Yes - Pause All Emails</option>
+                    </select>
+                    <small>Stop daily & holiday emails temporarily</small>
+                </div>
+                <button class="btn btn-success" onclick="saveSettings('email')">💾 Save Email Setting</button>
+                <div class="save-status" id="status-email"></div>
+            </div>
 
-    loader.style.display = "block";
-    table.style.display = "none";
-    noData.style.display = "none";
+            <!-- Weekend/Holiday Settings -->
+            <div class="settings-card">
+                <h3>🏖️ Weekend/Holidays</h3>
+                <div class="form-group">
+                    <label>Weekly Off Days</label>
+                    <input type="text" id="customHolidays" placeholder="Friday,Saturday">
+                    <small>Enter day names separated by commas</small>
+                </div>
+                <button class="btn btn-success" onclick="saveSettings('holidays')">💾 Save Holidays</button>
+                <div class="save-status" id="status-holidays"></div>
+            </div>
 
-    fetch(`${WEB_APP_URL}?action=admindata`, { redirect: "follow" })
-    .then(r => r.text())
-    .then(text => JSON.parse(text))
-    .then(rows => {
-        allRows = rows || [];
-        document.getElementById("lastUpdated").innerText = "Updated: " + new Date().toLocaleTimeString();
-        applyFilters();
-        loader.style.display = "none";
-    })
-    .catch(err => {
-        console.error("Load error:", err);
-        loader.innerText = "❌ Failed to load data.";
-    });
-}
+        </div>
 
-function applyFilters(){
-    const search = document.getElementById("searchInput").value.toLowerCase();
-    const status = document.getElementById("statusFilter").value;
-    const dateFrom = document.getElementById("dateFrom").value;
-    const dateTo = document.getElementById("dateTo").value;
+    </div>
 
-    let filtered = allRows.filter(r => {
-        const matchSearch = !search ||
-            String(r.id || "").toLowerCase().includes(search) ||
-            String(r.name || "").toLowerCase().includes(search);
+    <!-- ===== TAB: SEND EMAIL ===== -->
+    <div id="tab-email" class="tab-content">
 
-        const matchStatus = !status || String(r.status || "").includes(status);
+        <div class="email-card">
+            <h3 style="color:#0056b3;margin-bottom:20px;border-bottom:2px solid #0056b3;padding-bottom:10px;">📧 Send
+                Custom Email</h3>
 
-        const rowDate = parseSheetDate(String(r.date || ""));
-        const fromDate = dateFrom ? new Date(dateFrom) : null;
-        const toDate = dateTo ? new Date(dateTo) : null;
-        if(toDate) toDate.setHours(23, 59, 59);
+            <div class="form-group">
+                <label>Send To</label>
+                <select id="emailRecipients">
+                    <option value="all">All Users (Staff + Admins)</option>
+                    <option value="staff">All Staff Only</option>
+                    <option value="custom">Specific IDs (comma separated)</option>
+                </select>
+            </div>
 
-        const matchDate = (!fromDate && !toDate) ||
-            (rowDate && (!fromDate || rowDate >= fromDate) && (!toDate || rowDate <= toDate));
+            <div class="form-group" id="customIdsGroup" style="display:none;">
+                <label>Employee IDs (comma separated)</label>
+                <input type="text" id="customIds" placeholder="1001, 1002, 1003">
+                <small>Enter employee IDs separated by commas</small>
+            </div>
 
-        return matchSearch && matchStatus && matchDate;
-    });
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="emailSubject" placeholder="Enter email subject">
+            </div>
 
-    renderTable(filtered);
-    updateCards(filtered);
-}
+            <div class="form-group">
+                <label>Message</label>
+                <textarea id="emailMessage" rows="8" placeholder="Type your message here..."></textarea>
+            </div>
 
-function parseSheetDate(d){
-    if(!d) return null;
-    const parts = d.split("/");
-    if(parts.length !== 3) return null;
-    return new Date(parseInt(parts[2]), parseInt(parts[0])-1, parseInt(parts[1]));
-}
+            <button class="btn btn-success" onclick="sendCustomEmail()">📤 Send Email</button>
+            <div class="save-status" id="status-sendmail"></div>
+        </div>
 
-function clearFilters(){
-    document.getElementById("searchInput").value = "";
-    document.getElementById("statusFilter").value = "";
-    document.getElementById("dateFrom").value = "";
-    document.getElementById("dateTo").value = "";
-    applyFilters();
-}
+    </div>
 
-function renderTable(rows){
-    const tbody = document.getElementById("tbody");
-    const table = document.getElementById("mainTable");
-    const noData = document.getElementById("noData");
+    <script>
+        // =============================================
+        // CONFIG
+        // =============================================
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
-    tbody.innerHTML = "";
+        // Auth check
+        const role = localStorage.getItem("role");
+        if (role !== "admin" && role !== "superadmin") {
+            location.href = "index.html";
+        }
 
-    if(!rows || rows.length === 0){
-        table.style.display = "none";
-        noData.style.display = "block";
-        return;
-    }
+        let allRows = [];
 
-    table.style.display = "table";
-    noData.style.display = "none";
+        // =============================================
+        // TAB SWITCHING
+        // =============================================
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-    const sorted = [...rows].reverse();
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
 
-    sorted.forEach(r => {
-        const status = String(r.status || "").trim();
-        const badgeCls = getBadgeClass(status);
+            if (tabName === 'attendance') {
+                loadData();
+            } else if (tabName === 'settings') {
+                loadSettings();
+            }
+        }
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
+        // =============================================
+        // LOAD ATTENDANCE DATA
+        // =============================================
+        function loadData() {
+            const loader = document.getElementById("loader");
+            const table = document.getElementById("mainTable");
+            const noData = document.getElementById("noData");
+
+            loader.style.display = "block";
+            table.style.display = "none";
+            noData.style.display = "none";
+
+            fetch(`${WEB_APP_URL}?action=admindata`, { redirect: "follow" })
+                .then(r => r.text())
+                .then(text => JSON.parse(text))
+                .then(rows => {
+                    allRows = rows || [];
+                    document.getElementById("lastUpdated").innerText = "Updated: " + new Date().toLocaleTimeString();
+                    applyFilters();
+                    loader.style.display = "none";
+                })
+                .catch(err => {
+                    console.error("Load error:", err);
+                    loader.innerText = "❌ Failed to load data.";
+                });
+        }
+
+        function applyFilters() {
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const status = document.getElementById("statusFilter").value;
+            const dateFrom = document.getElementById("dateFrom").value;
+            const dateTo = document.getElementById("dateTo").value;
+
+            let filtered = allRows.filter(r => {
+                const matchSearch = !search ||
+                    String(r.id || "").toLowerCase().includes(search) ||
+                    String(r.name || "").toLowerCase().includes(search);
+
+                const matchStatus = !status || String(r.status || "").includes(status);
+
+                const rowDate = parseSheetDate(String(r.date || ""));
+                const fromDate = dateFrom ? new Date(dateFrom) : null;
+                const toDate = dateTo ? new Date(dateTo) : null;
+                if (toDate) toDate.setHours(23, 59, 59);
+
+                const matchDate = (!fromDate && !toDate) ||
+                    (rowDate && (!fromDate || rowDate >= fromDate) && (!toDate || rowDate <= toDate));
+
+                return matchSearch && matchStatus && matchDate;
+            });
+
+            renderTable(filtered);
+            updateCards(filtered);
+        }
+
+        function parseSheetDate(d) {
+            if (!d) return null;
+            const parts = d.split("/");
+            if (parts.length !== 3) return null;
+            return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+        }
+
+        function clearFilters() {
+            document.getElementById("searchInput").value = "";
+            document.getElementById("statusFilter").value = "";
+            document.getElementById("dateFrom").value = "";
+            document.getElementById("dateTo").value = "";
+            applyFilters();
+        }
+
+        function renderTable(rows) {
+            const tbody = document.getElementById("tbody");
+            const table = document.getElementById("mainTable");
+            const noData = document.getElementById("noData");
+
+            tbody.innerHTML = "";
+
+            if (!rows || rows.length === 0) {
+                table.style.display = "none";
+                noData.style.display = "block";
+                return;
+            }
+
+            table.style.display = "table";
+            noData.style.display = "none";
+
+            const sorted = [...rows].reverse();
+
+            sorted.forEach(r => {
+                const status = String(r.status || "").trim();
+                const badgeCls = getBadgeClass(status);
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
             <td style="font-size:11px;color:#777;">${r.timestamp || "---"}</td>
             <td><strong>${r.id || "---"}</strong></td>
             <td style="text-align:left;">${r.name || "---"}</td>
@@ -629,264 +763,265 @@ function renderTable(rows){
             <td>${r.outTime || "---"}</td>
             <td><span class="badge ${badgeCls}">${status || "---"}</span></td>
         `;
-        tbody.appendChild(tr);
-    });
-}
+                tbody.appendChild(tr);
+            });
+        }
 
-function getBadgeClass(status){
-    if(!status) return "badge-default";
-    const s = status.toLowerCase();
-    if(s === "present") return "badge-present";
-    if(s.includes("very late")) return "badge-verylate";
-    if(s.includes("late entry") && s.includes("early leave")) return "badge-verylate";
-    if(s.includes("late")) return "badge-late";
-    if(s.includes("early")) return "badge-early";
-    if(s === "absent") return "badge-absent";
-    if(s.includes("no sign out")) return "badge-nosignout";
-    return "badge-default";
-}
+        function getBadgeClass(status) {
+            if (!status) return "badge-default";
+            const s = status.toLowerCase();
+            if (s === "present") return "badge-present";
+            if (s.includes("very late")) return "badge-verylate";
+            if (s.includes("late entry") && s.includes("early leave")) return "badge-verylate";
+            if (s.includes("late")) return "badge-late";
+            if (s.includes("early")) return "badge-early";
+            if (s === "absent") return "badge-absent";
+            if (s.includes("no sign out")) return "badge-nosignout";
+            return "badge-default";
+        }
 
-function updateCards(rows){
-    const total = rows.length;
-    const present = rows.filter(r => r.status === "Present").length;
-    const late = rows.filter(r => r.status === "Late Entry").length;
-    const early = rows.filter(r => r.status && r.status.includes("Early Leave")).length;
-    const vlate = rows.filter(r => r.status && r.status.includes("Very Late")).length;
-    const absent = rows.filter(r => r.status === "Absent" || !r.status).length;
-    const nosign = rows.filter(r => 
-        String(r.status).includes("No Sign Out") || 
-        (String(r.outTime).replace(/^'+/, "").trim() === "---" && r.status !== "Absent")
-    ).length;
+        function updateCards(rows) {
+            const total = rows.length;
+            const present = rows.filter(r => r.status === "Present").length;
+            const late = rows.filter(r => r.status === "Late Entry").length;
+            const early = rows.filter(r => r.status && r.status.includes("Early Leave")).length;
+            const vlate = rows.filter(r => r.status && r.status.includes("Very Late")).length;
+            const absent = rows.filter(r => r.status === "Absent" || !r.status).length;
+            const nosign = rows.filter(r =>
+                String(r.status).includes("No Sign Out") ||
+                (String(r.outTime).replace(/^'+/, "").trim() === "---" && r.status !== "Absent")
+            ).length;
 
-    document.getElementById("cTotal").innerText = total;
-    document.getElementById("cPresent").innerText = present;
-    document.getElementById("cLate").innerText = late;
-    document.getElementById("cEarly").innerText = early;
-    document.getElementById("cVLate").innerText = vlate;
-    document.getElementById("cAbsent").innerText = absent;
-    document.getElementById("cNoSign").innerText = nosign;
-}
+            document.getElementById("cTotal").innerText = total;
+            document.getElementById("cPresent").innerText = present;
+            document.getElementById("cLate").innerText = late;
+            document.getElementById("cEarly").innerText = early;
+            document.getElementById("cVLate").innerText = vlate;
+            document.getElementById("cAbsent").innerText = absent;
+            document.getElementById("cNoSign").innerText = nosign;
+        }
 
-// =============================================
-// LOAD SETTINGS
-// =============================================
-function loadSettings(){
-    fetch(`${WEB_APP_URL}?action=getsettings`)
-    .then(r => r.json())
-    .then(settings => {
-        // Time fields - format HH:MM
-        let startTime = settings.officeStartTime || "09:00";
-        if(startTime.includes(":")) startTime = startTime.substring(0, 5);
-        document.getElementById("officeStartTime").value = startTime;
-        
-        let endTime = settings.officeEndTime || "17:00";
-        if(endTime.includes(":")) endTime = endTime.substring(0, 5);
-        document.getElementById("officeEndTime").value = endTime;
-        
-        // Number fields
-        document.getElementById("signInGraceMins").value = settings.signInGraceMins || 15;
-        document.getElementById("signInWindowMins").value = settings.signInWindowMins || 60;
-        document.getElementById("signOutGraceMins").value = settings.signOutGraceMins || 10;
-        
-        // Date fields - format YYYY-MM-DD
-        let closedFrom = settings.officeClosedFrom || "";
-        if(closedFrom){
-            // If it's in M/D/YYYY format, convert to YYYY-MM-DD
-            if(closedFrom.includes("/")){
-                let parts = closedFrom.split("/");
-                if(parts.length === 3){
-                    closedFrom = parts[2] + "-" + String(parts[0]).padStart(2,"0") + "-" + String(parts[1]).padStart(2,"0");
+        // =============================================
+        // LOAD SETTINGS
+        // =============================================
+        function loadSettings() {
+            fetch(`${WEB_APP_URL}?action=getsettings`)
+                .then(r => r.json())
+                .then(settings => {
+                    // Time fields - format HH:MM
+                    let startTime = settings.officeStartTime || "09:00";
+                    if (startTime.includes(":")) startTime = startTime.substring(0, 5);
+                    document.getElementById("officeStartTime").value = startTime;
+
+                    let endTime = settings.officeEndTime || "17:00";
+                    if (endTime.includes(":")) endTime = endTime.substring(0, 5);
+                    document.getElementById("officeEndTime").value = endTime;
+
+                    // Number fields
+                    document.getElementById("signInGraceMins").value = settings.signInGraceMins || 15;
+                    document.getElementById("signInWindowMins").value = settings.signInWindowMins || 60;
+                    document.getElementById("signOutGraceMins").value = settings.signOutGraceMins || 10;
+
+                    // Date fields - format YYYY-MM-DD
+                    let closedFrom = settings.officeClosedFrom || "";
+                    if (closedFrom) {
+                        // If it's in M/D/YYYY format, convert to YYYY-MM-DD
+                        if (closedFrom.includes("/")) {
+                            let parts = closedFrom.split("/");
+                            if (parts.length === 3) {
+                                closedFrom = parts[2] + "-" + String(parts[0]).padStart(2, "0") + "-" + String(parts[1]).padStart(2, "0");
+                            }
+                        }
+                    }
+                    document.getElementById("officeClosedFrom").value = closedFrom;
+
+                    let closedTo = settings.officeClosedTo || "";
+                    if (closedTo) {
+                        // If it's in M/D/YYYY format, convert to YYYY-MM-DD
+                        if (closedTo.includes("/")) {
+                            let parts = closedTo.split("/");
+                            if (parts.length === 3) {
+                                closedTo = parts[2] + "-" + String(parts[0]).padStart(2, "0") + "-" + String(parts[1]).padStart(2, "0");
+                            }
+                        }
+                    }
+                    document.getElementById("officeClosedTo").value = closedTo;
+
+                    // Select fields
+                    document.getElementById("emailsPaused").value = settings.emailsPaused || "no";
+                    document.getElementById("customHolidays").value = settings.customHolidays || "Friday,Saturday";
+                })
+                .catch(err => console.error("Failed to load settings:", err));
+        }
+
+        // =============================================
+        // SAVE SETTINGS
+        // =============================================
+        function saveSettings(type) {
+            let updates = [];
+            let statusId = "";
+
+            if (type === "hours") {
+                updates = [
+                    { key: "officeStartTime", value: document.getElementById("officeStartTime").value },
+                    { key: "officeEndTime", value: document.getElementById("officeEndTime").value }
+                ];
+                statusId = "status-hours";
+            } else if (type === "grace") {
+                updates = [
+                    { key: "signInGraceMins", value: document.getElementById("signInGraceMins").value },
+                    { key: "signInWindowMins", value: document.getElementById("signInWindowMins").value },
+                    { key: "signOutGraceMins", value: document.getElementById("signOutGraceMins").value }
+                ];
+                statusId = "status-grace";
+            } else if (type === "closure") {
+                let fromVal = document.getElementById("officeClosedFrom").value;
+                let toVal = document.getElementById("officeClosedTo").value;
+
+                // Convert YYYY-MM-DD to M/D/YYYY format for storage
+                if (fromVal) {
+                    let parts = fromVal.split("-");
+                    fromVal = parseInt(parts[1]) + "/" + parseInt(parts[2]) + "/" + parts[0];
                 }
-            }
-        }
-        document.getElementById("officeClosedFrom").value = closedFrom;
-        
-        let closedTo = settings.officeClosedTo || "";
-        if(closedTo){
-            // If it's in M/D/YYYY format, convert to YYYY-MM-DD
-            if(closedTo.includes("/")){
-                let parts = closedTo.split("/");
-                if(parts.length === 3){
-                    closedTo = parts[2] + "-" + String(parts[0]).padStart(2,"0") + "-" + String(parts[1]).padStart(2,"0");
+                if (toVal) {
+                    let parts = toVal.split("-");
+                    toVal = parseInt(parts[1]) + "/" + parseInt(parts[2]) + "/" + parts[0];
                 }
+
+                updates = [
+                    { key: "officeClosedFrom", value: fromVal },
+                    { key: "officeClosedTo", value: toVal }
+                ];
+                statusId = "status-closure";
+            } else if (type === "email") {
+                updates = [
+                    { key: "emailsPaused", value: document.getElementById("emailsPaused").value }
+                ];
+                statusId = "status-email";
+            } else if (type === "holidays") {
+                updates = [
+                    { key: "customHolidays", value: document.getElementById("customHolidays").value }
+                ];
+                statusId = "status-holidays";
             }
+
+            const statusEl = document.getElementById(statusId);
+            statusEl.style.display = "none";
+
+            let completed = 0;
+            updates.forEach(u => {
+                const fd = new FormData();
+                fd.append("type", "updatesettings");
+                fd.append("key", u.key);
+                fd.append("value", u.value);
+
+                fetch(WEB_APP_URL, { method: "POST", body: fd })
+                    .then(r => r.json())
+                    .then(d => {
+                        completed++;
+                        if (completed === updates.length) {
+                            statusEl.className = "save-status success";
+                            statusEl.innerText = "✅ Saved successfully!";
+                            statusEl.style.display = "block";
+                            setTimeout(() => {
+                                statusEl.style.display = "none";
+                                loadSettings(); // This reloads values from sheet
+                            }, 2000);
+                        }
+                    })
+                    .catch(err => {
+                        statusEl.className = "save-status error";
+                        statusEl.innerText = "❌ Save failed!";
+                        statusEl.style.display = "block";
+                    });
+            });
         }
-        document.getElementById("officeClosedTo").value = closedTo;
-        
-        // Select fields
-        document.getElementById("emailsPaused").value = settings.emailsPaused || "no";
-        document.getElementById("customHolidays").value = settings.customHolidays || "Friday,Saturday";
-    })
-    .catch(err => console.error("Failed to load settings:", err));
-}
 
-// =============================================
-// SAVE SETTINGS
-// =============================================
-function saveSettings(type){
-    let updates = [];
-    let statusId = "";
-
-    if(type === "hours"){
-        updates = [
-            {key: "officeStartTime", value: document.getElementById("officeStartTime").value},
-            {key: "officeEndTime", value: document.getElementById("officeEndTime").value}
-        ];
-        statusId = "status-hours";
-    } else if(type === "grace"){
-        updates = [
-            {key: "signInGraceMins", value: document.getElementById("signInGraceMins").value},
-            {key: "signInWindowMins", value: document.getElementById("signInWindowMins").value},
-            {key: "signOutGraceMins", value: document.getElementById("signOutGraceMins").value}
-        ];
-        statusId = "status-grace";
-} else if(type === "closure"){
-        let fromVal = document.getElementById("officeClosedFrom").value;
-        let toVal = document.getElementById("officeClosedTo").value;
-        
-        // Convert YYYY-MM-DD to M/D/YYYY format for storage
-        if(fromVal){
-            let parts = fromVal.split("-");
-            fromVal = parseInt(parts[1]) + "/" + parseInt(parts[2]) + "/" + parts[0];
+        function clearClosure() {
+            document.getElementById("officeClosedFrom").value = "";
+            document.getElementById("officeClosedTo").value = "";
+            saveSettings('closure');
         }
-        if(toVal){
-            let parts = toVal.split("-");
-            toVal = parseInt(parts[1]) + "/" + parseInt(parts[2]) + "/" + parts[0];
-        }
-        
-        updates = [
-            {key: "officeClosedFrom", value: fromVal},
-            {key: "officeClosedTo", value: toVal}
-        ];
-        statusId = "status-closure";
-    } else if(type === "email"){
-        updates = [
-            {key: "emailsPaused", value: document.getElementById("emailsPaused").value}
-        ];
-        statusId = "status-email";
-    } else if(type === "holidays"){
-        updates = [
-            {key: "customHolidays", value: document.getElementById("customHolidays").value}
-        ];
-        statusId = "status-holidays";
-    }
 
-    const statusEl = document.getElementById(statusId);
-    statusEl.style.display = "none";
-
-    let completed = 0;
-    updates.forEach(u => {
-        const fd = new FormData();
-        fd.append("type", "updatesettings");
-        fd.append("key", u.key);
-        fd.append("value", u.value);
-
-        fetch(WEB_APP_URL, { method: "POST", body: fd })
-        .then(r => r.json())
-        .then(d => {
-            completed++;
-            if(completed === updates.length){
-    statusEl.className = "save-status success";
-    statusEl.innerText = "✅ Saved successfully!";
-    statusEl.style.display = "block";
-    setTimeout(() => {
-        statusEl.style.display = "none";
-        loadSettings(); // This reloads values from sheet
-    }, 2000);
-}
-        })
-        .catch(err => {
-            statusEl.className = "save-status error";
-            statusEl.innerText = "❌ Save failed!";
-            statusEl.style.display = "block";
+        // =============================================
+        // SEND CUSTOM EMAIL
+        // =============================================
+        document.getElementById("emailRecipients").addEventListener("change", function () {
+            document.getElementById("customIdsGroup").style.display =
+                this.value === "custom" ? "block" : "none";
         });
-    });
-}
 
-function clearClosure(){
-    document.getElementById("officeClosedFrom").value = "";
-    document.getElementById("officeClosedTo").value = "";
-    saveSettings('closure');
-}
+        function sendCustomEmail() {
+            const recipients = document.getElementById("emailRecipients").value;
+            const customIds = document.getElementById("customIds").value.trim();
+            const subject = document.getElementById("emailSubject").value.trim();
+            const message = document.getElementById("emailMessage").value.trim();
+            const statusEl = document.getElementById("status-sendmail");
 
-// =============================================
-// SEND CUSTOM EMAIL
-// =============================================
-document.getElementById("emailRecipients").addEventListener("change", function(){
-    document.getElementById("customIdsGroup").style.display = 
-        this.value === "custom" ? "block" : "none";
-});
+            statusEl.style.display = "none";
 
-function sendCustomEmail(){
-    const recipients = document.getElementById("emailRecipients").value;
-    const customIds = document.getElementById("customIds").value.trim();
-    const subject = document.getElementById("emailSubject").value.trim();
-    const message = document.getElementById("emailMessage").value.trim();
-    const statusEl = document.getElementById("status-sendmail");
+            if (!subject || !message) {
+                statusEl.className = "save-status error";
+                statusEl.innerText = "❌ Subject and message are required!";
+                statusEl.style.display = "block";
+                return;
+            }
 
-    statusEl.style.display = "none";
+            let finalRecipients = recipients;
+            if (recipients === "custom") {
+                if (!customIds) {
+                    statusEl.className = "save-status error";
+                    statusEl.innerText = "❌ Please enter employee IDs!";
+                    statusEl.style.display = "block";
+                    return;
+                }
+                finalRecipients = customIds;
+            }
 
-    if(!subject || !message){
-        statusEl.className = "save-status error";
-        statusEl.innerText = "❌ Subject and message are required!";
-        statusEl.style.display = "block";
-        return;
-    }
+            const fd = new FormData();
+            fd.append("type", "sendemail");
+            fd.append("recipients", finalRecipients);
+            fd.append("subject", subject);
+            fd.append("message", message);
 
-    let finalRecipients = recipients;
-    if(recipients === "custom"){
-        if(!customIds){
-            statusEl.className = "save-status error";
-            statusEl.innerText = "❌ Please enter employee IDs!";
+            statusEl.className = "save-status";
+            statusEl.innerText = "📤 Sending emails...";
             statusEl.style.display = "block";
-            return;
+
+            fetch(WEB_APP_URL, { method: "POST", body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        statusEl.className = "save-status success";
+                        statusEl.innerText = `✅ Email sent to ${d.sent || 0} recipient(s)!`;
+                        document.getElementById("emailSubject").value = "";
+                        document.getElementById("emailMessage").value = "";
+                        document.getElementById("customIds").value = "";
+                    } else {
+                        statusEl.className = "save-status error";
+                        statusEl.innerText = "❌ Failed to send emails!";
+                    }
+                })
+                .catch(err => {
+                    statusEl.className = "save-status error";
+                    statusEl.innerText = "❌ Network error!";
+                });
         }
-        finalRecipients = customIds;
-    }
 
-    const fd = new FormData();
-    fd.append("type", "sendemail");
-    fd.append("recipients", finalRecipients);
-    fd.append("subject", subject);
-    fd.append("message", message);
-
-    statusEl.className = "save-status";
-    statusEl.innerText = "📤 Sending emails...";
-    statusEl.style.display = "block";
-
-    fetch(WEB_APP_URL, { method: "POST", body: fd })
-    .then(r => r.json())
-    .then(d => {
-        if(d.success){
-            statusEl.className = "save-status success";
-            statusEl.innerText = `✅ Email sent to ${d.sent || 0} recipient(s)!`;
-            document.getElementById("emailSubject").value = "";
-            document.getElementById("emailMessage").value = "";
-            document.getElementById("customIds").value = "";
-        } else {
-            statusEl.className = "save-status error";
-            statusEl.innerText = "❌ Failed to send emails!";
+        // =============================================
+        // LOGOUT
+        // =============================================
+        function logout() {
+            localStorage.clear();
+            location.href = "index.html";
         }
-    })
-    .catch(err => {
-        statusEl.className = "save-status error";
-        statusEl.innerText = "❌ Network error!";
-    });
-}
 
-// =============================================
-// LOGOUT
-// =============================================
-function logout(){
-    localStorage.clear();
-    location.href = "index.html";
-}
-
-// =============================================
-// INIT
-// =============================================
-loadData();
-</script>
+        // =============================================
+        // INIT
+        // =============================================
+        loadData();
+    </script>
 
 </body>
+
 </html>
