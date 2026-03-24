@@ -190,7 +190,12 @@ const fraudMsg   = document.getElementById("fraudMsg");
 
 // ================= CLOCK =================
 function updateClock(){
-    document.getElementById("clock").innerText = new Date().toLocaleTimeString();
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
 }
 setInterval(updateClock, 1000);
 updateClock();
