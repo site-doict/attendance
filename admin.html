@@ -50,35 +50,32 @@
 
       .blob {
         position: absolute;
-        width: 1000px;
-        height: 1000px;
-        filter: blur(120px);
+        width: 700px;
+        height: 700px;
+        filter: blur(100px);
         border-radius: 50%;
         z-index: -1;
-        opacity: 0.45;
-        mix-blend-mode: screen;
-        animation: swirl 40s infinite linear;
+        opacity: 0.25;
+        animation: move-blobs 30s infinite alternate ease-in-out;
       }
 
       .blob-1 { 
-        top: -30%; 
-        left: -15%; 
-        background: radial-gradient(circle, #3b82f6 0%, transparent 70%); 
+        top: 5%; 
+        left: 5%; 
+        background: #3b82f6; 
       }
 
       .blob-2 { 
-        bottom: -30%; 
-        right: -15%; 
-        background: radial-gradient(circle, #8b5cf6 0%, transparent 70%); 
-        animation-direction: reverse;
-        animation-duration: 50s;
+        bottom: 5%; 
+        right: 15%; 
+        background: #8b5cf6; 
+        animation-delay: -7s;
       }
 
-      @keyframes swirl {
-        0% { transform: rotate(0deg) translate(250px, 150px) scale(1); }
-        33% { transform: rotate(120deg) translate(-200px, 200px) scale(1.2); }
-        66% { transform: rotate(240deg) translate(150px, -250px) scale(0.9); }
-        100% { transform: rotate(360deg) translate(250px, 150px) scale(1); }
+      @keyframes move-blobs {
+        0% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(150px, 100px) scale(1.2); }
+        100% { transform: translate(-100px, 200px) scale(1.1); }
       }
 
       /* ===== HEADER ===== */
@@ -219,9 +216,9 @@
       .form-group label {
         display: block;
         font-size: 13px;
-        color: #555;
-        margin-bottom: 5px;
-        font-weight: bold;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 8px;
+        font-weight: 500;
       }
 
       .form-group input,
@@ -279,81 +276,44 @@
       }
 
       /* ===== SUMMARY CARDS ===== */
-      .summary {
+      .summary-cards {
         max-width: 1300px;
         margin: 0 auto 20px;
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
         gap: 12px;
-        flex-wrap: wrap;
-        justify-content: space-between;
       }
 
       .card {
-        font-weight: bold;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px 10px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        color: white;
+      }
+
+      .card .count {
+        font-size: 32px;
+        font-weight: 600;
+        margin-bottom: 5px;
       }
 
       .card .label {
-        font-size: 11px;
-        color: #555;
-        margin-top: 4px;
-        line-height: 1.3;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.2;
       }
 
-      .card.present {
-        border-color: #28a745;
-      }
-
-      .card.present .count {
-        color: #28a745;
-      }
-
-      .card.late {
-        border-color: #e67e00;
-      }
-
-      .card.late .count {
-        color: #e67e00;
-      }
-
-      .card.early {
-        border-color: #e67e00;
-      }
-
-      .card.early .count {
-        color: #e67e00;
-      }
-
-      .card.verylate {
-        border-color: #dc3545;
-      }
-
-      .card.verylate .count {
-        color: #dc3545;
-      }
-
-      .card.absent {
-        border-color: #dc3545;
-      }
-
-      .card.absent .count {
-        color: #dc3545;
-      }
-
-      .card.nosign {
-        border-color: #ffc107;
-      }
-
-      .card.nosign .count {
-        color: #856404;
-      }
-
-      .card.total {
-        border-color: #0056b3;
-      }
-
-      .card.total .count {
-        color: #0056b3;
-      }
+      .card.total { border-bottom: 4px solid #3b82f6; }
+      .card.present { border-bottom: 4px solid #10b981; }
+      .card.late { border-bottom: 4px solid #f59e0b; }
+      .card.early { border-bottom: 4px solid #f97316; }
+      .card.verylate { border-bottom: 4px solid #ef4444; }
+      .card.absent { border-bottom: 4px solid #6b7280; }
+      .card.nosign { border-bottom: 4px solid #8b5cf6; }
 
       /* ===== FILTERS ===== */
       .filters {
@@ -373,14 +333,16 @@
         font-size: 13px;
       }
 
-      /* ===== TABLE ===== */
+      /* ===== MAIN TABLE BOX ===== */
       .table-box {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 10px;
-        overflow-x: auto;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        max-width: 1300px;
+        margin: 0 auto 20px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
       }
 
       table {
@@ -563,9 +525,9 @@
           <option value="Absent">Absent</option>
           <option value="No Sign Out">No Sign Out</option>
         </select>
-        <label style="font-size: 12px; color: #555">From:</label>
+        <label style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">From:</label>
         <input type="date" id="dateFrom" onchange="applyFilters()" />
-        <label style="font-size: 12px; color: #555">To:</label>
+        <label style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">To:</label>
         <input type="date" id="dateTo" onchange="applyFilters()" />
         <button
           class="btn btn-primary"
