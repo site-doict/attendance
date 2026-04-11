@@ -255,14 +255,30 @@ function doGet(e){
 
   // ========== GET ALL LEAVES (admin only) ==========
   if(action === "getleaves"){
-    const sheet = SpreadsheetApp.getActive().getSheetByName("leaves");
+    const ss = SpreadsheetApp.getActive();
+    const sheet = ss.getSheetByName("leaves");
+    const userSheet = ss.getSheetByName("users");
     if(!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
     
+    // Create a name map for IDs
+    const userMap = {};
+    if (userSheet) {
+      const uData = userSheet.getDataRange().getValues();
+      const uHeaders = uData[0];
+      const idIdx = uHeaders.indexOf("ID");
+      const nameIdx = uHeaders.indexOf("Name");
+      for (let i = 1; i < uData.length; i++) {
+        userMap[String(uData[i][idIdx]).trim()] = String(uData[i][nameIdx]).trim();
+      }
+    }
+
     const data = sheet.getDataRange().getValues();
     let rows = [];
     for(let i = 1; i < data.length; i++){
+      const uid = String(data[i][0]).trim();
       rows.push({
-        id: data[i][0],
+        id: uid,
+        name: userMap[uid] || "---",
         start: data[i][1],
         end: data[i][2],
         timestamp: data[i][3]
@@ -1331,7 +1347,9 @@ function getUserLeaveStatus(uid) {
 
   const data = leaveSheet.getDataRange().getValues();
   const now = new Date();
-  now.setHours(12, 0, 0, 0); // Use mid-day for safety in comparison
+  
+  // Set current time to midnight for comparison
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 
   for (let i = 1; i < data.length; i++) {
     const lUid = String(data[i][0]).trim();
@@ -1339,10 +1357,12 @@ function getUserLeaveStatus(uid) {
 
     const start = new Date(data[i][1]);
     const end = new Date(data[i][2]);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
+    
+    // Reset start/end to midnight for clean range check
+    const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0);
+    const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999);
 
-    if (now >= start && now <= end) {
+    if (today >= startDate && today <= endDate) {
       return { 
         active: true, 
         startDate: Utilities.formatDate(start, TIMEZONE, "M/d/yyyy"),
