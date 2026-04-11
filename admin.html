@@ -372,20 +372,18 @@
 
       @media (min-width: 769px) {
         .filter-bar {
-          grid-template-columns: 2fr 1fr 1fr 1fr;
+          grid-template-columns: repeat(5, 1fr);
         }
+
         .filter-bar .search-input {
           grid-column: 1 / -1;
         }
-        /* Desktop button alignment */
-        .filter-bar button {
+        /* Desktop alignment for all row 2 items */
+        .filter-bar > *:not(.search-input) {
           grid-row: 2;
         }
-        /* Make filters sit in row 2 below search */
-        .filter-bar select, .filter-bar input[type="date"] {
-            grid-row: 2;
-        }
       }
+
 
       @media (max-width: 768px) {
         .filter-bar {
@@ -408,10 +406,7 @@
       /* Global Filter & Area Element Rules */
       .filter-bar input,
       .filter-bar select,
-      .filter-bar button,
-      .filters input,
-      .filters select,
-      .filters button {
+      .filter-bar button {
         min-height: 48px;
         width: 100%;
         box-sizing: border-box;
@@ -423,6 +418,42 @@
         color: white;
         outline: none;
       }
+
+      /* Fix for dropdown options not showing on some Desktop browsers */
+      .filter-bar select option {
+        background: #ffffff !important;
+        color: #1a1a1a !important;
+      }
+
+      .filter-bar label {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 0 14px;
+        min-height: 48px;
+        box-sizing: border-box;
+      }
+
+      .filter-group input {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100%;
+      }
+
+
       
       .filter-bar button {
         cursor: pointer;
@@ -748,8 +779,17 @@
           <option value="Absent">Absent</option>
           <option value="No Sign Out">No Sign Out</option>
         </select>
-        <input type="date" id="dateFrom" onchange="applyFilters()" />
-        <input type="date" id="dateTo" onchange="applyFilters()" />
+
+        <div class="filter-group">
+          <label>From:</label>
+          <input type="date" id="dateFrom" onchange="applyFilters()" />
+        </div>
+
+        <div class="filter-group">
+          <label>To:</label>
+          <input type="date" id="dateTo" onchange="applyFilters()" />
+        </div>
+
         <button class="btn btn-primary" onclick="clearFilters()">✖ Clear</button>
         <button class="btn btn-success" onclick="loadData()">🔄 Refresh</button>
       </div>
@@ -1173,9 +1213,13 @@
         const table = document.getElementById("mainTable");
         const noData = document.getElementById("noData");
 
-        loader.style.display = "block";
-        table.style.display = "none";
-        noData.style.display = "none";
+        // Only show loader if table is empty to prevent blinking on refresh
+        if (allRows.length === 0) {
+          loader.style.display = "block";
+          table.style.display = "none";
+          noData.style.display = "none";
+        }
+
 
         fetch(`${WEB_APP_URL}?action=admindata`, { redirect: "follow" })
           .then((r) => r.text())

@@ -934,6 +934,12 @@ const attRows = attSheet.getDataRange().getValues();
   }
 
   // ---- ADMIN SUMMARY EMAIL ----
+  // Skip sending admin summary if it's an off day
+  if (isOffDay) {
+    Logger.log("Skipping Admin Summary Email - It's an Off Day.");
+    return;
+  }
+
   const totalStaff     = adminRows.length;
   const totalPresent   = adminRows.filter(r => r.statusEN === "Present").length;
   const totalLate      = adminRows.filter(r => r.statusEN === "Late Entry").length;
