@@ -400,10 +400,27 @@
       }
 
       #loader {
-        text-align: center;
-        padding: 40px;
-        font-size: 16px;
-        color: #555;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px;
+        color: #0056b3;
+      }
+
+      .spinner-modern {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #0056b3;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
 
       .no-data {
@@ -512,7 +529,10 @@
 
       <!-- Table -->
       <div class="table-box">
-        <div id="loader">🔄 Loading attendance data...</div>
+        <div id="loader">
+          <div class="spinner-modern"></div>
+          <div>Processing attendance intelligence...</div>
+        </div>
         <table id="mainTable" style="display: none">
           <thead>
             <tr>
@@ -1670,10 +1690,16 @@
       }
 
       function formatDate(d) {
-        if (!d) return "---";
+        if (!d || d === "---") return "---";
         const date = new Date(d);
         if (isNaN(date)) return d;
-        return (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear();
+        
+        // Return date with time if it's a timestamp
+        const timeStr = date.getHours() > 0 || date.getMinutes() > 0 
+          ? " | " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : "";
+
+        return (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear() + timeStr;
       }
 
       function resetDevice(id) {

@@ -281,7 +281,7 @@ function doGet(e){
         name: userMap[uid] || "---",
         start: data[i][1],
         end: data[i][2],
-        timestamp: data[i][3]
+        timestamp: data[i][3] || "---"
       });
     }
     return ContentService.createTextOutput(JSON.stringify(rows)).setMimeType(ContentService.MimeType.JSON);
@@ -550,10 +550,10 @@ for(let i = 1; i < data.length; i++){
     let leaveSheet = ss.getSheetByName("leaves");
     if(!leaveSheet){
       leaveSheet = ss.insertSheet("leaves");
-      leaveSheet.appendRow(["ID", "From", "To"]);
+      leaveSheet.appendRow(["ID", "From", "To", "Timestamp"]);
     }
     
-    leaveSheet.appendRow([uid, start, end]);
+    leaveSheet.appendRow([uid, start, end, new Date()]);
     
     // Find User to send email
     const userSheet = ss.getSheetByName("users");
