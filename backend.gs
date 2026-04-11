@@ -267,6 +267,24 @@ function doGet(e){
     return ContentService.createTextOutput(JSON.stringify(users)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ========== GET DEVICES (admin only) ==========
+  if(action === "getdevices"){
+    const deviceSheet = SpreadsheetApp.getActive().getSheetByName("devices");
+    if(!deviceSheet){
+      return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    }
+    const data = deviceSheet.getDataRange().getValues();
+    let devices = [];
+    for(let i=1; i<data.length; i++){
+      if(!String(data[i][0]).trim() && !String(data[i][1]).trim()) continue; // skip blank rows
+      devices.push({
+        id: String(data[i][0]).trim(),
+        fp: String(data[i][1]).trim()
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify(devices)).setMimeType(ContentService.MimeType.JSON);
+  }
+
     // ========== GET SETTINGS (for admin) ==========
   if(action === "getsettings"){
     const settings = getSettings();
@@ -479,6 +497,34 @@ for(let i = 1; i < data.length; i++){
       return ContentService.createTextOutput(JSON.stringify({success:true, message:"User deleted"})).setMimeType(ContentService.MimeType.JSON);
     } else {
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"User not found"})).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // ---------- DELETE DEVICE (admin only) ----------
+  if(type === "deletedevice"){
+    const targetId = e.parameter.userid;
+    const deviceSheet = SpreadsheetApp.getActive().getSheetByName("devices");
+    if(!deviceSheet){
+      return ContentService.createTextOutput(JSON.stringify({success:false, error:"Devices sheet not found"})).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    const data = deviceSheet.getDataRange().getValues();
+    let deleted = false;
+    
+    // Iterate backwards to safely delete multiple rows if an ID is strangely registered multiple times
+    for(let i = data.length - 1; i >= 1; i--){
+      const currentId = String(data[i][0]).trim();
+      
+      if(currentId === String(targetId).trim()){
+        deviceSheet.deleteRow(i + 1); // spreadsheet rows are 1-indexed
+        deleted = true;
+      }
+    }
+    
+    if(deleted){
+        return ContentService.createTextOutput(JSON.stringify({success:true, message:"Device reset successfully"})).setMimeType(ContentService.MimeType.JSON);
+    } else {
+        return ContentService.createTextOutput(JSON.stringify({success:false, error:"Device not found for this user"})).setMimeType(ContentService.MimeType.JSON);
     }
   }
 
