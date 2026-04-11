@@ -253,6 +253,24 @@ function doGet(e){
     return ContentService.createTextOutput(JSON.stringify(devices)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ========== GET ALL LEAVES (admin only) ==========
+  if(action === "getleaves"){
+    const sheet = SpreadsheetApp.getActive().getSheetByName("leaves");
+    if(!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    
+    const data = sheet.getDataRange().getValues();
+    let rows = [];
+    for(let i = 1; i < data.length; i++){
+      rows.push({
+        id: data[i][0],
+        start: data[i][1],
+        end: data[i][2],
+        timestamp: data[i][3]
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify(rows)).setMimeType(ContentService.MimeType.JSON);
+  }
+
     // ========== GET SETTINGS (for admin) ==========
   if(action === "getsettings"){
     const settings = getSettings();

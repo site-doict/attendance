@@ -470,7 +470,8 @@ function controlButtons(rows){
 
     if(!deviceAllowed) return;
 
-    // ========== DYNAMIC LEAVE CHECK ==========
+    // ========== DYNAMIC LEAVE CHECK ========== 
+    // This is now at the top so employees see their return date even on weekends
     if (userLeaveStatus && userLeaveStatus.active) {
         const nextWorkDay = calculateNextWorkingDay(userLeaveStatus.endDate);
         showStatusBox(
