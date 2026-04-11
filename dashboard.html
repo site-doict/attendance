@@ -120,6 +120,7 @@ button{
       .bg-early   { background: #e2e3e5; color: #383d41; }
       .bg-vlate   { background: #f5c6cb; color: #721c24; }
       .bg-leave   { background: #cce5ff; color: #004085; }
+      .bg-off     { background: #e1f5fe; color: #01579b; border: 1px solid #b3e5fc; }
       .bg-none    { background: #f0f0f0; color: #888; }
 
 #status{
@@ -601,18 +602,24 @@ function displayHistory(rows) {
     let inTime = rec ? rec.inTime || "---" : "---";
     let outTime = rec ? rec.outTime || "---" : "---";
     let status = rec ? rec.status || "---" : "No Record";
+    
+    // If no record, check if it was a holiday/weekend
+    if ((!rec || status === "No Record") && isWeekendOrHoliday(d)) {
+      status = "Off Day";
+    }
 
     // Clean "---" or empty strings
     if (inTime === "---" || !inTime) inTime = "---";
     if (outTime === "---" || !outTime) outTime = "---";
 
     let badgeClass = "bg-none";
-    if (status.includes("Present")) badgeClass = "bg-present";
-    else if (status.includes("Late Entry")) badgeClass = "bg-late";
-    else if (status.includes("Very Late")) badgeClass = "bg-vlate";
-    else if (status.includes("Absent")) badgeClass = "bg-absent";
+    if      (status.includes("Present"))     badgeClass = "bg-present";
+    else if (status.includes("Late Entry"))  badgeClass = "bg-late";
+    else if (status.includes("Very Late"))  badgeClass = "bg-vlate";
+    else if (status.includes("Absent"))      badgeClass = "bg-absent";
     else if (status.includes("Early Leave")) badgeClass = "bg-early";
-    else if (status.includes("On Leave")) badgeClass = "bg-leave";
+    else if (status.includes("On Leave"))    badgeClass = "bg-leave";
+    else if (status.includes("Off Day"))     badgeClass = "bg-off";
 
     const tr = document.createElement("tr");
     tr.innerHTML = `

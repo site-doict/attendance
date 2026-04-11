@@ -108,7 +108,8 @@ function doGet(e){
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  // ========== INITIALIZE DASHBOARD (consolidated) ==========
+  // ========== INITIALIZE DASHBOARD (consolidated & optimized) ==========
+  // This endpoint handles device checks, history, and settings in one fast trip.
   if(action === "initdash"){
     const uid = e.parameter.id;
     const fp = e.parameter.fp;
@@ -672,17 +673,10 @@ function sendDailyEmails(){
     return;
   }
   
-  // Check if office is closed
-  if(isOfficeClosed(now)){
-    Logger.log("Office is closed. No emails sent.");
-    return;
-  }
-
-  // Check if today is weekend/holiday
-  if(isWeekendOrHoliday(now)){
-    Logger.log("Today is weekend/holiday. No emails sent.");
-    return;
-  }
+  // Determine if it's a working day
+  const isHoliday = isWeekendOrHoliday(now);
+  const isClosed  = isOfficeClosed(now);
+  const isOffDay  = isHoliday || isClosed; 
 
   const ss        = SpreadsheetApp.getActive();
   const attSheet  = ss.getSheetByName("attendance");
@@ -702,8 +696,13 @@ function sendDailyEmails(){
 
   if(idCol === -1 || emailCol === -1){
     Logger.log("ERROR: 'ID' or 'Email' column not found in users sheet!");
-    Logger.log("Headers found: " + JSON.stringify(userHeaders));
     return;
+  }
+
+  // If it's a weekend, holiday, or office is closed, we record "Off Day" for everyone
+  // but we skip the email sending logic.
+  if (isOffDay) {
+    Logger.log("Recording Off Day/Holiday status for all active users...");
   }
 
   // Pre-load Leaves
@@ -774,7 +773,11 @@ const attRows = attSheet.getDataRange().getValues();
     let statusEN = "", statusBN = "", statusColor = "", noticeEN = "", noticeBN = "";
 
     if(!att){
-      if(isOnLeave) {
+      if (isOffDay) {
+        // Record as Off Day if today is weekend/holiday
+        attSheet.appendRow([now, uid, uname, today, "Off Day", "Off Day", "", "", "Off Day"]);
+        continue; 
+      } else if(isOnLeave) {
         // Mark as On Leave in Google Sheet and Skip email
         attSheet.appendRow([now, uid, uname, today, "On Leave", "On Leave", "", "", "On Leave"]);
         continue;
@@ -811,6 +814,9 @@ const attRows = attSheet.getDataRange().getValues();
         const n = getNotices(att.status); noticeEN = n.en; noticeBN = n.bn;
       }
     }
+
+    // Skip sending email if it's an off day - we just want the record
+    if (isOffDay) continue;
 
     const inTime  = att ? att.inTime  : "---";
     const outTime = att ? att.outTime : "---";
