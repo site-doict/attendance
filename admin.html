@@ -87,7 +87,7 @@
         align-items: center;
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
         position: relative;
-        overflow: hidden;
+        overflow: visible; /* Changed from hidden for table scroll safety */
       }
 
       .header::after {
@@ -354,23 +354,87 @@
       .card.absent { border-bottom: 4px solid #6b7280; }
       .card.nosign { border-bottom: 4px solid #8b5cf6; }
 
-      /* ===== FILTERS ===== */
-      .filters {
-        max-width: 1200px;
-        margin: 0 auto 15px;
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+      /* ===== FILTERS & GRID ===== */
+      .filter-bar {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        width: 100%;
+        max-width: 1300px;
+        margin: 0 auto 15px auto;
         align-items: center;
       }
 
-      .filters input,
-      .filters select {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 13px;
+      .filter-bar .search-input {
+        grid-column: 1 / -1;
+        width: 100%;
       }
+
+      @media (min-width: 769px) {
+        .filter-bar {
+          grid-template-columns: 2fr 1fr 1fr 1fr;
+        }
+        .filter-bar .search-input {
+          grid-column: 1 / -1;
+        }
+        /* Desktop button alignment */
+        .filter-bar button {
+          grid-row: 2;
+        }
+        /* Make filters sit in row 2 below search */
+        .filter-bar select, .filter-bar input[type="date"] {
+            grid-row: 2;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .filter-bar {
+          grid-template-columns: 1fr 1fr;
+        }
+        .filter-bar .search-input {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .filter-bar {
+          grid-template-columns: 1fr;
+        }
+        .filter-bar .search-input {
+          grid-column: 1;
+        }
+      }
+
+      /* Global Filter & Area Element Rules */
+      .filter-bar input,
+      .filter-bar select,
+      .filter-bar button,
+      .filters input,
+      .filters select,
+      .filters button {
+        min-height: 48px;
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 14px;
+        border-radius: 10px;
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        outline: none;
+      }
+      
+      .filter-bar button {
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+      
+      .filter-bar button:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+      }
+
 
       /* ===== MAIN TABLE BOX ===== */
       .table-box {
@@ -422,35 +486,23 @@
         font-size: 11px;
         font-weight: bold;
         color: white;
+        white-space: normal;
+        word-break: break-word;
+        text-align: center;
+        max-width: 90px;
+        line-height: 1.3;
       }
 
-      .badge-present {
-        background: #28a745;
-      }
-
-      .badge-late {
-        background: #e67e00;
-      }
-
-      .badge-early {
-        background: #e67e00;
-      }
-
-      .badge-verylate {
-        background: #dc3545;
-      }
-
-      .badge-absent {
-        background: #dc3545;
-      }
-
-      .badge-nosignout {
-        background: #ffc107;
-        color: #333;
-      }
-
-      .badge-default {
-        background: #888;
+      .status-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 20px;
+        white-space: normal;
+        word-break: break-word;
+        text-align: center;
+        display: inline-block;
+        max-width: 90px;
+        line-height: 1.3;
       }
 
       #loader {
@@ -608,13 +660,13 @@
       </div>
 
       <!-- Filters -->
-      <div class="filters">
+      <div class="filter-bar">
         <input
+          class="search-input"
           type="text"
           id="searchInput"
           placeholder="🔍 Search by name or ID..."
           oninput="applyFilters()"
-          style="min-width: 200px"
         />
         <select id="statusFilter" onchange="applyFilters()">
           <option value="">All Status</option>
@@ -625,24 +677,10 @@
           <option value="Absent">Absent</option>
           <option value="No Sign Out">No Sign Out</option>
         </select>
-        <label style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">From:</label>
         <input type="date" id="dateFrom" onchange="applyFilters()" />
-        <label style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">To:</label>
         <input type="date" id="dateTo" onchange="applyFilters()" />
-        <button
-          class="btn btn-primary"
-          onclick="clearFilters()"
-          style="padding: 8px 12px; font-size: 13px"
-        >
-          ✖ Clear
-        </button>
-        <button
-          class="btn btn-success"
-          onclick="loadData()"
-          style="padding: 8px 12px; font-size: 13px"
-        >
-          🔄 Refresh
-        </button>
+        <button class="btn btn-primary" onclick="clearFilters()">✖ Clear</button>
+        <button class="btn btn-success" onclick="loadData()">🔄 Refresh</button>
       </div>
 
       <!-- Table -->
@@ -651,8 +689,8 @@
           <div class="spinner-modern"></div>
           <div>Loading Administrative Data...</div>
         </div>
-        <div style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
-          <table id="mainTable" style="display: none">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+          <table id="mainTable" style="display: none; min-width: 520px; width: 100%;">
             <thead>
               <tr>
                 <th>ID</th>
@@ -841,8 +879,8 @@
         <h3 style="color: #0056b3; margin-top: 30px; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
           📋 Existing Leave Records
         </h3>
-        <div style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+          <table style="min-width: 520px; width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
               <tr style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">
                 <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">ID</th>
@@ -922,8 +960,8 @@
           👥 Current Users
         </h3>
         <button class="btn btn-primary" onclick="loadUsers()" style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
-        <div style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+          <table style="min-width: 520px; width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
               <tr style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">
                 <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">ID</th>
@@ -988,17 +1026,17 @@
         </h3>
         <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">View or Reset fingerprint devices associated with employees. Usually necessary when an employee changes their mobile phone.</p>
         <button class="btn btn-primary" onclick="loadDevices()" style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+          <table style="min-width: 520px; width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
               <tr style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">
                 <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Employee ID</th>
                 <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Fingerprint Code</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Action</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center;">Action</th>
               </tr>
             </thead>
             <tbody id="devicesListBody">
-              <tr><td colspan="3" style="padding: 15px; text-align: center; color: #888;">⏳ Loading devices...</td></tr>
+              <tr><td colspan="3" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading devices...</td></tr>
             </tbody>
           </table>
         </div>
