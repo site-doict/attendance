@@ -10,7 +10,7 @@ const TIMEZONE    = "GMT+6";
 
 // =============================================
 // HELPER: READ SETTINGS FROM SHEET
-// =============================================
+// ==============================================
 
 function getSettings(){
   const ss = SpreadsheetApp.getActive();
