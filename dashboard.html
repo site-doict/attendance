@@ -442,14 +442,13 @@ function showStatusBox(msg, type){
     }
 }
 
-async function controlButtons(rows){
+function controlButtons(rows){
     const now     = new Date();
     const mins    = now.getHours() * 60 + now.getMinutes();
     const dayOfWk = now.getDay(); // 0=Sunday, 5=Friday, 6=Saturday
 
-// Get settings from Google Sheet
-    const settings = await getSettingsSync();
-    appSettings = settings;
+    const settings = appSettings || {};
+    if (!appSettings) return; // Wait until settings are loaded
     
     // Parse office hours
     const [startHour, startMin] = String(settings.officeStartTime).split(":").map(Number);
@@ -469,17 +468,29 @@ async function controlButtons(rows){
     if(!deviceAllowed) return;
 
     // ========== HOLIDAY CHECK (Friday=5, Saturday=6) ==========
-    if(dayOfWk === 5 || dayOfWk === 6){
-        const dayName = dayOfWk === 5 ? "Friday" : "Saturday";
+    if(!deviceAllowed) return;
+
+    // ========== DYNAMIC OFFICE CLOSED CHECK (Date Ranges) ==========
+    if (isOfficeClosed(now)) {
         showStatusBox(
-            "🏖️ আজ সরকারি ছুটির দিন (" + dayName + ")!\n\n" +
+            "🏢 অফিস সাময়িকভাবে বন্ধ আছে!\n\n" +
+            "অফিসারের নির্দেশনা অনুযায়ী পরবর্তীতে উপস্থিতি দিন।",
+        "orange");
+        return;
+    }
+
+    // ========== DYNAMIC WEEKEND/HOLIDAY CHECK ==========
+    if(isWeekendOrHoliday(now)){
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const dayName = dayNames[now.getDay()];
+        showStatusBox(
+            "🏖️ আজ ছুটির দিন (" + dayName + ")!\n\n" +
             "অফিস বন্ধ আছে। আগামী কার্যদিবসে উপস্থিত থাকুন।",
         "orange");
         return;
     }
 
-    const today    = new Date();
-    const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
+    const todayStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
 
     const rec = rows.find(r =>
         String(r.id).trim() === id &&
@@ -746,6 +757,27 @@ if("Notification" in window &&
 // ================= START =================
 initializeDashboard();
 
+
+// Helper to check if weekend or holiday based on settings
+function isWeekendOrHoliday(date) {
+  if (!appSettings) return false;
+  const holidays = (appSettings.customHolidays || "Friday,Saturday").split(",").map(h => h.trim().toLowerCase());
+  const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const dayName = dayNames[new Date(date).getDay()];
+  return holidays.includes(dayName);
+}
+
+// Helper to check if office is closed for a range
+function isOfficeClosed(date) {
+  if (!appSettings || !appSettings.officeClosedFrom || !appSettings.officeClosedTo) return false;
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  const from = new Date(appSettings.officeClosedFrom);
+  const to = new Date(appSettings.officeClosedTo);
+  from.setHours(0,0,0,0);
+  to.setHours(23,59,59,999);
+  return d >= from && d <= to;
+}
 
 // Convert 24-hour to 12-hour format
 function convertTo12Hour(hour, min){
