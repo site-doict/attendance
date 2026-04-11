@@ -57,22 +57,70 @@ button{
     color: white;
 }
 
-#historyArea{
-    margin-top: 20px;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    max-width: 600px;
-    margin: 20px auto;
-    box-shadow: 0 2px 5px rgba(0,0,0,.1);
-    text-align: left;
-}
+      #historyArea {
+        margin-top: 25px;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        max-width: 600px;
+        margin: 25px auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
 
-.history-item{
-    border-bottom: 1px solid #eee;
-    padding: 6px 0;
-    font-size: 14px;
-}
+      #historyArea h4 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #333;
+        font-size: 18px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      .history-table th {
+        background: #f8f9fa;
+        color: #666;
+        font-weight: 600;
+        padding: 12px 8px;
+        text-align: left;
+        border-bottom: 2px solid #eee;
+      }
+
+      .history-table td {
+        padding: 12px 8px;
+        border-bottom: 1px solid #f0f0f0;
+        color: #444;
+      }
+
+      .history-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .bg-present { background: #d4edda; color: #155724; }
+      .bg-late    { background: #fff3cd; color: #856404; }
+      .bg-absent  { background: #f8d7da; color: #721c24; }
+      .bg-early   { background: #e2e3e5; color: #383d41; }
+      .bg-vlate   { background: #f5c6cb; color: #721c24; }
+      .bg-leave   { background: #cce5ff; color: #004085; }
+      .bg-none    { background: #f0f0f0; color: #888; }
 
 #status{
     margin-top: 10px;
@@ -459,32 +507,65 @@ async function controlButtons(rows){
 }
 
 // ================= DISPLAY HISTORY =================
-function displayHistory(rows){
-    const list = document.getElementById("historyList");
-    list.innerHTML = "";
-    const today = new Date();
+function displayHistory(rows) {
+  const list = document.getElementById("historyList");
+  list.innerHTML = "";
+  const today = new Date();
 
-    for(let i = 0; i < 7; i++){
-        let d = new Date();
-        d.setDate(today.getDate() - i);
-        let dayStr = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+  const table = document.createElement("table");
+  table.className = "history-table";
+  table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>In</th>
+                <th>Out</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="historyTableBody"></tbody>
+    `;
+  list.appendChild(table);
 
-        let rec = rows.find(r =>
-            String(r.id).trim() === id &&
-            String(r.date).trim() === dayStr
-        );
+  const tbody = document.getElementById("historyTableBody");
 
-        let html = rec
-            ? `✅ In: ${rec.inTime||'---'} | Out: ${rec.outTime||'---'} | Status: ${rec.status||'---'}`
-            : "❌ No Record";
+  for (let i = 0; i < 7; i++) {
+    let d = new Date();
+    d.setDate(today.getDate() - i);
+    let dayStr = `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+    let displayDay = i === 0 ? "Today" : dayStr;
 
-        const div = document.createElement("div");
-        div.className = "history-item";
-        div.innerHTML = `<strong>${i===0 ? "Today" : dayStr}:</strong> ${html}`;
-        list.appendChild(div);
-    }
+    let rec = rows.find(
+      (r) => String(r.id).trim() === id && String(r.date).trim() === dayStr
+    );
 
-    controlButtons(rows);
+    let inTime = rec ? rec.inTime || "---" : "---";
+    let outTime = rec ? rec.outTime || "---" : "---";
+    let status = rec ? rec.status || "---" : "No Record";
+
+    // Clean "---" or empty strings
+    if (inTime === "---" || !inTime) inTime = "---";
+    if (outTime === "---" || !outTime) outTime = "---";
+
+    let badgeClass = "bg-none";
+    if (status.includes("Present")) badgeClass = "bg-present";
+    else if (status.includes("Late Entry")) badgeClass = "bg-late";
+    else if (status.includes("Very Late")) badgeClass = "bg-vlate";
+    else if (status.includes("Absent")) badgeClass = "bg-absent";
+    else if (status.includes("Early Leave")) badgeClass = "bg-early";
+    else if (status.includes("On Leave")) badgeClass = "bg-leave";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+            <td style="font-weight:bold;">${displayDay}</td>
+            <td>${inTime}</td>
+            <td>${outTime}</td>
+            <td><span class="status-badge ${badgeClass}">${status}</span></td>
+        `;
+    tbody.appendChild(tr);
+  }
+
+  controlButtons(rows);
 }
 
 // ================= SEND DATA =================
