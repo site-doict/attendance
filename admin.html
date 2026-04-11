@@ -36,23 +36,23 @@
         position: relative;
       }
 
-      /* --- Animated Background (Mesh Gradient) --- */
+/* --- Animated Background (Mesh Gradient) --- */
 .animated-bg {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: -1;
+    z-index: -2;
     background: #0f172a;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.4) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.4) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.4) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(168, 85, 247, 0.4) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(30, 64, 175, 0.3) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.45) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(30, 58, 138, 0.45) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(76, 29, 149, 0.4) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.3) 0px, transparent 50%);
     background-size: 200% 200%;
-    animation: mesh 15s ease infinite;
+    animation: mesh 20s ease infinite;
 }
 
 @keyframes mesh {
@@ -61,20 +61,49 @@
     100% { background-position: 0% 0%; }
 }
 
+#particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
       /* ===== HEADER ===== */
       .header {
         max-width: 1300px;
         margin: 0 auto 20px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 2px solid rgba(59, 130, 246, 0.3);
         padding: 20px 30px;
         border-radius: 15px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .header::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: -100%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        animation: search-glow 4s linear infinite;
+      }
+
+      @keyframes search-glow {
+        0% { left: -100%; }
+        100% { left: 100%; }
       }
 
       h2 {
@@ -146,11 +175,11 @@
         padding: 10px 15px;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 14px;
         font-weight: bold;
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.85);
         white-space: nowrap;
         transition: all 0.3s ease;
       }
@@ -159,7 +188,7 @@
         background: #3b82f6;
         color: white;
         border-color: #3b82f6;
-        box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
       }
 
       /* ===== TAB CONTENT ===== */
@@ -181,13 +210,20 @@
       }
 
       .settings-card {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         color: white;
+        transition: all 0.3s ease;
+      }
+
+      .settings-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(59, 130, 246, 0.3);
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.1);
       }
 
       .settings-card h3 {
@@ -724,10 +760,10 @@
     <!-- ===== TAB: LEAVES ===== -->
     <div id="tab-leaves" class="tab-content">
       <div class="email-card">
-        <h3 style="color: #0056b3; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
+        <h3 style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
           📅 Grant Leave
         </h3>
-        <p style="margin-bottom: 15px; font-size: 14px; color: #666;">Select an employee and specify their leave duration. An email will be sent automatically and they won't be marked absent.</p>
+        <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">Select an employee and specify their leave duration. An email will be sent automatically and they won't be marked absent.</p>
         
         <div class="form-group">
           <label>Employee</label>
@@ -756,16 +792,16 @@
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-              <tr style="background: #0056b3; color: white;">
-                <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Name</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Start Date</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">End Date</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Granted On</th>
+              <tr style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">ID</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Name</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Start Date</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">End Date</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Granted On</th>
               </tr>
             </thead>
             <tbody id="leavesListBody">
-              <tr><td colspan="5" style="padding: 15px; text-align: center; color: #888;">⏳ Loading records...</td></tr>
+               <tr><td colspan="5" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading records...</td></tr>
             </tbody>
           </table>
         </div>
@@ -837,11 +873,11 @@
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-              <tr style="background: #0056b3; color: white;">
-                <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Name</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Email</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Role</th>
+              <tr style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">ID</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Name</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Email</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Role</th>
                 <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Action</th>
               </tr>
             </thead>
@@ -853,7 +889,7 @@
       </div>
 
       <div class="email-card">
-        <h3 style="color: #0056b3; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
+        <h3 style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
           👥 Add New User
         </h3>
 
@@ -895,17 +931,17 @@
     <!-- ===== TAB: DEVICES ===== -->
     <div id="tab-devices" class="tab-content">
       <div class="email-card">
-        <h3 style="color: #0056b3; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
+        <h3 style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
           📱 Current Devices
         </h3>
-        <p style="margin-bottom: 15px; font-size: 14px; color: #666;">View or Reset fingerprint devices associated with employees. Usually necessary when an employee changes their mobile phone.</p>
+        <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">View or Reset fingerprint devices associated with employees. Usually necessary when an employee changes their mobile phone.</p>
         <button class="btn btn-primary" onclick="loadDevices()" style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-              <tr style="background: #0056b3; color: white;">
-                <th style="padding: 10px; border: 1px solid #ddd;">Employee ID</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Fingerprint Code</th>
+              <tr style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Employee ID</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Fingerprint Code</th>
                 <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Action</th>
               </tr>
             </thead>
@@ -1773,5 +1809,68 @@
       // =============================================
       loadData();
     </script>
-  </body>
+  <script>
+    // --- Particle System ---
+    (function() {
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const count = 75;
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    size: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.strokeStyle = 'rgba(59, 130, 246, 0.12)';
+            
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 110) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        draw();
+    })();
+</script>
+
+</body>
 </html>

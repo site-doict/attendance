@@ -42,16 +42,16 @@ body{
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: -1;
+    z-index: -2; /* Set to -2 to stay behind canvas */
     background: #0f172a;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.4) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.4) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.4) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(168, 85, 247, 0.4) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(30, 64, 175, 0.3) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.45) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(30, 58, 138, 0.45) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(76, 29, 149, 0.4) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.3) 0px, transparent 50%);
     background-size: 200% 200%;
-    animation: mesh 12s ease infinite;
+    animation: mesh 20s ease infinite;
 }
 
 @keyframes mesh {
@@ -60,12 +60,29 @@ body{
     100% { background-position: 0% 0%; }
 }
 
+#particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
 #clock{
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 600;
-    margin: 20px 0;
-    color: #fff;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    margin: 25px 0;
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    animation: clock-glow 3s infinite ease-in-out;
+}
+
+@keyframes clock-glow {
+    0% { text-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+    50% { text-shadow: 0 0 35px rgba(59, 130, 246, 0.7); opacity: 0.95; }
+    100% { text-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
 }
 
 button{
@@ -78,15 +95,31 @@ button{
 }
 
 #inBtn{
-    background: #28a745;
+    background: #10b981;
     color: white;
     display: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    transition: all 0.3s ease;
+}
+
+#inBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.45);
 }
 
 #outBtn{
-    background: #dc3545;
+    background: #ef4444;
     color: white;
     display: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    transition: all 0.3s ease;
+}
+
+#outBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.45);
 }
 
 .logout-btn{
@@ -96,15 +129,21 @@ button{
 
       #historyArea {
         margin-top: 30px;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(15, 23, 42, 0.45);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 25px;
-        border-radius: 20px;
+        border-radius: 24px;
         max-width: 600px;
-        margin: 30px auto;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        margin: 35px auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s ease;
+      }
+
+      #historyArea:hover {
+        border-color: rgba(59, 130, 246, 0.3);
+        box-shadow: 0 0 30px rgba(59, 130, 246, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       }
 
       #historyArea h4 {
@@ -169,14 +208,10 @@ button{
       .bg-none    { background: transparent; color: #888; }
 
 #status{
-    margin-top: 10px;
-    font-weight: bold;
-    font-size: 15px;
-}
-    margin-top: 15px;
+    margin-top: 20px;
     font-size: 16px;
-    font-weight: 500;
-    color: white;
+    font-weight: 600;
+    color: #ffffff;
 }
 
 .status-box {
@@ -227,24 +262,29 @@ button{
       left: 0;
       width: 100%;
       height: 100%;
-      background: white;
+      background: #0f172a;
       z-index: 10000;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       transition: opacity 0.5s ease;
-      opacity: 1; /* Ensure visible immediately */
+      opacity: 1;
     }
 
     .spinner {
       width: 50px;
       height: 50px;
-      border: 5px solid #f3f3f3;
-      border-top: 5px solid #28a745;
+      border: 5px solid rgba(255, 255, 255, 0.1);
+      border-top: 5px solid #3b82f6;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 20px;
+    }
+
+    #loadingOverlay div {
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 500;
     }
 
     @keyframes spin {
@@ -915,5 +955,68 @@ function formatTimeWithAMPM(timeStr){
     return String(displayHour).padStart(2, "0") + ":" + String(min).padStart(2, "0") + " " + ampm;
 }
 </script>
+<script>
+    // --- Particle System ---
+    (function() {
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const count = 75;
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    size: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.strokeStyle = 'rgba(59, 130, 246, 0.12)';
+            
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 110) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        draw();
+    })();
+</script>
+
 </body>
 </html>
