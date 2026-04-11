@@ -255,15 +255,28 @@ function doGet(e){
     const nameCol = headers.indexOf("Name");
     const emailCol = headers.indexOf("Email");
     const roleCol = headers.indexOf("Role");
+    let statusCol = headers.indexOf("Status");
+    
+    // Auto-create Status column if missing
+    if(statusCol === -1) {
+      statusCol = headers.length;
+      userSheet.getRange(1, statusCol + 1).setValue("Status");
+    }
     
     let users = [];
     for(let i=1; i<data.length; i++){
       if(idCol !== -1 && !String(data[i][idCol]).trim()) continue; // skip empty rows
+      let rowStatus = "Active";
+      if(data[i].length > statusCol && String(data[i][statusCol]).trim() !== "") {
+        rowStatus = String(data[i][statusCol]).trim();
+      }
+      
       users.push({
         id: idCol !== -1 ? String(data[i][idCol]).trim() : "",
         name: nameCol !== -1 ? String(data[i][nameCol]).trim() : "",
         email: emailCol !== -1 ? String(data[i][emailCol]).trim() : "",
-        role: roleCol !== -1 ? String(data[i][roleCol]).trim() : ""
+        role: roleCol !== -1 ? String(data[i][roleCol]).trim() : "",
+        status: rowStatus
       });
     }
     
@@ -459,20 +472,23 @@ for(let i = 1; i < data.length; i++){
     const emailCol = headers.indexOf("Email");
     const passCol = headers.indexOf("Password");
     const roleCol = headers.indexOf("Role");
+    let statusCol = headers.indexOf("Status");
+    if(statusCol === -1) statusCol = headers.length; // Handle dynamically appended header previously
 
     if (idCol !== -1) newRow[idCol] = uid;
     if (nameCol !== -1) newRow[nameCol] = uname;
     if (emailCol !== -1) newRow[emailCol] = uemail;
     if (passCol !== -1) newRow[passCol] = upass;
     if (roleCol !== -1) newRow[roleCol] = urole;
+    newRow[statusCol] = "Active"; // Default status
     
     userSheet.appendRow(newRow);
     
     return ContentService.createTextOutput(JSON.stringify({success:true, message:"User created successfully"})).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // ---------- DELETE USER (admin only) ----------
-  if(type === "deleteuser"){
+  // ---------- TOGGLE USER STATUS (admin only) ----------
+  if(type === "toggleuserstatus"){
     const targetId = e.parameter.userid;
     const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
     if(!userSheet){
@@ -482,25 +498,85 @@ for(let i = 1; i < data.length; i++){
     const data = userSheet.getDataRange().getValues();
     const headers = data[0] || [];
     const idCol = headers.indexOf("ID");
+    const statusCol = headers.indexOf("Status");
     
-    if(idCol === -1){
-      return ContentService.createTextOutput(JSON.stringify({success:false, error:"ID column not found"})).setMimeType(ContentService.MimeType.JSON);
+    if(idCol === -1 || statusCol === -1){
+      return ContentService.createTextOutput(JSON.stringify({success:false, error:"ID or Status column not found. Reload page to initialize headers."})).setMimeType(ContentService.MimeType.JSON);
     }
     
-    let deleted = false;
-    for(let i = data.length - 1; i >= 1; i--){
+    let toggled = false;
+    for(let i = 1; i < data.length; i++){
       if(String(data[i][idCol]).trim() === String(targetId).trim()){
-        userSheet.deleteRow(i + 1); // array is 0-indexed, rows are 1-indexed
-        deleted = true;
-        break; // Assume 1 user at a time
+        const currentStatus = String(data[i][statusCol]).trim() || "Active";
+        const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+        userSheet.getRange(i + 1, statusCol + 1).setValue(newStatus);
+        toggled = true;
+        break; 
       }
     }
 
-    if(deleted){
-      return ContentService.createTextOutput(JSON.stringify({success:true, message:"User deleted"})).setMimeType(ContentService.MimeType.JSON);
+    if(toggled){
+      return ContentService.createTextOutput(JSON.stringify({success:true, message:"User status updated"})).setMimeType(ContentService.MimeType.JSON);
     } else {
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"User not found"})).setMimeType(ContentService.MimeType.JSON);
     }
+  }
+
+  // ---------- GRANT LEAVE (admin only) ----------
+  if(type === "grantleave"){
+    const uid = e.parameter.userid;
+    const start = e.parameter.startdate; // YYYY-MM-DD
+    const end = e.parameter.enddate; // YYYY-MM-DD
+    
+    const ss = SpreadsheetApp.getActive();
+    let leaveSheet = ss.getSheetByName("leaves");
+    if(!leaveSheet){
+      leaveSheet = ss.insertSheet("leaves");
+      leaveSheet.appendRow(["ID", "From", "To"]);
+    }
+    
+    leaveSheet.appendRow([uid, start, end]);
+    
+    // Find User to send email
+    const userSheet = ss.getSheetByName("users");
+    if(userSheet){
+      const data = userSheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const idCol = headers.indexOf("ID");
+      const nameCol = headers.indexOf("Name");
+      const emailCol = headers.indexOf("Email");
+      
+      if(idCol !== -1 && emailCol !== -1){
+        for(let i=1; i<data.length; i++){
+          if(String(data[i][idCol]).trim() === String(uid)){
+            const uname = String(data[i][nameCol]).trim();
+            const uemail = String(data[i][emailCol]).trim();
+            if(uemail){
+              const subject = `Leave Approved - ${uname}`;
+              const bodyHTML = `
+                <div style="font-family:Arial,sans-serif;padding:20px;">
+                  <h2 style="color:#0056b3;">Leave Application Approved</h2>
+                  <p>Dear ${uname},</p>
+                  <p>Your leave has been successfully approved.</p>
+                  <p><strong>From:</strong> ${start}<br>
+                  <strong>To:</strong> ${end} (Inclusive)</p>
+                  <p>Enjoy your leave. Do not worry about attendance during these days.</p>
+                  <p>Regards,<br>Administrator</p>
+                </div>
+              `;
+              try {
+                GmailApp.sendEmail(uemail, subject, "", { htmlBody: bodyHTML });
+              } catch(e) {
+                 Logger.log("Failed to send leave approval email to " + uemail);
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({success:true, message:"Leave granted"})).setMimeType(ContentService.MimeType.JSON);
   }
 
   // ---------- DELETE DEVICE (admin only) ----------
@@ -641,11 +717,33 @@ function sendDailyEmails(){
   const nameCol  = userHeaders.indexOf("Name");
   const emailCol = userHeaders.indexOf("Email");
   const roleCol  = userHeaders.indexOf("Role");
+  const statusCol= userHeaders.indexOf("Status");
 
   if(idCol === -1 || emailCol === -1){
     Logger.log("ERROR: 'ID' or 'Email' column not found in users sheet!");
     Logger.log("Headers found: " + JSON.stringify(userHeaders));
     return;
+  }
+
+  // Pre-load Leaves
+  const leaveSheet = ss.getSheetByName("leaves");
+  const leaveMap = {};
+  if(leaveSheet) {
+    const leaveData = leaveSheet.getDataRange().getValues();
+    for(let i = 1; i < leaveData.length; i++){
+      const lUid = String(leaveData[i][0]).trim();
+      let lStart = new Date(leaveData[i][1]);
+      let lEnd = new Date(leaveData[i][2]);
+      lStart.setHours(0,0,0,0);
+      lEnd.setHours(23,59,59,999);
+      
+      const nowMidnight = new Date(now.getTime());
+      nowMidnight.setHours(12,0,0,0);
+      
+      if(nowMidnight >= lStart && nowMidnight <= lEnd) {
+        leaveMap[lUid] = true;
+      }
+    }
   }
 
 const attRows = attSheet.getDataRange().getValues();
@@ -684,19 +782,31 @@ const attRows = attSheet.getDataRange().getValues();
     const uname  = String(u[nameCol] || "").trim();
     const uemail = String(u[emailCol]|| "").trim();
     const urole  = String(u[roleCol] || "user").trim().toLowerCase();
+    const ustatus = statusCol !== -1 ? String(u[statusCol] || "Active").trim().toLowerCase() : "active";
 
     if(urole === "admin" || urole === "superadmin") continue;
     if(!uid || !uemail) continue;
+    if(ustatus === "inactive") continue; // Skip inactive users altogether
 
     const att = attMap[uid];
+    const isOnLeave = !!leaveMap[uid];
     let statusEN = "", statusBN = "", statusColor = "", noticeEN = "", noticeBN = "";
 
     if(!att){
-      statusEN    = "Absent";
-      statusBN    = "অনুপস্থিত";
-      statusColor = "#dc3545";
-      noticeEN    = "You were marked absent today. If this is incorrect, please contact your officer.";
-      noticeBN    = "আজ আপনাকে অনুপস্থিত চিহ্নিত করা হয়েছে। এটি ভুল হলে অফিসারের সাথে যোগাযোগ করুন।";
+      if(isOnLeave) {
+        // Mark as On Leave in Google Sheet and Skip email
+        attSheet.appendRow([now, uid, uname, today, "On Leave", "On Leave", "", "", "On Leave"]);
+        continue;
+      } else {
+        // Mark as Absent in Google Sheet and Send absent email
+        attSheet.appendRow([now, uid, uname, today, "Absent", "Absent", "", "", "Absent"]);
+        
+        statusEN    = "Absent";
+        statusBN    = "অনুপস্থিত";
+        statusColor = "#dc3545";
+        noticeEN    = "You were marked absent today. If this is incorrect, please contact your officer.";
+        noticeBN    = "আজ আপনাকে অনুপস্থিত চিহ্নিত করা হয়েছে। এটি ভুল হলে অফিসারের সাথে যোগাযোগ করুন।";
+      }
     } else {
       const outVal    = String(att.outTime).replace(/^'+/, "").trim();
       const noSignOut = (outVal === "---" || outVal === "");

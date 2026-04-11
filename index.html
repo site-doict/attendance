@@ -169,8 +169,15 @@ function login(){
                 const uPass = (u.Password || "").trim();
                 const uRole = (u.Role || "user").trim().toLowerCase();
                 const uName = (u.Name || "").trim();
+                const uStatus = (u.Status || "active").trim().toLowerCase();
 
                 if(uID === id && uPass === pass){
+
+                    if (uStatus === "inactive") {
+                        errEl.innerText = "❌ Account is deactivated.";
+                        found = true; // Prevents "Wrong ID/Password" message
+                        return;
+                    }
 
                     found = true;
 

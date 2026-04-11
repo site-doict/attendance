@@ -96,11 +96,14 @@
         padding: 10px;
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
       }
 
       .tab {
-        flex: 1;
-        padding: 10px;
+        flex: 0 0 auto;
+        padding: 10px 15px;
         background: #f0f0f0;
         border: none;
         border-radius: 6px;
@@ -108,6 +111,7 @@
         font-size: 14px;
         font-weight: bold;
         color: #666;
+        white-space: nowrap;
       }
 
       .tab.active {
@@ -428,6 +432,7 @@
         📊 Attendance
       </button>
       <button class="tab" onclick="showTab('settings')">⚙️ Settings</button>
+      <button class="tab" onclick="showTab('leaves')">📅 Leaves</button>
       <button class="tab" onclick="showTab('email')">📧 Send Email</button>
       <button class="tab" onclick="showTab('users')">👥 Manage Users</button>
       <button class="tab" onclick="showTab('devices')">📱 Devices</button>
@@ -511,7 +516,6 @@
         <table id="mainTable" style="display: none">
           <thead>
             <tr>
-              <th>Timestamp</th>
               <th>ID</th>
               <th>Name</th>
               <th>Date</th>
@@ -662,6 +666,37 @@
           </button>
           <div class="save-status" id="status-location"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: LEAVES ===== -->
+    <div id="tab-leaves" class="tab-content">
+      <div class="email-card">
+        <h3 style="color: #0056b3; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
+          📅 Grant Leave
+        </h3>
+        <p style="margin-bottom: 15px; font-size: 14px; color: #666;">Select an employee and specify their leave duration. An email will be sent automatically and they won't be marked absent.</p>
+        
+        <div class="form-group">
+          <label>Employee</label>
+          <select id="leaveUserId">
+            <option value="">⏳ Loading users...</option>
+          </select>
+        </div>
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label>Start Date</label>
+            <input type="date" id="leaveStartDate" />
+          </div>
+          <div style="flex: 1;">
+            <label>End Date (Inclusive)</label>
+            <input type="date" id="leaveEndDate" />
+          </div>
+        </div>
+        <button class="btn btn-success" onclick="grantLeave()" id="btnGrantLeave" style="width: 100%;">
+          ✅ Grant leave
+        </button>
+        <div id="leaveStatus" class="save-status"></div>
       </div>
     </div>
 
@@ -851,6 +886,8 @@
           loadData();
         } else if (tabName === "settings") {
           loadSettings();
+        } else if (tabName === "leaves") {
+          loadUsersForLeave();
         } else if (tabName === "users") {
           loadUsers();
         } else if (tabName === "devices") {
@@ -968,7 +1005,6 @@
 
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td style="font-size:11px;color:#777;">${r.timestamp || "---"}</td>
             <td><strong>${r.id || "---"}</strong></td>
             <td style="text-align:left;">${r.name || "---"}</td>
             <td>${r.date || "---"}</td>
@@ -1374,47 +1410,61 @@
       // =============================================
       function loadUsers() {
         const tbody = document.getElementById("usersListBody");
-        tbody.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #888;">⏳ Loading users...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Loading users...</td></tr>';
         
+        // Ensure table has the Status header
+        const theadTr = document.querySelector("#tab-users thead tr");
+        if(theadTr.children.length === 5) {
+          const statusTh = document.createElement("th");
+          statusTh.style.padding = "10px";
+          statusTh.style.border = "1px solid #ddd";
+          statusTh.innerText = "Status";
+          theadTr.insertBefore(statusTh, theadTr.children[4]);
+        }
+
         fetch(`${WEB_APP_URL}?action=getusers`)
           .then(r => r.json())
           .then(users => {
             tbody.innerHTML = "";
             if (!users || users.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #888;">No users found in sheet.</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">No users found in sheet.</td></tr>';
               return;
             }
             users.forEach(u => {
               if (u.id === "ID" || !u.id) return; // skip header
               
+              const statusLabel = (u.status && u.status.toLowerCase() === "inactive") ? "🔴 Inactive" : "🟢 Active";
+              const btnLabel = (u.status && u.status.toLowerCase() === "inactive") ? "🟢 Activate" : "🔴 Deactivate";
+              const btnClass = (u.status && u.status.toLowerCase() === "inactive") ? "btn-success" : "btn-danger";
+
               const tr = document.createElement("tr");
               tr.innerHTML = `
                 <td style="padding: 10px; border: 1px solid #eee;"><strong>${u.id}</strong></td>
                 <td style="padding: 10px; border: 1px solid #eee;">${u.name}</td>
                 <td style="padding: 10px; border: 1px solid #eee; font-size: 13px; color: #555;">${u.email}</td>
                 <td style="padding: 10px; border: 1px solid #eee;">${u.role}</td>
+                <td style="padding: 10px; border: 1px solid #eee; font-weight: bold;">${statusLabel}</td>
                 <td style="padding: 10px; border: 1px solid #eee; text-align: center;">
-                  <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteUser('${u.id}', '${u.name}')">🗑️ Delete</button>
+                  <button class="btn ${btnClass}" style="padding: 4px 8px; font-size: 12px;" onclick="toggleUserStatus('${u.id}', '${u.name}')">${btnLabel}</button>
                 </td>
               `;
               tbody.appendChild(tr);
             });
           })
           .catch(err => {
-            tbody.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #dc3545;">❌ Error loading users.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #dc3545;">❌ Error loading users.</td></tr>';
           });
       }
 
-      function deleteUser(id, name) {
-        if (!confirm(`Are you sure you want to delete user ${name} (${id})?`)) return;
+      function toggleUserStatus(id, name) {
+        if (!confirm(`Are you sure you want to toggle status for user ${name} (${id})?`)) return;
         
         const fd = new FormData();
-        fd.append("type", "deleteuser");
+        fd.append("type", "toggleuserstatus");
         fd.append("userid", id);
         
-        // Show loading state temporarily in table
         const tbody = document.getElementById("usersListBody");
-        tbody.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #888;">⏳ Deleting...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Updating...</td></tr>';
         
         fetch(WEB_APP_URL, { method: "POST", body: fd })
           .then(r => r.json())
@@ -1422,13 +1472,83 @@
             if(d.success) {
               loadUsers();
             } else {
-              alert("Wait, failed to delete: " + (d.error || "Unknown"));
+              alert("Wait, failed to update: " + (d.error || "Unknown"));
               loadUsers();
             }
           })
           .catch(e => {
             alert("Network error occurred.");
             loadUsers();
+          });
+      }
+
+      // =============================================
+      // LEAVE MANAGEMENT
+      // =============================================
+      function loadUsersForLeave() {
+        const select = document.getElementById("leaveUserId");
+        select.innerHTML = '<option value="">⏳ Loading...</option>';
+        
+        fetch(`${WEB_APP_URL}?action=getusers`)
+          .then(r => r.json())
+          .then(users => {
+            select.innerHTML = '<option value="">-- Select Employee --</option>';
+            users.forEach(u => {
+              if (u.id === "ID" || !u.id) return;
+              if (u.status && u.status.toLowerCase() === "inactive") return; // don't show inactive
+              const opt = document.createElement("option");
+              opt.value = u.id;
+              opt.innerText = `${u.name} (${u.id})`;
+              select.appendChild(opt);
+            });
+          })
+          .catch(err => {
+            select.innerHTML = '<option value="">❌ Error loading</option>';
+          });
+      }
+
+      function grantLeave() {
+        const id = document.getElementById("leaveUserId").value;
+        const start = document.getElementById("leaveStartDate").value;
+        const end = document.getElementById("leaveEndDate").value;
+        const statusEl = document.getElementById("leaveStatus");
+
+        statusEl.style.display = "none";
+
+        if (!id || !start || !end) {
+          statusEl.className = "save-status error";
+          statusEl.innerText = "❌ Please select employee, start, and end dates.";
+          statusEl.style.display = "block";
+          return;
+        }
+
+        const fd = new FormData();
+        fd.append("type", "grantleave");
+        fd.append("userid", id);
+        fd.append("startdate", start);
+        fd.append("enddate", end);
+
+        statusEl.className = "save-status";
+        statusEl.innerText = "⏳ Granting leave and sending email...";
+        statusEl.style.display = "block";
+
+        fetch(WEB_APP_URL, { method: "POST", body: fd })
+          .then(r => r.json())
+          .then(d => {
+            if (d.success) {
+              statusEl.className = "save-status success";
+              statusEl.innerText = "✅ Leave granted successfully!";
+              document.getElementById("leaveUserId").value = "";
+              document.getElementById("leaveStartDate").value = "";
+              document.getElementById("leaveEndDate").value = "";
+            } else {
+              statusEl.className = "save-status error";
+              statusEl.innerText = "❌ " + (d.error || "Failed to grant leave.");
+            }
+          })
+          .catch(e => {
+            statusEl.className = "save-status error";
+            statusEl.innerText = "❌ Network error!";
           });
       }
 
