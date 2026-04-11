@@ -13,7 +13,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Office Attendance" />
     <link rel="apple-touch-icon" href="./icon-192.png" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
       * {
@@ -638,17 +637,19 @@
         <!-- Office Location Settings -->
         <div class="settings-card">
           <h3>📍 Office Location</h3>
-          <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Click on the map to set the exact office center point.</p>
-          <div id="map" style="height: 250px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ccc; z-index: 1;"></div>
+          <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Manually enter the coordinates, or get your current location.</p>
+          <button class="btn btn-primary" onclick="getCurrentAdminLocation()" style="margin-bottom: 15px;">
+            🗺️ Use My Current Location
+          </button>
           
           <div class="form-group" style="display: flex; gap: 10px;">
             <div style="flex: 1;">
               <label>Latitude</label>
-              <input type="text" id="officeLat" readonly style="background: #e9ecef;" />
+              <input type="text" id="officeLat" />
             </div>
             <div style="flex: 1;">
               <label>Longitude</label>
-              <input type="text" id="officeLng" readonly style="background: #e9ecef;" />
+              <input type="text" id="officeLng" />
             </div>
           </div>
           <div class="form-group">
@@ -809,7 +810,6 @@
       </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
       // =============================================
       // CONFIG
@@ -851,7 +851,6 @@
           loadData();
         } else if (tabName === "settings") {
           loadSettings();
-          setTimeout(() => { if (officeMap) officeMap.invalidateSize(); }, 200);
         } else if (tabName === "users") {
           loadUsers();
         } else if (tabName === "devices") {
@@ -1093,44 +1092,40 @@
             document.getElementById("officeLat").value = settings.officeLat || "24.8946369";
             document.getElementById("officeLng").value = settings.officeLng || "89.7183403";
             document.getElementById("officeRadius").value = settings.officeRadius || "100";
-            
-            initMap(settings.officeLat || 24.8946369, settings.officeLng || 89.7183403);
 
           })
           .catch((err) => console.error("Failed to load settings:", err));
       }
 
       // =============================================
-      // MAP LOGIC
+      // LOCATION LOGIC
       // =============================================
-      let officeMap = null;
-      let officeMarker = null;
+      function getCurrentAdminLocation() {
+        const statusEl = document.getElementById("status-location");
+        statusEl.className = "save-status";
+        statusEl.innerText = "⏳ Fetching your location...";
+        statusEl.style.display = "block";
 
-      function initMap(lat, lng) {
-        if (!officeMap) {
-          officeMap = L.map("map").setView([lat, lng], 16);
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: "© OpenStreetMap",
-          }).addTo(officeMap);
-
-          officeMarker = L.marker([lat, lng], { draggable: true }).addTo(officeMap);
-
-          officeMarker.on("dragend", function (e) {
-            const pos = officeMarker.getLatLng();
-            document.getElementById("officeLat").value = pos.lat.toFixed(7);
-            document.getElementById("officeLng").value = pos.lng.toFixed(7);
-          });
-
-          officeMap.on("click", function (e) {
-            officeMarker.setLatLng(e.latlng);
-            document.getElementById("officeLat").value = e.latlng.lat.toFixed(7);
-            document.getElementById("officeLng").value = e.latlng.lng.toFixed(7);
-          });
-        } else {
-          officeMap.setView([lat, lng], 16);
-          officeMarker.setLatLng([lat, lng]);
+        if (!navigator.geolocation) {
+          statusEl.className = "save-status error";
+          statusEl.innerText = "❌ Geolocation is not supported by your browser.";
+          return;
         }
+
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            document.getElementById("officeLat").value = pos.coords.latitude.toFixed(7);
+            document.getElementById("officeLng").value = pos.coords.longitude.toFixed(7);
+            statusEl.className = "save-status success";
+            statusEl.innerText = "✅ Location updated! Don't forget to save.";
+            setTimeout(() => { statusEl.style.display = "none"; }, 3000);
+          },
+          function (err) {
+            statusEl.className = "save-status error";
+            statusEl.innerText = "❌ Failed to get location. Please allow location access.";
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
       }
 
       // =============================================
