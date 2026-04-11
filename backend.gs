@@ -102,7 +102,7 @@ function doGet(e){
 
   // ========== GET HISTORY (single user) ==========
   if(action === "history"){
-    const rows = getHistoryInternal();
+    const rows = getHistoryInternal(e.parameter.id);
     return ContentService
       .createTextOutput(JSON.stringify(rows))
       .setMimeType(ContentService.MimeType.JSON);
@@ -114,7 +114,7 @@ function doGet(e){
     const fp = e.parameter.fp;
     
     const deviceStatus = checkDeviceInternal(uid, fp);
-    const history = getHistoryInternal();
+    const history = getHistoryInternal(uid);
     const settings = getSettings();
     
     return ContentService
@@ -1212,7 +1212,7 @@ function setupDailyTrigger(){
 // =============================================
 // HELPER: GET HISTORY ROWS
 // =============================================
-function getHistoryInternal(){
+function getHistoryInternal(userId){
   const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
   if(!sheet) return [];
   const data  = sheet.getDataRange().getValues();
@@ -1220,7 +1220,11 @@ function getHistoryInternal(){
 
   for(let i = 1; i < data.length; i++){
     const r = data[i];
-    if(!r[1]) continue;
+    const rowId = String(r[1] || "").trim();
+    if(!rowId) continue;
+    
+    // Filter by user ID if provided
+    if (userId && rowId !== String(userId).trim()) continue;
 
     let inTime = r[4];
     if(inTime instanceof Date){
