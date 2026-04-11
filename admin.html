@@ -13,6 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Office Attendance" />
     <link rel="apple-touch-icon" href="./icon-192.png" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
       * {
@@ -633,6 +634,33 @@
           </button>
           <div class="save-status" id="status-holidays"></div>
         </div>
+
+        <!-- Office Location Settings -->
+        <div class="settings-card">
+          <h3>📍 Office Location</h3>
+          <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Click on the map to set the exact office center point.</p>
+          <div id="map" style="height: 250px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ccc; z-index: 1;"></div>
+          
+          <div class="form-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label>Latitude</label>
+              <input type="text" id="officeLat" readonly style="background: #e9ecef;" />
+            </div>
+            <div style="flex: 1;">
+              <label>Longitude</label>
+              <input type="text" id="officeLng" readonly style="background: #e9ecef;" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Allowed Radius (Meters)</label>
+            <input type="number" id="officeRadius" value="100" />
+            <small>Employees must be within this distance to mark attendance.</small>
+          </div>
+          <button class="btn btn-success" onclick="saveSettings('location')">
+            💾 Save Location
+          </button>
+          <div class="save-status" id="status-location"></div>
+        </div>
       </div>
     </div>
 
@@ -781,6 +809,7 @@
       </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
       // =============================================
       // CONFIG
@@ -822,6 +851,7 @@
           loadData();
         } else if (tabName === "settings") {
           loadSettings();
+          setTimeout(() => { if (officeMap) officeMap.invalidateSize(); }, 200);
         } else if (tabName === "users") {
           loadUsers();
         } else if (tabName === "devices") {
@@ -1058,8 +1088,49 @@
               settings.emailsPaused || "no";
             document.getElementById("customHolidays").value =
               settings.customHolidays || "Friday,Saturday";
+              
+            // Location
+            document.getElementById("officeLat").value = settings.officeLat || "24.8946369";
+            document.getElementById("officeLng").value = settings.officeLng || "89.7183403";
+            document.getElementById("officeRadius").value = settings.officeRadius || "100";
+            
+            initMap(settings.officeLat || 24.8946369, settings.officeLng || 89.7183403);
+
           })
           .catch((err) => console.error("Failed to load settings:", err));
+      }
+
+      // =============================================
+      // MAP LOGIC
+      // =============================================
+      let officeMap = null;
+      let officeMarker = null;
+
+      function initMap(lat, lng) {
+        if (!officeMap) {
+          officeMap = L.map("map").setView([lat, lng], 16);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "© OpenStreetMap",
+          }).addTo(officeMap);
+
+          officeMarker = L.marker([lat, lng], { draggable: true }).addTo(officeMap);
+
+          officeMarker.on("dragend", function (e) {
+            const pos = officeMarker.getLatLng();
+            document.getElementById("officeLat").value = pos.lat.toFixed(7);
+            document.getElementById("officeLng").value = pos.lng.toFixed(7);
+          });
+
+          officeMap.on("click", function (e) {
+            officeMarker.setLatLng(e.latlng);
+            document.getElementById("officeLat").value = e.latlng.lat.toFixed(7);
+            document.getElementById("officeLng").value = e.latlng.lng.toFixed(7);
+          });
+        } else {
+          officeMap.setView([lat, lng], 16);
+          officeMarker.setLatLng([lat, lng]);
+        }
       }
 
       // =============================================
@@ -1134,6 +1205,13 @@
             },
           ];
           statusId = "status-holidays";
+        } else if (type === "location") {
+          updates = [
+            { key: "officeLat", value: document.getElementById("officeLat").value },
+            { key: "officeLng", value: document.getElementById("officeLng").value },
+            { key: "officeRadius", value: document.getElementById("officeRadius").value }
+          ];
+          statusId = "status-location";
         }
 
         const statusEl = document.getElementById(statusId);

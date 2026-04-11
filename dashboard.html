@@ -168,10 +168,6 @@ if('serviceWorker' in navigator){
 const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
-const OFFICE_LAT          = 24.8946369;
-const OFFICE_LNG          = 89.7183403;
-const MAX_DISTANCE_METERS = 100;
-
 // ================= USER =================
 const id   = localStorage.getItem("userid");
 const name = localStorage.getItem("name");
@@ -292,11 +288,16 @@ function getLocationAndMark(type, status){
         function(pos){
             const userLat = pos.coords.latitude;
             const userLng = pos.coords.longitude;
-            const dist    = getDistance(userLat, userLng, OFFICE_LAT, OFFICE_LNG);
+            
+            const officeLat = appSettings ? parseFloat(appSettings.officeLat) : 24.8946369;
+            const officeLng = appSettings ? parseFloat(appSettings.officeLng) : 89.7183403;
+            const maxRadius = appSettings ? parseInt(appSettings.officeRadius) || 100 : 100;
+
+            const dist    = getDistance(userLat, userLng, officeLat, officeLng);
 
             console.log("Distance:", Math.round(dist), "m");
 
-            if(dist <= MAX_DISTANCE_METERS){
+            if(dist <= maxRadius){
                 sendData(status, type, userLat, userLng);
             } else {
                 fraudMsg.style.display = "block";

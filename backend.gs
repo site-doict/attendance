@@ -22,7 +22,10 @@ function getSettings(){
     officeClosedFrom: "",
     officeClosedTo: "",
     emailsPaused: "no",
-    customHolidays: "Friday,Saturday"
+    customHolidays: "Friday,Saturday",
+    officeLat: "24.8946369",
+    officeLng: "89.7183403",
+    officeRadius: "100"
   };
   
   if(!settingsSheet){
