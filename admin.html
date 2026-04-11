@@ -429,6 +429,7 @@
       </button>
       <button class="tab" onclick="showTab('settings')">⚙️ Settings</button>
       <button class="tab" onclick="showTab('email')">📧 Send Email</button>
+      <button class="tab" onclick="showTab('users')">👥 Manage Users</button>
     </div>
 
     <!-- ===== TAB: ATTENDANCE ===== -->
@@ -685,6 +686,48 @@
           📤 Send Email
         </button>
         <div class="save-status" id="status-sendmail"></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: MANAGE USERS ===== -->
+    <div id="tab-users" class="tab-content">
+      <div class="email-card">
+        <h3 style="color: #0056b3; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
+          👥 Add New User
+        </h3>
+
+        <div class="form-group">
+          <label>Employee ID</label>
+          <input type="text" id="newUserId" placeholder="e.g. 1004" />
+        </div>
+
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="newUserName" placeholder="Full Name" />
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="text" id="newUserEmail" placeholder="Email Address" />
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="newUserPass" placeholder="Password" />
+        </div>
+
+        <div class="form-group">
+          <label>Role</label>
+          <select id="newUserRole">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <button class="btn btn-success" onclick="createUser()">
+          ➕ Create User
+        </button>
+        <div class="save-status" id="status-createuser"></div>
       </div>
     </div>
 
@@ -1136,6 +1179,60 @@
             } else {
               statusEl.className = "save-status error";
               statusEl.innerText = "❌ Failed to send emails!";
+            }
+          })
+          .catch((err) => {
+            statusEl.className = "save-status error";
+            statusEl.innerText = "❌ Network error!";
+          });
+      }
+
+      // =============================================
+      // CREATE USER
+      // =============================================
+      function createUser() {
+        const id = document.getElementById("newUserId").value.trim();
+        const name = document.getElementById("newUserName").value.trim();
+        const email = document.getElementById("newUserEmail").value.trim();
+        const pass = document.getElementById("newUserPass").value.trim();
+        const role = document.getElementById("newUserRole").value;
+        const statusEl = document.getElementById("status-createuser");
+
+        statusEl.style.display = "none";
+
+        if (!id || !name || !pass) {
+          statusEl.className = "save-status error";
+          statusEl.innerText = "❌ ID, Name and Password are required!";
+          statusEl.style.display = "block";
+          return;
+        }
+
+        const fd = new FormData();
+        fd.append("type", "createuser");
+        fd.append("userid", id);
+        fd.append("name", name);
+        fd.append("email", email);
+        fd.append("pass", pass);
+        fd.append("role", role);
+
+        statusEl.className = "save-status";
+        statusEl.innerText = "⏳ Creating user...";
+        statusEl.style.display = "block";
+
+        fetch(WEB_APP_URL, { method: "POST", body: fd })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.success) {
+              statusEl.className = "save-status success";
+              statusEl.innerText = "✅ " + (d.message || "User created!");
+              document.getElementById("newUserId").value = "";
+              document.getElementById("newUserName").value = "";
+              document.getElementById("newUserEmail").value = "";
+              document.getElementById("newUserPass").value = "";
+              document.getElementById("newUserRole").value = "user";
+            } else {
+              statusEl.className = "save-status error";
+              statusEl.innerText = "❌ " + (d.error || "Failed to create user");
             }
           })
           .catch((err) => {
