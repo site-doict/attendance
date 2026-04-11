@@ -117,12 +117,14 @@ function doGet(e){
     const deviceStatus = checkDeviceInternal(uid, fp);
     const history = getHistoryInternal(uid);
     const settings = getSettings();
+    const leaveStatus = getUserLeaveStatus(uid);
     
     return ContentService
       .createTextOutput(JSON.stringify({
         deviceStatus: deviceStatus,
         history: history,
-        settings: settings
+        settings: settings,
+        leaveStatus: leaveStatus
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }
@@ -1299,4 +1301,36 @@ function checkDeviceInternal(uid, fingerprint){
 
   sheet.appendRow([uid, fingerprint]);
   return {status:"registered"};
+}
+
+// =============================================
+// HELPER: GET USER LEAVE STATUS
+// =============================================
+function getUserLeaveStatus(uid) {
+  const ss = SpreadsheetApp.getActive();
+  const leaveSheet = ss.getSheetByName("leaves");
+  if (!leaveSheet) return { active: false };
+
+  const data = leaveSheet.getDataRange().getValues();
+  const now = new Date();
+  now.setHours(12, 0, 0, 0); // Use mid-day for safety in comparison
+
+  for (let i = 1; i < data.length; i++) {
+    const lUid = String(data[i][0]).trim();
+    if (lUid !== uid) continue;
+
+    const start = new Date(data[i][1]);
+    const end = new Date(data[i][2]);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    if (now >= start && now <= end) {
+      return { 
+        active: true, 
+        startDate: Utilities.formatDate(start, TIMEZONE, "M/d/yyyy"),
+        endDate: Utilities.formatDate(end, TIMEZONE, "M/d/yyyy") 
+      };
+    }
+  }
+  return { active: false };
 }

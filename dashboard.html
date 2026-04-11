@@ -263,6 +263,7 @@ const WEB_APP_URL =
 const id   = localStorage.getItem("userid");
 const name = localStorage.getItem("name");
 let appSettings = null;
+let userLeaveStatus = null;
 
 if(!id){ location.href = "index.html"; }
 
@@ -327,6 +328,7 @@ function initializeDashboard(silent = false) {
     .then((r) => r.json())
     .then((res) => {
       appSettings = res.settings;
+      userLeaveStatus = res.leaveStatus;
       if (res.deviceStatus.status === "blocked") {
         deviceMsg.style.display = "block";
         inBtn.style.display = "none";
@@ -468,8 +470,15 @@ function controlButtons(rows){
 
     if(!deviceAllowed) return;
 
-    // ========== HOLIDAY CHECK (Friday=5, Saturday=6) ==========
-    if(!deviceAllowed) return;
+    // ========== DYNAMIC LEAVE CHECK ==========
+    if (userLeaveStatus && userLeaveStatus.active) {
+        const nextWorkDay = calculateNextWorkingDay(userLeaveStatus.endDate);
+        showStatusBox(
+            "🌴 You are on approved leave today. Enjoy your day off!\n\n" +
+            "📅 Your next working day is: " + nextWorkDay,
+        "blue");
+        return;
+    }
 
     // ========== DYNAMIC OFFICE CLOSED CHECK (Date Ranges) ==========
     if (isOfficeClosed(now)) {
@@ -784,6 +793,33 @@ function isOfficeClosed(date) {
   from.setHours(0,0,0,0);
   to.setHours(23,59,59,999);
   return d >= from && d <= to;
+}
+
+// Helper to calculate the next working day after leave
+function calculateNextWorkingDay(endDateStr) {
+  if (!appSettings) return "---";
+  
+  let current = new Date(endDateStr);
+  let found = false;
+  let safetyCounter = 0;
+  
+  while (!found && safetyCounter < 30) { // Safety limit of 30 days
+    current.setDate(current.getDate() + 1);
+    
+    const isHoliday = isWeekendOrHoliday(current);
+    const isClosed = isOfficeClosed(current);
+    
+    if (!isHoliday && !isClosed) {
+      found = true;
+    }
+    safetyCounter++;
+  }
+  
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayName = dayNames[current.getDay()];
+  const dateStr = (current.getMonth() + 1) + "/" + current.getDate() + "/" + current.getFullYear();
+  
+  return dateStr + " (" + dayName + ")";
 }
 
 // Convert 24-hour to 12-hour format
