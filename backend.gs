@@ -1343,13 +1343,14 @@ function checkDeviceInternal(uid, fingerprint){
 function getUserLeaveStatus(uid) {
   const ss = SpreadsheetApp.getActive();
   const leaveSheet = ss.getSheetByName("leaves");
-  if (!leaveSheet) return { active: false };
+  if (!leaveSheet) return { active: false, allLeaves: [] };
 
   const data = leaveSheet.getDataRange().getValues();
   const now = new Date();
-  
-  // Set current time to midnight for comparison
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+  let activeLeave = null;
+  let allLeaves = [];
 
   for (let i = 1; i < data.length; i++) {
     const lUid = String(data[i][0]).trim();
@@ -1358,17 +1359,29 @@ function getUserLeaveStatus(uid) {
     const start = new Date(data[i][1]);
     const end = new Date(data[i][2]);
     
-    // Reset start/end to midnight for clean range check
     const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0);
     const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999);
 
-    if (today >= startDate && today <= endDate) {
-      return { 
-        active: true, 
-        startDate: Utilities.formatDate(start, TIMEZONE, "M/d/yyyy"),
-        endDate: Utilities.formatDate(end, TIMEZONE, "M/d/yyyy") 
-      };
+    // Collect all current and future leaves
+    if (endDate >= today) {
+      allLeaves.push({
+        start: Utilities.formatDate(start, TIMEZONE, "M/d/yyyy"),
+        end: Utilities.formatDate(end, TIMEZONE, "M/d/yyyy")
+      });
+
+      // Check if active today
+      if (today >= startDate && today <= endDate) {
+        activeLeave = {
+          startDate: Utilities.formatDate(start, TIMEZONE, "M/d/yyyy"),
+          endDate: Utilities.formatDate(end, TIMEZONE, "M/d/yyyy")
+        };
+      }
     }
   }
-  return { active: false };
+
+  return { 
+    active: !!activeLeave, 
+    currentLeave: activeLeave,
+    allLeaves: allLeaves 
+  };
 }

@@ -470,22 +470,24 @@ function controlButtons(rows){
 
     if(!deviceAllowed) return;
 
+    // ========== SMART RETURN DATE LOGIC ========== 
+    // This finds the first actual working day, skipping weekends, holidays, and leaves.
+    const smartReturnDate = findSmartReturnDate(now);
+
     // ========== DYNAMIC LEAVE CHECK ========== 
-    // This is now at the top so employees see their return date even on weekends
     if (userLeaveStatus && userLeaveStatus.active) {
-        const nextWorkDay = calculateNextWorkingDay(userLeaveStatus.endDate);
         showStatusBox(
             "🌴 You are on approved leave today. Enjoy your day off!\n\n" +
-            "📅 Your next working day is: " + nextWorkDay,
+            "📅 Your next working day is: " + smartReturnDate,
         "blue");
         return;
     }
 
-    // ========== DYNAMIC OFFICE CLOSED CHECK (Date Ranges) ==========
+    // ========== DYNAMIC OFFICE CLOSED CHECK (Date Ranges) ========== 
     if (isOfficeClosed(now)) {
         showStatusBox(
             "🏢 অফিস সাময়িকভাবে বন্ধ আছে!\n\n" +
-            "অফিসারের নির্দেশনা অনুযায়ী পরবর্তীতে উপস্থিতি দিন।",
+            "আপনার পরবর্তী কার্যদিবস: " + smartReturnDate,
         "orange");
         return;
     }
@@ -496,7 +498,7 @@ function controlButtons(rows){
         const dayName = dayNames[now.getDay()];
         showStatusBox(
             "🏖️ আজ ছুটির দিন (" + dayName + ")!\n\n" +
-            "অফিস বন্ধ আছে। আগামী কার্যদিবসে উপস্থিত থাকুন।",
+            "আপনার পরবর্তী কার্যদিবস: " + smartReturnDate,
         "orange");
         return;
     }
