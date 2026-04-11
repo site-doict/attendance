@@ -1444,8 +1444,9 @@
                 <td style="padding: 10px; border: 1px solid #eee; font-size: 13px; color: #555;">${u.email}</td>
                 <td style="padding: 10px; border: 1px solid #eee;">${u.role}</td>
                 <td style="padding: 10px; border: 1px solid #eee; font-weight: bold;">${statusLabel}</td>
-                <td style="padding: 10px; border: 1px solid #eee; text-align: center;">
+                <td style="padding: 10px; border: 1px solid #eee; text-align: center; white-space: nowrap;">
                   <button class="btn ${btnClass}" style="padding: 4px 8px; font-size: 12px;" onclick="toggleUserStatus('${u.id}', '${u.name}')">${btnLabel}</button>
+                  <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; margin-left: 5px;" onclick="deleteUser('${u.id}', '${u.name}')">🗑️ Delete</button>
                 </td>
               `;
               tbody.appendChild(tr);
@@ -1453,6 +1454,32 @@
           })
           .catch(err => {
             tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #dc3545;">❌ Error loading users.</td></tr>';
+          });
+      }
+
+      function deleteUser(id, name) {
+        if (!confirm(`⚠️ WARNING: This will PERMANENTLY delete user ${name} (${id}) and all their device records. Deactivate instead if you just want to block them temporarily. \n\nAre you sure you want to delete?`)) return;
+        
+        const fd = new FormData();
+        fd.append("type", "deleteuser");
+        fd.append("userid", id);
+        
+        const tbody = document.getElementById("usersListBody");
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Deleting...</td></tr>';
+        
+        fetch(WEB_APP_URL, { method: "POST", body: fd })
+          .then(r => r.json())
+          .then(d => {
+            if(d.success) {
+              loadUsers();
+            } else {
+              alert("Wait, failed to delete: " + (d.error || "Unknown"));
+              loadUsers();
+            }
+          })
+          .catch(e => {
+            alert("Network error occurred.");
+            loadUsers();
           });
       }
 

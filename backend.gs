@@ -522,6 +522,38 @@ for(let i = 1; i < data.length; i++){
     }
   }
 
+  // ---------- DELETE USER (admin only) ----------
+  if(type === "deleteuser"){
+    const targetId = e.parameter.userid;
+    const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
+    if(!userSheet){
+      return ContentService.createTextOutput(JSON.stringify({success:false, error:"Users sheet not found"})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const data = userSheet.getDataRange().getValues();
+    const headers = data[0] || [];
+    const idCol = headers.indexOf("ID");
+    
+    if(idCol === -1){
+      return ContentService.createTextOutput(JSON.stringify({success:false, error:"ID column not found"})).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    let deleted = false;
+    for(let i = data.length - 1; i >= 1; i--){
+      if(String(data[i][idCol]).trim() === String(targetId).trim()){
+        userSheet.deleteRow(i + 1); // array is 0-indexed, rows are 1-indexed
+        deleted = true;
+        break; // Assume 1 user at a time
+      }
+    }
+
+    if(deleted){
+      return ContentService.createTextOutput(JSON.stringify({success:true, message:"User deleted"})).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({success:false, error:"User not found"})).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // ---------- GRANT LEAVE (admin only) ----------
   if(type === "grantleave"){
     const uid = e.parameter.userid;
