@@ -36,47 +36,30 @@
         position: relative;
       }
 
-      /* --- Animated Background --- */
-      .animated-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background: #0f172a;
-        overflow: hidden;
-      }
+      /* --- Animated Background (Mesh Gradient) --- */
+.animated-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: #0f172a;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.4) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.4) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.4) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(168, 85, 247, 0.4) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(30, 64, 175, 0.3) 0px, transparent 50%);
+    background-size: 200% 200%;
+    animation: mesh 15s ease infinite;
+}
 
-      .blob {
-        position: absolute;
-        width: 700px;
-        height: 700px;
-        filter: blur(100px);
-        border-radius: 50%;
-        z-index: -1;
-        opacity: 0.25;
-        animation: move-blobs 30s infinite alternate ease-in-out;
-      }
-
-      .blob-1 { 
-        top: 5%; 
-        left: 5%; 
-        background: #3b82f6; 
-      }
-
-      .blob-2 { 
-        bottom: 5%; 
-        right: 15%; 
-        background: #8b5cf6; 
-        animation-delay: -7s;
-      }
-
-      @keyframes move-blobs {
-        0% { transform: translate(0, 0) scale(1); }
-        50% { transform: translate(150px, 100px) scale(1.2); }
-        100% { transform: translate(-100px, 200px) scale(1.1); }
-      }
+@keyframes mesh {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+}
 
       /* ===== HEADER ===== */
       .header {
@@ -161,19 +144,22 @@
       .tab {
         flex: 0 0 auto;
         padding: 10px 15px;
-        background: #f0f0f0;
-        border: none;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 6px;
         cursor: pointer;
         font-size: 14px;
         font-weight: bold;
-        color: #666;
+        color: rgba(255, 255, 255, 0.7);
         white-space: nowrap;
+        transition: all 0.3s ease;
       }
 
       .tab.active {
-        background: #0056b3;
+        background: #3b82f6;
         color: white;
+        border-color: #3b82f6;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
       }
 
       /* ===== TAB CONTENT ===== */
@@ -195,18 +181,22 @@
       }
 
       .settings-card {
-        background: white;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        color: white;
       }
 
       .settings-card h3 {
-        color: #0056b3;
-        margin-bottom: 15px;
-        font-size: 16px;
-        border-bottom: 2px solid #0056b3;
-        padding-bottom: 8px;
+        color: #3b82f6;
+        margin-bottom: 20px;
+        font-size: 18px;
+        font-weight: 600;
+        border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+        padding-bottom: 10px;
       }
 
       .form-group {
@@ -225,17 +215,21 @@
       .form-group select,
       .form-group textarea {
         width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
         font-size: 14px;
+        color: white;
+        outline: none;
+        transition: all 0.3s ease;
       }
 
       .form-group input:focus,
       .form-group select:focus,
       .form-group textarea:focus {
-        outline: none;
-        border-color: #0056b3;
+        border-color: #3b82f6;
+        background: rgba(255, 255, 255, 0.1);
       }
 
       .form-group small {
@@ -269,10 +263,13 @@
       .email-card {
         max-width: 800px;
         margin: 0 auto;
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        color: white;
       }
 
       /* ===== SUMMARY CARDS ===== */
@@ -352,26 +349,28 @@
 
       th,
       td {
-        border: 1px solid #eee;
-        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 12px;
         font-size: 13px;
         text-align: center;
       }
 
       th {
-        background: #0056b3;
-        color: white;
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        font-weight: 600;
         white-space: nowrap;
         position: sticky;
         top: 0;
+        backdrop-filter: blur(10px);
       }
 
       tr:nth-child(even) {
-        background: #f9f9f9;
+        background: rgba(255, 255, 255, 0.02);
       }
 
       tr:hover {
-        background: #eef4ff;
+        background: rgba(255, 255, 255, 0.05);
       }
 
       .badge {
@@ -418,14 +417,14 @@
         align-items: center;
         justify-content: center;
         padding: 60px;
-        color: #0056b3;
+        color: #3b82f6;
       }
 
       .spinner-modern {
         width: 40px;
         height: 40px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #0056b3;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-top: 4px solid #3b82f6;
         border-radius: 50%;
         animation: spin 1s linear infinite;
         margin-bottom: 15px;
@@ -439,22 +438,37 @@
       .no-data {
         text-align: center;
         padding: 40px;
-        color: #888;
+        color: #9ca3af;
+      }
+
+      .animated-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background: linear-gradient(125deg, #0f172a, #1e1b4b, #312e81, #0f172a);
+        background-size: 400% 400%;
+        animation: gradientMove 15s ease infinite;
+      }
+
+      @keyframes gradientMove {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
       }
     </style>
   </head>
 
-<body>
-    <!-- Animated Background -->
-    <div class="animated-bg">
-      <div class="blob blob-1"></div>
-      <div class="blob blob-2"></div>
-    </div>
+  <body>
+    <!-- Animated Background (Mesh) -->
+    <div class="animated-bg"></div>
     <!-- ===== HEADER ===== -->
     <div class="header">
       <h2>🏢 Admin Dashboard</h2>
       <div class="header-btns">
-        <span id="lastUpdated" style="font-size: 12px; color: #888"
+        <span id="lastUpdated" style="font-size: 12px; color: #94a3b8"
           >⏳ Loading...</span
         >
         <button class="btn btn-danger" onclick="logout()">Logout</button>
