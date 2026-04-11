@@ -503,6 +503,66 @@
         display: inline-block;
         max-width: 90px;
         line-height: 1.3;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      }
+
+      .badge-present {
+        background: #10b981;
+        color: white;
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+      }
+
+      .badge-late {
+        background: #f59e0b;
+        color: white;
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+      }
+
+      .badge-early {
+        background: #f97316;
+        color: white;
+        box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+      }
+
+      .badge-verylate {
+        background: #ef4444;
+        color: white;
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+        animation: pulse-red 2s infinite;
+      }
+
+      @keyframes pulse-red {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+
+      /* Row Highlights */
+      tr.tr-verylate {
+        background: rgba(239, 68, 68, 0.1) !important;
+      }
+      tr.tr-absent {
+        background: rgba(107, 114, 128, 0.1) !important;
+      }
+      tr.tr-late {
+        background: rgba(245, 158, 11, 0.05) !important;
+      }
+
+
+      .badge-absent {
+        background: #6b7280;
+        color: white;
+      }
+
+      .badge-nosignout {
+        background: #8b5cf6;
+        color: white;
+        box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+      }
+
+      .badge-default {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
       }
 
       #loader {
@@ -1201,8 +1261,10 @@
         sorted.forEach((r) => {
           const status = String(r.status || "").trim();
           const badgeCls = getBadgeClass(status);
+          const rowCls = getRowClass(status);
 
           const tr = document.createElement("tr");
+          if (rowCls) tr.className = rowCls;
           tr.innerHTML = `
             <td><strong>${r.id || "---"}</strong></td>
             <td style="text-align:left;">${r.name || "---"}</td>
@@ -1213,6 +1275,15 @@
         `;
           tbody.appendChild(tr);
         });
+      }
+
+      function getRowClass(status) {
+        if (!status) return "";
+        const s = status.toLowerCase();
+        if (s.includes("very late")) return "tr-verylate";
+        if (s === "absent") return "tr-absent";
+        if (s.includes("late") || s.includes("early")) return "tr-late";
+        return "";
       }
 
       function getBadgeClass(status) {
