@@ -30,8 +30,9 @@ body{
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden;
     position: relative;
+    padding: 20px;
 }
 
 /* --- Animated Background (Mesh Gradient) --- */
@@ -77,7 +78,8 @@ body{
     -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 40px 35px;
-    width: 360px;
+    width: 90vw;
+    max-width: 360px;
     border-radius: 24px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     transition: all 0.4s ease;
@@ -195,6 +197,35 @@ button:hover::after {
     margin-top: 10px;
     font-size: 14px;
 }
+
+/* Tablet & Mobile Responsiveness */
+@media (max-width: 480px) {
+    .login-box {
+        padding: 30px 25px;
+    }
+    .login-box h2 {
+        font-size: 22px;
+    }
+    input, button {
+        height: 48px;
+    }
+    .logo-float {
+        font-size: 40px;
+    }
+}
+
+@media (max-width: 360px) {
+    .login-box {
+        padding: 25px 20px;
+    }
+    .login-box h2 {
+        font-size: 20px;
+    }
+    .login-box p {
+        font-size: 13px;
+    }
+}
+
 </style>
 </head>
 

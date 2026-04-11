@@ -303,9 +303,61 @@ button{
 
     .loading-text {
       font-size: 18px;
-      color: #555;
+      color: rgba(255, 255, 255, 0.85);
       font-weight: bold;
     }
+
+    /* Tablet & Mobile Responsiveness */
+    @media (max-width: 480px) {
+        body {
+            padding: 15px;
+        }
+        h2 {
+            font-size: 20px;
+        }
+        #clock {
+            font-size: 24px;
+            margin: 15px 0;
+        }
+        #inBtn, #outBtn, .logout-btn {
+            width: 100%;
+            height: 48px;
+            margin: 8px 0;
+            font-size: 16px;
+        }
+        .status-box, #deviceMsg, #fraudMsg {
+            max-width: 100%;
+            padding: 15px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        #historyArea {
+            padding: 15px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 100%;
+        }
+        #historyArea h4 {
+            font-size: 17px;
+            padding-bottom: 10px;
+        }
+        .history-table {
+            font-size: 13px;
+        }
+        .status-badge {
+            font-size: 10px;
+            padding: 3px 8px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        h2 { font-size: 18px; }
+        #clock { font-size: 22px; }
+        .history-table th, .history-table td {
+            padding: 8px 5px;
+        }
+    }
+
   </style>
 </head>
 
@@ -689,6 +741,11 @@ function displayHistory(rows) {
   list.innerHTML = "";
   const today = new Date();
 
+  const wrapper = document.createElement("div");
+  wrapper.style.overflowX = "auto";
+  wrapper.style.width = "100%";
+  wrapper.style.webkitOverflowScrolling = "touch";
+
   const table = document.createElement("table");
   table.className = "history-table";
   table.innerHTML = `
@@ -702,7 +759,8 @@ function displayHistory(rows) {
         </thead>
         <tbody id="historyTableBody"></tbody>
     `;
-  list.appendChild(table);
+  wrapper.appendChild(table);
+  list.appendChild(wrapper);
 
   const tbody = document.getElementById("historyTableBody");
 
