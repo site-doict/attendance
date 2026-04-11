@@ -40,8 +40,12 @@
         overflow-x: hidden;
         overscroll-behavior: none;
         overscroll-behavior-y: none;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: auto;
         position: relative;
       }
+
+
 
 
 
@@ -651,25 +655,9 @@
         color: #9ca3af;
       }
 
-      .animated-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background: linear-gradient(125deg, #0f172a, #1e1b4b, #312e81, #0f172a);
-        background-size: 400% 400%;
-        animation: gradientMove 15s ease infinite;
-      }
-
-      @keyframes gradientMove {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
 
       /* Tablet & Mobile Responsiveness */
+
       @media (max-width: 768px) {
         .summary-cards {
           grid-template-columns: repeat(2, 1fr);
@@ -715,7 +703,7 @@
     </style>
   </head>
 
-  <body>
+  <body style="touch-action: pan-y;">
     <!-- Animated Background (Mesh) -->
     <div class="animated-bg"></div>
     <!-- ===== HEADER ===== -->
