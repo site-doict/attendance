@@ -44,13 +44,13 @@ body{
     z-index: -1;
     background: #0f172a;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.4) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.4) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.4) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(168, 85, 247, 0.4) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(30, 64, 175, 0.3) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.45) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(30, 58, 138, 0.45) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(76, 29, 149, 0.4) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.3) 0px, transparent 50%);
     background-size: 200% 200%;
-    animation: mesh 12s ease infinite;
+    animation: mesh 20s ease infinite;
 }
 
 @keyframes mesh {
@@ -59,64 +59,99 @@ body{
     100% { background-position: 0% 0%; }
 }
 
+#particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
 .login-box{
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    position: relative;
+    z-index: 10;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 35px 30px;
-    width: 320px;
-    border-radius: 20px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    padding: 40px 35px;
+    width: 360px;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    transition: all 0.4s ease;
+}
+
+.login-box:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Floating Logo Animation */
+.logo-float {
+    font-size: 48px;
+    margin-bottom: 20px;
+    display: block;
+    text-align: center;
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
 }
 
 .login-box h2{
     text-align: center;
     margin-bottom: 8px;
-    color: #fff;
+    color: #ffffff;
     font-size: 26px;
     font-weight: 600;
 }
 
 .login-box p{
     text-align: center;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.85);
     font-size: 14px;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
 }
 
 input{
     width: 100%;
     padding: 14px 15px;
-    margin: 10px 0;
-    background: rgba(255, 255, 255, 0.07);
+    margin: 12px 0;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     font-size: 15px;
-    color: white;
+    color: #ffffff;
     outline: none;
     transition: all 0.3s ease;
 }
 
-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+input::placeholder { color: rgba(255, 255, 255, 0.6); }
 
 input:focus{
     border-color: #3b82f6;
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
 }
 
 button{
+    position: relative;
+    overflow: hidden;
     width: 100%;
-    padding: 14px;
+    padding: 15px;
     background: #3b82f6;
-    color: white;
+    color: #ffffff;
     border: none;
     cursor: pointer;
     border-radius: 12px;
     font-size: 16px;
-    margin-top: 15px;
-    font-weight: 600;
+    margin-top: 20px;
+    font-weight: 700;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
@@ -124,7 +159,25 @@ button{
 button:hover{ 
     background: #2563eb; 
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.45);
+}
+
+/* Shimmer Effect */
+button::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 20%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(30deg);
+    transition: 0s;
+}
+
+button:hover::after {
+    left: 120%;
+    transition: 0.6s ease;
 }
 
 #error{
@@ -147,14 +200,12 @@ button:hover{
 
 <body>
 
-<div class="animated-bg">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-</div>
+<div class="animated-bg"></div>
+<canvas id="particles"></canvas>
 
 <div class="login-box">
-    <h2>🏢 Office Attendance</h2>
+    <div class="logo-float">🏢</div>
+    <h2>Office Attendance</h2>
     <p>Upazila ICT Office, Madarganj</p>
 
     <input type="text" id="userid" placeholder="Enter Employee ID" autocomplete="off">
@@ -162,7 +213,7 @@ button:hover{
 
     <button onclick="login()">Login</button>
 
-    <div id="loading">⏳ Verifying...</div>
+    <div id="loading">⏳ Verifying Account...</div>
     <div id="error"></div>
 </div>
 
@@ -266,6 +317,69 @@ document.addEventListener("keydown", function(e){
     if(e.key === "Enter") login();
 });
 
+</script>
+
+<script>
+    // --- Particle System ---
+    (function() {
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const count = 70;
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    size: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.strokeStyle = 'rgba(59, 130, 246, 0.15)';
+            
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        draw();
+    })();
 </script>
 
 </body>
