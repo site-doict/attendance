@@ -102,55 +102,27 @@ function doGet(e){
 
   // ========== GET HISTORY (single user) ==========
   if(action === "history"){
-
-    const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
-    const data  = sheet.getDataRange().getValues();
-    let rows    = [];
-
-    for(let i = 1; i < data.length; i++){
-      const r = data[i];
-
-      let inTime = r[4];
-      if(inTime instanceof Date){
-        inTime = Utilities.formatDate(inTime, TIMEZONE, "h:mm a");
-      } else {
-        inTime = String(inTime).replace(/^'+/, "");
-      }
-
-      let outTime = r[5];
-      if(outTime instanceof Date){
-        outTime = Utilities.formatDate(outTime, TIMEZONE, "h:mm a");
-      } else {
-        outTime = String(outTime).replace(/^'+/, "");
-      }
-
-      let date = r[3];
-      if(date instanceof Date){
-        date = Utilities.formatDate(date, TIMEZONE, "M/d/yyyy");
-      } else {
-        date = String(date).replace(/^'+/, "");
-      }
-
-      let timestamp = r[0];
-      if(timestamp instanceof Date){
-        timestamp = Utilities.formatDate(timestamp, TIMEZONE, "M/d/yyyy h:mm a");
-      } else {
-        timestamp = String(timestamp);
-      }
-
-      rows.push({
-        timestamp: timestamp,
-        date   : date,
-        id     : String(r[1]),
-        name   : r[2],
-        inTime : inTime,
-        outTime: outTime,
-        status : r[8]
-      });
-    }
-
+    const rows = getHistoryInternal();
     return ContentService
       .createTextOutput(JSON.stringify(rows))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ========== INITIALIZE DASHBOARD (consolidated) ==========
+  if(action === "initdash"){
+    const uid = e.parameter.id;
+    const fp = e.parameter.fp;
+    
+    const deviceStatus = checkDeviceInternal(uid, fp);
+    const history = getHistoryInternal();
+    const settings = getSettings();
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        deviceStatus: deviceStatus,
+        history: history,
+        settings: settings
+      }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -213,32 +185,9 @@ function doGet(e){
 
   // ========== CHECK DEVICE ==========
   if(action === "checkdevice"){
-
-    const uid         = e.parameter.id;
-    const fingerprint = e.parameter.fp;
-    const sheet       = SpreadsheetApp.getActive().getSheetByName("devices");
-    const data        = sheet.getDataRange().getValues();
-
-    for(let i = 1; i < data.length; i++){
-      const rowId = String(data[i][0]).trim();
-      const rowFp = String(data[i][1]).trim();
-
-      if(rowId === uid){
-        if(rowFp === fingerprint){
-          return ContentService
-            .createTextOutput(JSON.stringify({status:"allowed"}))
-            .setMimeType(ContentService.MimeType.JSON);
-        } else {
-          return ContentService
-            .createTextOutput(JSON.stringify({status:"blocked"}))
-            .setMimeType(ContentService.MimeType.JSON);
-        }
-      }
-    }
-
-    sheet.appendRow([uid, fingerprint]);
+    const res = checkDeviceInternal(e.parameter.id, e.parameter.fp);
     return ContentService
-      .createTextOutput(JSON.stringify({status:"registered"}))
+      .createTextOutput(JSON.stringify(res))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -1258,4 +1207,86 @@ function setupDailyTrigger(){
   Logger.log("✅ Triggers set:");
   Logger.log("   → sendDailyEmails     : 9:00 PM (GMT+6)");
   Logger.log("   → sendHolidayEveEmails: 10:00 PM (GMT+6)");
+}
+
+// =============================================
+// HELPER: GET HISTORY ROWS
+// =============================================
+function getHistoryInternal(){
+  const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
+  if(!sheet) return [];
+  const data  = sheet.getDataRange().getValues();
+  let rows    = [];
+
+  for(let i = 1; i < data.length; i++){
+    const r = data[i];
+    if(!r[1]) continue;
+
+    let inTime = r[4];
+    if(inTime instanceof Date){
+      inTime = Utilities.formatDate(inTime, TIMEZONE, "h:mm a");
+    } else {
+      inTime = String(inTime).replace(/^'+/, "");
+    }
+
+    let outTime = r[5];
+    if(outTime instanceof Date){
+      outTime = Utilities.formatDate(outTime, TIMEZONE, "h:mm a");
+    } else {
+      outTime = String(outTime).replace(/^'+/, "");
+    }
+
+    let date = r[3];
+    if(date instanceof Date){
+      date = Utilities.formatDate(date, TIMEZONE, "M/d/yyyy");
+    } else {
+      date = String(date).replace(/^'+/, "");
+    }
+
+    let timestamp = r[0];
+    if(timestamp instanceof Date){
+      timestamp = Utilities.formatDate(timestamp, TIMEZONE, "M/d/yyyy h:mm a");
+    } else {
+      timestamp = String(timestamp);
+    }
+
+    rows.push({
+      timestamp: timestamp,
+      date   : date,
+      id     : String(r[1]).trim(),
+      name   : String(r[2] || "").trim(),
+      inTime : inTime,
+      outTime: outTime,
+      status : String(r[8] || "").trim()
+    });
+  }
+  return rows;
+}
+
+// =============================================
+// HELPER: CHECK DEVICE INTERNAL
+// =============================================
+function checkDeviceInternal(uid, fingerprint){
+  if(!uid || !fingerprint) return {status: "error", message: "Missing params"};
+  
+  const sheet = SpreadsheetApp.getActive().getSheetByName("devices");
+  if(!sheet) return {status: "error", message: "Devices sheet missing"};
+  
+  const data = sheet.getDataRange().getValues();
+
+  for(let i = 1; i < data.length; i++){
+    const rowId = String(data[i][0]).trim();
+    const rowFp = String(data[i][1]).trim();
+
+    if(rowId === uid){
+      if(rowFp === fingerprint){
+        return {status:"allowed"};
+      } else {
+        return {status:"blocked"};
+      }
+    }
+  }
+
+  sheet.appendRow([uid, fingerprint]);
+  return {status:"registered"};
 }
