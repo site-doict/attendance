@@ -175,6 +175,7 @@ const MAX_DISTANCE_METERS = 100;
 // ================= USER =================
 const id   = localStorage.getItem("userid");
 const name = localStorage.getItem("name");
+let appSettings = null;
 
 if(!id){ location.href = "index.html"; }
 
@@ -351,6 +352,7 @@ async function controlButtons(rows){
 
 // Get settings from Google Sheet
     const settings = await getSettingsSync();
+    appSettings = settings;
     
     // Parse office hours
     const [startHour, startMin] = String(settings.officeStartTime).split(":").map(Number);
@@ -545,14 +547,30 @@ function sendData(status, type, lat, lng){
 function markIn(){
     const now  = new Date();
     const mins = now.getHours() * 60 + now.getMinutes();
-    const status = mins >= 10*60 ? "Late Entry" : "Present";
+    
+    let lateThreshold = 10 * 60; // default 10:00 AM
+    if (appSettings && appSettings.officeStartTime) {
+        const [h, m] = String(appSettings.officeStartTime).split(":").map(Number);
+        const grace = parseInt(appSettings.signInGraceMins) || 15;
+        lateThreshold = (h * 60) + m + grace;
+    }
+    
+    const status = mins > lateThreshold ? "Late Entry" : "Present";
     getLocationAndMark("in", status);
 }
 
 function markOut(){
     const now  = new Date();
     const mins = now.getHours() * 60 + now.getMinutes();
-    const status = mins < (16*60 + 45) ? "Early Leave" : "Present";
+    
+    let earlyThreshold = 16 * 60 + 45; // default 4:45 PM
+    if (appSettings && appSettings.officeEndTime) {
+        const [h, m] = String(appSettings.officeEndTime).split(":").map(Number);
+        const grace = parseInt(appSettings.signOutGraceMins) || 10;
+        earlyThreshold = (h * 60) + m - grace;
+    }
+    
+    const status = mins < earlyThreshold ? "Early Leave" : "Present";
 
     // Check if there's a today record - if no inTime, it's very late
     const today    = new Date();
