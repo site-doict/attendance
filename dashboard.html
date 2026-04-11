@@ -798,27 +798,40 @@ function isOfficeClosed(date) {
   return d >= from && d <= to;
 }
 
-function calculateNextWorkingDay(endDateStr) {
+// Helper to check if a specific date falls within any approved leave
+function isUserOnLeave(date) {
+  if (!userLeaveStatus || !userLeaveStatus.allLeaves) return false;
+  
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+  
+  for (let leave of userLeaveStatus.allLeaves) {
+    const partsStart = leave.start.split("/");
+    const partsEnd = leave.end.split("/");
+    
+    const start = new Date(parseInt(partsStart[2]), parseInt(partsStart[0]) - 1, parseInt(partsStart[1]), 0, 0, 0, 0);
+    const end = new Date(parseInt(partsEnd[2]), parseInt(partsEnd[0]) - 1, parseInt(partsEnd[1]), 23, 59, 59, 999);
+    
+    if (d >= start && d <= end) return true;
+  }
+  return false;
+}
+
+// Unified "Smart Return" finder
+function findSmartReturnDate(baseDate) {
   if (!appSettings) return "---";
   
-  // Robust parsing for M/D/YYYY from backend
-  const parts = endDateStr.split("/");
-  if(parts.length < 3) return endDateStr;
-  
-  // Create date (months are 0-indexed in JS)
-  let current = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
-  
+  let current = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), 12, 0, 0, 0);
   let found = false;
   let safetyCounter = 0;
   
-  while (!found && safetyCounter < 30) { // Safety limit of 30 days
+  while (!found && safetyCounter < 60) { // Safety limit of 60 days
     current.setDate(current.getDate() + 1);
     
-    // Check if this new 'current' day is a working day
     const isHoliday = isWeekendOrHoliday(current);
     const isClosed = isOfficeClosed(current);
+    const onLeave = isUserOnLeave(current);
     
-    if (!isHoliday && !isClosed) {
+    if (!isHoliday && !isClosed && !onLeave) {
       found = true;
     }
     safetyCounter++;
