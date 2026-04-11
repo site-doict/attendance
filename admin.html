@@ -33,8 +33,10 @@
         color: white;
         min-height: 100vh;
         overflow-x: hidden;
+        overscroll-behavior-y: none; /* Prevents accidental pull-to-refresh resets */
         position: relative;
       }
+
 
 /* --- Animated Background (Mesh Gradient) --- */
 .animated-bg {
@@ -2032,6 +2034,7 @@
         const ctx = canvas.getContext('2d');
         let particles = [];
         const count = 75;
+        let lastWidth = window.innerWidth;
 
         function init() {
             canvas.width = window.innerWidth;
@@ -2082,10 +2085,23 @@
             requestAnimationFrame(draw);
         }
 
-        window.addEventListener('resize', init);
+        // Debounced resize to prevent blinking when toolbars hide/show
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                // Only re-init if width changed (avoiding height-only triggers from scroll)
+                if (window.innerWidth !== lastWidth) {
+                    lastWidth = window.innerWidth;
+                    init();
+                }
+            }, 250);
+        });
+
         init();
         draw();
     })();
+
 </script>
 
 </body>
