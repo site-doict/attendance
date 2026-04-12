@@ -261,6 +261,9 @@ button:hover::after {
 const USER_SHEET =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQU4-KlIY732XZyhLAZB4-5pUrAcwiqO1bkhrVladSas6MT7ZK967vkNDPd_QzAu7rM72JnT5F5jDzL/pub?gid=32388154&single=true&output=csv";
 
+const WEB_APP_URL =
+"https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
+
 // Register Service Worker
 if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js')
@@ -369,6 +372,10 @@ function login(){
 
     loadEl.style.display = "block";
 
+    // Debug: Log the login attempt
+    console.log("Attempting login with ID:", id);
+    console.log("Backend URL:", WEB_APP_URL);
+
     fetch(`${WEB_APP_URL}?action=login`, {
         method: "POST",
         headers: {
@@ -376,13 +383,18 @@ function login(){
         },
         body: `id=${encodeURIComponent(id)}&pass=${encodeURIComponent(pass)}`
     })
-    .then(res => res.json())
+    .then(res => {
+        console.log("Login response status:", res.status);
+        return res.json();
+    })
     .then(data => {
+        console.log("Login response data:", data);
         loadEl.style.display = "none";
 
         if(data.success) {
             // Store only sessionId in localStorage
             localStorage.setItem("sessionId", data.sessionId);
+            console.log("Login successful, sessionId:", data.sessionId);
             
             if(data.user.role === "admin" || data.user.role === "superadmin"){
                 location.href = "admin.html";
@@ -395,11 +407,12 @@ function login(){
             attempts.firstAttempt = attempts.firstAttempt || now;
             localStorage.setItem("loginAttempts", JSON.stringify(attempts));
             errEl.innerText = data.error || "❌ Login failed";
+            console.log("Login failed:", data.error);
         }
     })
     .catch(err => {
         loadEl.style.display = "none";
-        console.error(err);
+        console.error("Login fetch error:", err);
         errEl.innerText = "❌ Cannot connect. Try again.";
     });
 }
