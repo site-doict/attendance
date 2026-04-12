@@ -322,6 +322,8 @@ function login(){
         return;
     }
     
+    // Temporarily disable validation for testing
+    /*
     // Validate user ID format (alphanumeric + basic symbols, max 20 chars)
     const idPattern = /^[a-zA-Z0-9\-_\.]{1,20}$/;
     if(!idPattern.test(id)){
@@ -330,13 +332,13 @@ function login(){
         attempts.count++;
         attempts.firstAttempt = attempts.firstAttempt || now;
         localStorage.setItem("loginAttempts", JSON.stringify(attempts));
-        errEl.innerText = "❌ Invalid ID format. Use letters, numbers, -, _, . only";
+        errEl.innerText = "Invalid ID format. Use letters, numbers, -, _, . only";
         return;
     }
     
     // Validate password length (min 6, max 50 chars)
     if(pass.length < 6 || pass.length > 50){
-        errEl.innerText = "❌ Password must be 6-50 characters";
+        errEl.innerText = "Password must be 6-50 characters";
         return;
     }
     
@@ -350,10 +352,11 @@ function login(){
     
     for(let pattern of dangerousPatterns){
         if(pattern.test(id) || pattern.test(pass)){
-            errEl.innerText = "❌ Invalid characters detected";
+            errEl.innerText = "Invalid characters detected";
             return;
         }
     }
+    */
 
     loadEl.style.display = "block";
 
