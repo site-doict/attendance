@@ -1296,11 +1296,14 @@
         }
 
 
-        fetch(`${WEB_APP_URL}?action=admindata`, { redirect: "follow" })
+        fetch(`${WEB_APP_URL}?action=admindata&sessionId=${encodeURIComponent(sessionId)}`, { redirect: "follow" })
           .then((r) => r.text())
           .then((text) => JSON.parse(text))
           .then((rows) => {
-            allRows = rows || [];
+            if(rows && typeof rows === "object" && !Array.isArray(rows) && rows.success === false) {
+              throw new Error(rows.error || "Load failed");
+            }
+            allRows = Array.isArray(rows) ? rows : [];
             document.getElementById("lastUpdated").innerText =
               "Updated: " + new Date().toLocaleTimeString();
             applyFilters();
@@ -1463,7 +1466,7 @@
       // LOAD SETTINGS
       // =============================================
       function loadSettings() {
-        fetch(`${WEB_APP_URL}?action=getsettings`)
+        fetch(`${WEB_APP_URL}?action=getsettings&sessionId=${encodeURIComponent(sessionId)}`)
           .then((r) => r.json())
           .then((settings) => {
             // Time fields - format HH:MM
@@ -1822,7 +1825,7 @@
           theadTr.insertBefore(statusTh, theadTr.children[4]);
         }
 
-        fetch(`${WEB_APP_URL}?action=getusers`)
+        fetch(`${WEB_APP_URL}?action=getusers&sessionId=${encodeURIComponent(sessionId)}`)
           .then(r => r.json())
           .then(users => {
             tbody.innerHTML = "";
@@ -1916,7 +1919,7 @@
         const select = document.getElementById("leaveUserId");
         select.innerHTML = '<option value="">⏳ Loading...</option>';
         
-        fetch(`${WEB_APP_URL}?action=getusers`)
+        fetch(`${WEB_APP_URL}?action=getusers&sessionId=${encodeURIComponent(sessionId)}`)
           .then(r => r.json())
           .then(users => {
             select.innerHTML = '<option value="">-- Select Employee --</option>';
@@ -1987,7 +1990,7 @@
         const tbody = document.getElementById("devicesListBody");
         tbody.innerHTML = '<tr><td colspan="3" style="padding: 15px; text-align: center; color: #888;">⏳ Loading devices...</td></tr>';
         
-        fetch(`${WEB_APP_URL}?action=getdevices`)
+        fetch(`${WEB_APP_URL}?action=getdevices&sessionId=${encodeURIComponent(sessionId)}`)
           .then(r => r.json())
           .then(devices => {
             tbody.innerHTML = "";
@@ -2021,7 +2024,7 @@
         const tbody = document.getElementById("leavesListBody");
         tbody.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #888;">⏳ Loading...</td></tr>';
 
-        fetch(`${WEB_APP_URL}?action=getleaves`)
+        fetch(`${WEB_APP_URL}?action=getleaves&sessionId=${encodeURIComponent(sessionId)}`)
           .then(r => r.json())
           .then(data => {
             tbody.innerHTML = "";

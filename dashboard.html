@@ -442,8 +442,7 @@ function validateUserSession() {
     .then(res => res.json())
     .then(data => {
       if(data.valid) {
-        userData = data.user;
-        // Continue loading the app
+        userData = data.user || { id: data.userId, name: data.userId || "" };
         initializeApp();
       } else {
         localStorage.clear();
@@ -457,9 +456,11 @@ function validateUserSession() {
     });
 }
 
-if(!id){ location.href = "index.html"; }
-
-document.getElementById("user").innerText = `ID: ${userData.id} | Name: ${userData.name}`;
+function initializeApp() {
+  if(!userData) return;
+  document.getElementById("user").innerText = `ID: ${userData.id} | Name: ${userData.name}`;
+  initializeDashboard();
+}
 
 // ================= ELEMENTS =================
 const inBtn      = document.getElementById("inBtn");
@@ -513,7 +514,7 @@ function initializeDashboard(silent = false) {
   }
   
   const fp = getDeviceFingerprint();
-  const url = `${WEB_APP_URL}?action=initdash&id=${userData.id}&fp=${fp}`;
+  const url = `${WEB_APP_URL}?action=initdash&id=${encodeURIComponent(userData.id)}&fp=${encodeURIComponent(fp)}&sessionId=${encodeURIComponent(sessionId)}`;
 
   if (!silent) {
     const overlay = document.getElementById("loadingOverlay");
@@ -524,6 +525,9 @@ function initializeDashboard(silent = false) {
   fetch(url)
     .then((r) => r.json())
     .then((res) => {
+      if(res && res.success === false) {
+        throw new Error(res.error || "Load failed");
+      }
       appSettings = res.settings;
       userLeaveStatus = res.leaveStatus;
       if (res.deviceStatus.status === "blocked") {
@@ -743,7 +747,7 @@ function controlButtons(rows){
     const todayStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
 
     const rec = rows.find(r =>
-        String(r.id).trim() === id &&
+        String(r.id).trim() === userData.id &&
         String(r.date).trim() === todayStr
     );
 
@@ -981,11 +985,11 @@ function markOut(){
     const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
 
     // Get latest rows from history
-    fetch(`${WEB_APP_URL}?action=history&id=${id}`)
+    fetch(`${WEB_APP_URL}?action=history&id=${encodeURIComponent(userData.id)}`)
     .then(r => r.json())
     .then(rows => {
         const rec = rows.find(r =>
-            String(r.id).trim() === id &&
+            String(r.id).trim() === userData.id &&
             String(r.date).trim() === todayStr
         );
 
@@ -1018,7 +1022,7 @@ if("Notification" in window &&
 }
 
 // ================= START =================
-initializeDashboard();
+validateUserSession();
 
 
 // Helper to check if weekend or holiday based on settings

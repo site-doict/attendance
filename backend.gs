@@ -77,6 +77,25 @@ function validateSession(sessionId) {
   return {valid: false, error: "Invalid session"};
 }
 
+function getUserDisplayName(userId) {
+  const uid = String(userId || "").trim();
+  if(!uid) return "";
+  const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
+  if(!userSheet) return uid;
+  const data = userSheet.getDataRange().getValues();
+  const headers = data[0] || [];
+  const idCol = headers.indexOf("ID");
+  const nameCol = headers.indexOf("Name");
+  if(idCol === -1 || nameCol === -1) return uid;
+  for(let i = 1; i < data.length; i++) {
+    if(String(data[i][idCol]).trim() === uid) {
+      const n = String(data[i][nameCol] || "").trim();
+      return n || uid;
+    }
+  }
+  return uid;
+}
+
 function deleteSession(sessionId) {
   const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
   if(!sessionSheet) return;
@@ -210,11 +229,12 @@ function doGet(e){
   // Auto-setup sessions sheet on first run
   setupSessionsSheet();
 
-  const action = e.parameter.action || "history";
+  const action = String(e.parameter.action || "history").trim().toLowerCase();
   const sessionId = e.parameter.sessionId;
-  
-  // Validate session for all protected endpoints
-  if(action !== "history" && action !== "login") {
+  const publicActions = ["history", "login", "test", "validatesession"];
+  let sessionCtx = null;
+
+  if(publicActions.indexOf(action) === -1) {
     const sessionValidation = validateSession(sessionId);
     if(!sessionValidation.valid) {
       return ContentService.createTextOutput(JSON.stringify({
@@ -222,6 +242,7 @@ function doGet(e){
         error: sessionValidation.error || "Invalid session"
       })).setMimeType(ContentService.MimeType.JSON);
     }
+    sessionCtx = sessionValidation;
   }
 
   // ========== LOGIN ==========
@@ -248,10 +269,24 @@ function doGet(e){
 
   // ========== VALIDATE SESSION ==========
   if(action === "validatesession"){
-    const sessionId = e.parameter.sessionId;
-    const validation = validateSession(sessionId);
+    const sid = e.parameter.sessionId;
+    const validation = validateSession(sid);
+    if(validation.valid) {
+      const name = getUserDisplayName(validation.userId);
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          valid: true,
+          userId: validation.userId,
+          role: validation.role,
+          user: { id: validation.userId, name: name }
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     return ContentService
-      .createTextOutput(JSON.stringify(validation))
+      .createTextOutput(JSON.stringify({
+        valid: false,
+        error: validation.error || "Invalid session"
+      }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -268,7 +303,16 @@ function doGet(e){
   if(action === "initdash"){
     const uid = e.parameter.id;
     const fp = e.parameter.fp;
-    
+    const uidStr = String(uid || "").trim();
+    const role = String(sessionCtx.role || "").toLowerCase();
+    if(String(sessionCtx.userId).trim() !== uidStr &&
+       role !== "admin" && role !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Forbidden"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     const deviceStatus = checkDeviceInternal(uid, fp);
     const history = getHistoryInternal(uid);
     const settings = getSettings();
@@ -287,6 +331,13 @@ function doGet(e){
 
   // ========== GET ALL DATA (admin dashboard) ==========
   if(action === "admindata"){
+    const adminRole = String(sessionCtx.role || "").toLowerCase();
+    if(adminRole !== "admin" && adminRole !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Forbidden"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
     const data  = sheet.getDataRange().getValues();
@@ -343,6 +394,15 @@ function doGet(e){
 
   // ========== CHECK DEVICE ==========
   if(action === "checkdevice"){
+    const uidCd = String(e.parameter.id || "").trim();
+    const roleCd = String(sessionCtx.role || "").toLowerCase();
+    if(String(sessionCtx.userId).trim() !== uidCd &&
+       roleCd !== "admin" && roleCd !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Forbidden"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
     const res = checkDeviceInternal(e.parameter.id, e.parameter.fp);
     return ContentService
       .createTextOutput(JSON.stringify(res))
@@ -351,6 +411,10 @@ function doGet(e){
 
   // ========== GET USERS (admin only) ==========
   if(action === "getusers"){
+    const adminRole = String(sessionCtx.role || "").toLowerCase();
+    if(adminRole !== "admin" && adminRole !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    }
     const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
     if(!userSheet){
       return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
@@ -392,6 +456,10 @@ function doGet(e){
 
   // ========== GET DEVICES (admin only) ==========
   if(action === "getdevices"){
+    const adminRole = String(sessionCtx.role || "").toLowerCase();
+    if(adminRole !== "admin" && adminRole !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    }
     const deviceSheet = SpreadsheetApp.getActive().getSheetByName("devices");
     if(!deviceSheet){
       return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
@@ -410,6 +478,10 @@ function doGet(e){
 
   // ========== GET ALL LEAVES (admin only) ==========
   if(action === "getleaves"){
+    const adminRole = String(sessionCtx.role || "").toLowerCase();
+    if(adminRole !== "admin" && adminRole !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    }
     const ss = SpreadsheetApp.getActive();
     const sheet = ss.getSheetByName("leaves");
     const userSheet = ss.getSheetByName("users");
@@ -444,6 +516,10 @@ function doGet(e){
 
     // ========== GET SETTINGS (for admin) ==========
   if(action === "getsettings"){
+    const adminRole = String(sessionCtx.role || "").toLowerCase();
+    if(adminRole !== "admin" && adminRole !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({})).setMimeType(ContentService.MimeType.JSON);
+    }
     const settings = getSettings();
     return ContentService
       .createTextOutput(JSON.stringify(settings))
