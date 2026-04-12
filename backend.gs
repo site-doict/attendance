@@ -229,6 +229,15 @@ function doGet(e){
     return loginUser(e);
   }
 
+  // ========== TEST ENDPOINT ==========
+  if(action === "test"){
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      message: "Backend is deployed and working",
+      timestamp: new Date().toISOString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // ========== VALIDATE SESSION ==========
   if(action === "validatesession"){
     const sessionId = e.parameter.sessionId;

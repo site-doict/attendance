@@ -376,7 +376,11 @@ function login(){
     console.log("Attempting login with ID:", id);
     console.log("Backend URL:", WEB_APP_URL);
 
-    fetch(`${WEB_APP_URL}?action=login`, {
+    // Debug: Show the exact URL being called
+    const loginUrl = `${WEB_APP_URL}?action=login&id=${encodeURIComponent(id)}&pass=${encodeURIComponent(pass)}`;
+    console.log("Login URL:", loginUrl);
+
+    fetch(loginUrl, {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded"
@@ -421,6 +425,22 @@ function login(){
 document.addEventListener("keydown", function(e){
     if(e.key === "Enter") login();
 });
+
+// Test backend connection
+function testBackend() {
+    console.log("Testing backend connection...");
+    fetch(`${WEB_APP_URL}?action=test`)
+        .then(res => res.json())
+        .then(data => {
+            console.log("Backend test response:", data);
+        })
+        .catch(err => {
+            console.error("Backend test failed:", err);
+        });
+}
+
+// Auto-test backend on page load
+setTimeout(testBackend, 1000);
 
 </script>
 
