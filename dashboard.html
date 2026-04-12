@@ -509,8 +509,24 @@ function initializeDashboard(silent = false) {
       console.log("Initialization failed:", err);
       const loadingText = document.querySelector("#loadingOverlay .loading-text");
       if(loadingText) {
-        loadingText.innerHTML = `<span style="color:#dc3545">❌ Load Failed</span><br>
-                                 <button onclick="location.reload()" style="margin-top:10px; padding:8px 15px; font-size:14px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Retry</button>`;
+        // Clear existing content
+        loadingText.innerHTML = '';
+        
+        // Create error message safely
+        const errorSpan = document.createElement('span');
+        errorSpan.style.color = '#dc3545';
+        errorSpan.textContent = '❌ Load Failed';
+        
+        // Create retry button safely
+        const retryBtn = document.createElement('button');
+        retryBtn.textContent = 'Retry';
+        retryBtn.style.cssText = 'margin-top:10px; padding:8px 15px; font-size:14px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;';
+        retryBtn.onclick = () => location.reload();
+        
+        // Append elements safely
+        loadingText.appendChild(errorSpan);
+        loadingText.appendChild(document.createElement('br'));
+        loadingText.appendChild(retryBtn);
       } else {
         document.getElementById("loadingOverlay").style.display = "none";
       }
@@ -557,16 +573,40 @@ function getLocationAndMark(type, status){
                 sendData(status, type, userLat, userLng);
             } else {
                 fraudMsg.style.display = "block";
-                fraudMsg.innerHTML = `
-                    🚨 সতর্কতা! 🚨<br><br>
-                    আপনি অফিস থেকে <strong>${Math.round(dist)} মিটার</strong> দূরে আছেন!<br><br>
-                    আপনি অফিস এলাকার বাইরে থেকে উপস্থিতি দেওয়ার চেষ্টা করছেন।<br>
-                    এই তথ্য রেকর্ড করা হয়েছে।<br><br>
-                    অনুগ্রহ করে অফিসে এসে উপস্থিতি দিন।<br><br>
-                    <span style="font-size:14px; font-weight:normal;">
-                    ⚠️ মিথ্যা উপস্থিতি দেওয়ার চেষ্টা শাস্তিযোগ্য অপরাধ।
-                    </span>
-                `;
+                // Create fraud message safely using DOM manipulation
+                fraudMsg.innerHTML = '';
+                
+                const lines = [
+                    '🚨 সতর্কতা! 🚨',
+                    '',
+                    `আপনি অফিস থেকে ${Math.round(dist)} মিটার দূরে আছেন!`,
+                    '',
+                    'আপনি অফিস এলাকার বাইরে থেকে উপস্থিতি দেওয়ার চেষ্টা করছেন।',
+                    'এই তথ্য রেকর্ড করা হয়েছে।',
+                    '',
+                    'অনুগ্রহ করে অফিসে এসে উপস্থিতি দিন।',
+                    '',
+                    '⚠️ মিথ্যা উপস্থিতি দেওয়ার চেষ্টা শাস্তিযোগ্য অপরাধ।'
+                ];
+                
+                lines.forEach((line, index) => {
+                    if (line === '') {
+                        fraudMsg.appendChild(document.createElement('br'));
+                        fraudMsg.appendChild(document.createElement('br'));
+                    } else {
+                        const span = document.createElement('span');
+                        span.textContent = line;
+                        if (index === 2) { // Distance line - make it bold
+                            const strong = document.createElement('strong');
+                            strong.textContent = span.textContent;
+                            span.textContent = 'আপনি অফিস থেকে ';
+                            span.appendChild(strong);
+                            span.appendChild(document.createTextNode(' দূরে আছেন!'));
+                        }
+                        fraudMsg.appendChild(span);
+                        fraudMsg.appendChild(document.createElement('br'));
+                    }
+                });
                 statusTx.innerText = "";
             }
         },
