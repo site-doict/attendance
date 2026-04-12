@@ -2223,8 +2223,18 @@
       // LOGOUT
       // =============================================
       function logout() {
-        localStorage.clear();
-        location.href = "index.html";
+        const sid = localStorage.getItem("sessionId");
+        const finish = () => {
+          localStorage.clear();
+          location.href = "index.html";
+        };
+        if (!sid) {
+          finish();
+          return;
+        }
+        fetch(`${WEB_APP_URL}?action=deletesession&sessionId=${encodeURIComponent(sid)}`, { redirect: "follow" })
+          .catch(() => {})
+          .finally(() => finish());
       }
 
       }
