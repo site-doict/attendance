@@ -268,23 +268,29 @@ if('serviceWorker' in navigator){
     .catch(err => console.log("SW error:", err));
 }
 
-// If already logged in, redirect with basic validation
-const existingId = localStorage.getItem("userid");
-const existingRole = localStorage.getItem("role");
-if(existingId && existingId.length > 0){
-    // Basic validation: ensure role is valid
-    const validRoles = ["user", "admin", "superadmin"];
-    const isValidRole = validRoles.includes(existingRole);
-    
-    if(isValidRole && (existingRole === "admin" || existingRole === "superadmin")){
-        location.href = "./admin.html";
-    } else if(isValidRole && existingRole === "user"){
-        location.href = "./dashboard.html";
-    } else {
-        // Invalid role detected - clear and redirect to login
-        localStorage.clear();
-        console.warn("Invalid role detected, clearing session");
-    }
+// If already logged in, redirect with session validation
+const existingSessionId = localStorage.getItem("sessionId");
+if(existingSessionId && existingSessionId.length > 0){
+    // Validate session with server
+    fetch(`${WEB_APP_URL}?action=validateSession&sessionId=${existingSessionId}`)
+    .then(res => res.json())
+    .then(data => {
+        if(data.valid) {
+            if(data.role === "admin" || data.role === "superadmin"){
+                location.href = "./admin.html";
+            } else if(data.role === "user"){
+                location.href = "./dashboard.html";
+            } else {
+                // Invalid role - clear and redirect to login
+                localStorage.clear();
+                console.warn("Invalid session role, clearing session");
+            }
+        } else {
+            // Invalid session - clear and redirect to login
+            localStorage.clear();
+            console.warn("Invalid session, clearing session");
+        }
+    });
 }
 
 function login(){
@@ -363,66 +369,38 @@ function login(){
 
     loadEl.style.display = "block";
 
-    Papa.parse(USER_SHEET, {
-
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-
-        complete: function(res){
-
-            loadEl.style.display = "none";
-
-            const users = res.data.filter(u => u.ID && u.Password);
-            let found = false;
-
-            users.forEach(u => {
-
-                const uID   = (u.ID   || "").trim();
-                const uPass = (u.Password || "").trim();
-                const uRole = (u.Role || "user").trim().toLowerCase();
-                const uName = (u.Name || "").trim();
-                const uStatus = (u.Status || "active").trim().toLowerCase();
-
-                if(uID === id && uPass === pass){
-
-                    if (uStatus === "inactive") {
-                        errEl.innerText = "❌ Account is deactivated.";
-                        found = true; // Prevents "Wrong ID/Password" message
-                        return;
-                    }
-
-                    found = true;
-
-                    // Clear login attempts on successful login
-                    localStorage.removeItem("loginAttempts");
-
-                    localStorage.setItem("userid", uID);
-                    localStorage.setItem("name",   uName);
-                    localStorage.setItem("role",   uRole);
-
-                    if(uRole === "admin" || uRole === "superadmin"){
-                        location.href = "admin.html";
-                    } else {
-                        location.href = "dashboard.html";
-                    }
-                }
-            });
-
-            if(!found){
-                // Record failed attempt for rate limiting
-                attempts.count++;
-                attempts.firstAttempt = attempts.firstAttempt || now;
-                localStorage.setItem("loginAttempts", JSON.stringify(attempts));
-                errEl.innerText = "Wrong ID or Password";
-            }
+    fetch(`${WEB_APP_URL}?action=login`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
         },
+        body: `id=${encodeURIComponent(id)}&pass=${encodeURIComponent(pass)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        loadEl.style.display = "none";
 
-        error: function(err){
-            loadEl.style.display = "none";
-            console.error(err);
-            errEl.innerText = "❌ Cannot connect. Try again.";
+        if(data.success) {
+            // Store only sessionId in localStorage
+            localStorage.setItem("sessionId", data.sessionId);
+            
+            if(data.user.role === "admin" || data.user.role === "superadmin"){
+                location.href = "admin.html";
+            } else {
+                location.href = "dashboard.html";
+            }
+        } else {
+            // Record failed attempt for rate limiting
+            attempts.count++;
+            attempts.firstAttempt = attempts.firstAttempt || now;
+            localStorage.setItem("loginAttempts", JSON.stringify(attempts));
+            errEl.innerText = data.error || "❌ Login failed";
         }
+    })
+    .catch(err => {
+        loadEl.style.display = "none";
+        console.error(err);
+        errEl.innerText = "❌ Cannot connect. Try again.";
     });
 }
 

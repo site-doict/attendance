@@ -1,12 +1,104 @@
 // =============================================
-// OFFICE ATTENDANCE SYSTEM - BACKEND v1.5
-// UPDATED: SMART RETURN LOGIC & TIMESTAMP FIX
+// OFFICE ATTENDANCE SYSTEM - BACKEND v1.6
+// UPDATED: SERVER-SIDE SESSION AUTHENTICATION
 // =============================================
 // CONFIG
 // =============================================
 
 const ADMIN_EMAIL = "sarwarcsembstu@gmail.com";
-const TIMEZONE    = "GMT+6"; 
+const TIMEZONE    = "GMT+6";
+
+// =============================================
+// SESSION MANAGEMENT FUNCTIONS
+// =============================================
+
+function createSession(userId, role) {
+  const sessionId = Utilities.getUuid();
+  const expiry = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
+  const sessionData = {
+    userId: userId,
+    role: role,
+    createdAt: new Date(),
+    expiresAt: expiry
+  };
+  
+  const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
+  if(!sessionSheet) {
+    sessionSheet = SpreadsheetApp.getActive().insertSheet("sessions");
+    sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
+  }
+  
+  sessionSheet.appendRow([sessionId, JSON.stringify(sessionData), sessionData.createdAt, sessionData.expiresAt]);
+  return sessionId;
+}
+
+function validateSession(sessionId) {
+  const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
+  if(!sessionSheet) {
+    return {valid: false, error: "No sessions sheet found"};
+  }
+  
+  const data = sessionSheet.getDataRange().getValues();
+  const now = new Date();
+  
+  for(let i = 1; i < data.length; i++) {
+    if(data[i][0] === sessionId) {
+      const sessionData = JSON.parse(data[i][1] || "{}");
+      const expiresAt = new Date(sessionData.expiresAt);
+      
+      if(now <= expiresAt) {
+        return {
+          valid: true,
+          userId: sessionData.userId,
+          role: sessionData.role
+        };
+      } else {
+        // Session expired - clean it up
+        sessionSheet.deleteRow(i + 1);
+        return {valid: false, error: "Session expired"};
+      }
+    }
+  }
+  
+  return {valid: false, error: "Invalid session"};
+}
+
+function deleteSession(sessionId) {
+  const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
+  if(!sessionSheet) return;
+  
+  const data = sessionSheet.getDataRange().getValues();
+  for(let i = 1; i < data.length; i++) {
+    if(data[i][0] === sessionId) {
+      sessionSheet.deleteRow(i + 1);
+      break;
+    }
+  }
+  
+  // Clean expired sessions
+  cleanupExpiredSessions();
+}
+
+function cleanupExpiredSessions() {
+  const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
+  if(!sessionSheet) return;
+  
+  const data = sessionSheet.getDataRange().getValues();
+  const now = new Date();
+  const toDelete = [];
+  
+  for(let i = 1; i < data.length; i++) {
+    const expiresAt = new Date(JSON.parse(data[i][1] || "{}").expiresAt);
+    if(now > expiresAt) {
+      toDelete.push(i + 1);
+    }
+  }
+  
+  // Delete in reverse order to maintain row numbers
+  for(let i = toDelete.length - 1; i >= 0; i--) {
+    sessionSheet.deleteRow(toDelete[i]);
+  }
+} 
 
 // =============================================
 // HELPER: READ SETTINGS FROM SHEET
@@ -102,6 +194,27 @@ function isWeekendOrHoliday(date){
 function doGet(e){
 
   const action = e.parameter.action || "history";
+  const sessionId = e.parameter.sessionId;
+  
+  // Validate session for all protected endpoints
+  if(action !== "history" && action !== "login") {
+    const sessionValidation = validateSession(sessionId);
+    if(!sessionValidation.valid) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: sessionValidation.error || "Invalid session"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // ========== VALIDATE SESSION ==========
+  if(action === "validatesession"){
+    const sessionId = e.parameter.sessionId;
+    const validation = validateSession(sessionId);
+    return ContentService
+      .createTextOutput(JSON.stringify(validation))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   // ========== GET HISTORY (single user) ==========
   if(action === "history"){
@@ -306,6 +419,24 @@ function doGet(e){
 
 function doPost(e){
 
+  const sessionId = e.parameter.sessionId;
+  
+  // Validate session for all protected operations
+  if(!sessionId) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "No session provided"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const sessionValidation = validateSession(sessionId);
+  if(!sessionValidation.valid) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: sessionValidation.error || "Invalid session"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
   const id     = e.parameter.id;
   const name   = e.parameter.name;
   const status = e.parameter.status;
@@ -696,6 +827,73 @@ function resolveNoSignOutStatus(originalStatus){
   return null;
 }
 
+
+// =============================================
+// LOGIN ENDPOINT - SERVER-SIDE AUTHENTICATION
+// =============================================
+
+function loginUser(e) {
+  const id = e.parameter.id;
+  const pass = e.parameter.pass;
+  
+  if(!id || !pass) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "Missing credentials"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
+  if(!userSheet) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "Users sheet not found"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const data = userSheet.getDataRange().getValues();
+  const headers = data[0] || [];
+  const idCol = headers.indexOf("ID");
+  const passCol = headers.indexOf("Password");
+  const roleCol = headers.indexOf("Role");
+  const nameCol = headers.indexOf("Name");
+  const statusCol = headers.indexOf("Status");
+  
+  for(let i = 1; i < data.length; i++) {
+    const uID = String(data[i][idCol] || "").trim();
+    const uPass = String(data[i][passCol] || "").trim();
+    const uRole = String(data[i][roleCol] || "user").trim().toLowerCase();
+    const uName = String(data[i][nameCol] || "").trim();
+    const uStatus = String(data[i][statusCol] || "active").trim().toLowerCase();
+    
+    if(uID === id && uPass === pass) {
+      if(uStatus === "inactive") {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: false,
+          error: "Account is deactivated"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      // Create session and return
+      const sessionId = createSession(uID, uRole);
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        sessionId: sessionId,
+        user: {
+          id: uID,
+          name: uName,
+          role: uRole
+        }
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: false,
+    error: "Invalid ID or Password"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
 
 // =============================================
 // SEND DAILY EMAIL - runs at 9 PM every day

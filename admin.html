@@ -1223,28 +1223,32 @@
       const WEB_APP_URL =
         "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
-      // Auth check with validation (temporarily disabled for testing)
-      /*
-      const role = localStorage.getItem("role");
-      const validRoles = ["admin", "superadmin"];
-      
-      // Validate role exists and is valid
-      if (!role || !validRoles.includes(role)) {
-        console.warn("Invalid or missing role in admin panel");
+      // Auth check with session validation
+      const sessionId = localStorage.getItem("sessionId");
+      if(!sessionId) {
         localStorage.clear();
         location.href = "index.html";
         return;
       }
       
-      // Additional check: ensure user ID exists
-      const userId = localStorage.getItem("userid");
-      if (!userId || userId.length === 0) {
-        console.warn("Missing user ID in admin panel");
+      // Validate session with server
+      fetch(`${WEB_APP_URL}?action=validatesession&sessionId=${sessionId}`)
+      .then(res => res.json())
+      .then(data => {
+        if(data.valid && (data.role === "admin" || data.role === "superadmin")) {
+          // Session valid - continue loading admin panel
+          console.log("Admin session validated");
+        } else {
+          // Invalid session - clear and redirect
+          localStorage.clear();
+          location.href = "index.html";
+        }
+      })
+      .catch(err => {
+        console.error("Session validation failed:", err);
         localStorage.clear();
         location.href = "index.html";
-        return;
-      }
-      */
+      });
 
       let allRows = [];
 

@@ -425,14 +425,41 @@ const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
 // ================= USER =================
-const id   = localStorage.getItem("userid");
-const name = localStorage.getItem("name");
+const sessionId = localStorage.getItem("sessionId");
+let userData = null;
 let appSettings = null;
 let userLeaveStatus = null;
 
+// Validate session on page load
+function validateUserSession() {
+  if(!sessionId) {
+    localStorage.clear();
+    location.href = "index.html";
+    return;
+  }
+  
+  fetch(`${WEB_APP_URL}?action=validatesession&sessionId=${sessionId}`)
+    .then(res => res.json())
+    .then(data => {
+      if(data.valid) {
+        userData = data.user;
+        // Continue loading the app
+        initializeApp();
+      } else {
+        localStorage.clear();
+        location.href = "index.html";
+      }
+    })
+    .catch(err => {
+      console.error("Session validation failed:", err);
+      localStorage.clear();
+      location.href = "index.html";
+    });
+}
+
 if(!id){ location.href = "index.html"; }
 
-document.getElementById("user").innerText = `ID: ${id} | Name: ${name}`;
+document.getElementById("user").innerText = `ID: ${userData.id} | Name: ${userData.name}`;
 
 // ================= ELEMENTS =================
 const inBtn      = document.getElementById("inBtn");
@@ -480,8 +507,13 @@ function getDeviceFingerprint(){
 let deviceAllowed = false;
 
 function initializeDashboard(silent = false) {
+  if (!userData) {
+    console.error("User data not loaded, cannot initialize dashboard");
+    return;
+  }
+  
   const fp = getDeviceFingerprint();
-  const url = `${WEB_APP_URL}?action=initdash&id=${id}&fp=${fp}`;
+  const url = `${WEB_APP_URL}?action=initdash&id=${userData.id}&fp=${fp}`;
 
   if (!silent) {
     const overlay = document.getElementById("loadingOverlay");
@@ -819,7 +851,7 @@ function displayHistory(rows) {
     let displayDay = i === 0 ? "Today" : dayStr;
 
     let rec = rows.find(
-      (r) => String(r.id).trim() === id && String(r.date).trim() === dayStr
+      (r) => String(r.id).trim() === userData.id && String(r.date).trim() === dayStr
     );
 
     let inTime = rec ? rec.inTime || "---" : "---";
@@ -862,12 +894,13 @@ function sendData(status, type, lat, lng){
     const now = new Date();
     const fd  = new FormData();
 
-    fd.append("id",     id);
-    fd.append("name",   name);
+    fd.append("id",     userData.id);
+    fd.append("name",   userData.name);
     fd.append("status", status);
     fd.append("type",   type);
     fd.append("lat",    lat || "");
     fd.append("lng",    lng || "");
+    fd.append("sessionId", sessionId);
 
     fetch(WEB_APP_URL, {
         method: "POST",
