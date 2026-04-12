@@ -224,6 +224,11 @@ function doGet(e){
     }
   }
 
+  // ========== LOGIN ==========
+  if(action === "login"){
+    return loginUser(e);
+  }
+
   // ========== VALIDATE SESSION ==========
   if(action === "validatesession"){
     const sessionId = e.parameter.sessionId;
