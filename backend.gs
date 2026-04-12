@@ -835,7 +835,7 @@ for(let i = 1; i < data.length; i++){
     if (idCol !== -1) newRow[idCol] = uid;
     if (nameCol !== -1) newRow[nameCol] = uname;
     if (emailCol !== -1) newRow[emailCol] = uemail;
-    if (passCol !== -1) newRow[passCol] = upass;
+    if (passCol !== -1) newRow[passCol] = hashPassword(upass);
     if (roleCol !== -1) newRow[roleCol] = urole;
     newRow[statusCol] = "Active"; // Default status
     
@@ -1108,8 +1108,11 @@ function loginUser(e) {
     const uRole = String(data[i][roleCol] || "user").trim().toLowerCase();
     const uName = String(data[i][nameCol] || "").trim();
     const uStatus = String(data[i][statusCol] || "active").trim().toLowerCase();
-    
-    if(uID === id && uPass === pass) {
+
+    const passwordMatch = uPass.includes(":")
+      ? verifyPassword(pass, uPass) // already hashed
+      : uPass === pass; // still plain text (old users)
+    if (uID === id && passwordMatch) {
       if(uStatus === "inactive") {
         return ContentService.createTextOutput(JSON.stringify({
           success: false,
