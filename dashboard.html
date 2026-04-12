@@ -412,6 +412,8 @@ button{
 <button class="logout-btn" onclick="logout()">Logout</button>
 
 <script>
+(function () {
+  // Wrapped so early `return` on missing session is legal (same idea as admin.html)
 
 // ================= SERVICE WORKER =================
 if('serviceWorker' in navigator){
@@ -426,19 +428,18 @@ const WEB_APP_URL =
 
 // ================= USER =================
 const sessionId = localStorage.getItem("sessionId");
+if(!sessionId) {
+  localStorage.clear();
+  location.href = "index.html";
+  return;
+}
 let userData = null;
 let appSettings = null;
 let userLeaveStatus = null;
 
 // Validate session on page load
 function validateUserSession() {
-  if(!sessionId) {
-    localStorage.clear();
-    location.href = "index.html";
-    return;
-  }
-  
-  fetch(`${WEB_APP_URL}?action=validatesession&sessionId=${sessionId}`)
+  fetch(`${WEB_APP_URL}?action=validatesession&sessionId=${encodeURIComponent(sessionId)}`)
     .then(res => res.json())
     .then(data => {
       if(data.valid) {
@@ -510,6 +511,10 @@ let deviceAllowed = false;
 function initializeDashboard(silent = false) {
   if (!userData) {
     console.error("User data not loaded, cannot initialize dashboard");
+    if(!silent) {
+      const overlay = document.getElementById("loadingOverlay");
+      if(overlay) overlay.style.display = "none";
+    }
     return;
   }
   
@@ -1021,10 +1026,6 @@ if("Notification" in window &&
     Notification.requestPermission();
 }
 
-// ================= START =================
-validateUserSession();
-
-
 // Helper to check if weekend or holiday based on settings
 function isWeekendOrHoliday(date) {
   if (!appSettings) return false;
@@ -1108,6 +1109,16 @@ function formatTimeWithAMPM(timeStr){
     const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
     return String(displayHour).padStart(2, "0") + ":" + String(min).padStart(2, "0") + " " + ampm;
 }
+
+// Inline onclick handlers need globals — functions live inside this IIFE
+window.logout = logout;
+window.markIn = markIn;
+window.markOut = markOut;
+
+// ================= START (after helpers exist) =================
+validateUserSession();
+
+})();
 </script>
 <script>
 // ===== PARTICLES =====

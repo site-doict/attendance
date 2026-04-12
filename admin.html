@@ -1223,16 +1223,15 @@
       const WEB_APP_URL =
         "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
-      // Auth check with session validation
+      // Auth check with session validation (no top-level `return` — it breaks the whole script)
       const sessionId = localStorage.getItem("sessionId");
       if(!sessionId) {
         localStorage.clear();
         location.href = "index.html";
-        return;
-      }
-      
+      } else {
+
       // Validate session with server
-      fetch(`${WEB_APP_URL}?action=validatesession&sessionId=${sessionId}`)
+      fetch(`${WEB_APP_URL}?action=validatesession&sessionId=${encodeURIComponent(sessionId)}`)
       .then(res => res.json())
       .then(data => {
         if(data.valid && (data.role === "admin" || data.role === "superadmin")) {
@@ -2102,6 +2101,7 @@
       // INIT
       // =============================================
       loadData();
+      }
     </script>
   <script>
     // --- Particle System ---
