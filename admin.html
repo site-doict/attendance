@@ -1215,10 +1215,25 @@
       const WEB_APP_URL =
         "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
-      // Auth check
+      // Auth check with validation
       const role = localStorage.getItem("role");
-      if (role !== "admin" && role !== "superadmin") {
+      const validRoles = ["admin", "superadmin"];
+      
+      // Validate role exists and is valid
+      if (!role || !validRoles.includes(role)) {
+        console.warn("Invalid or missing role in admin panel");
+        localStorage.clear();
         location.href = "index.html";
+        return;
+      }
+      
+      // Additional check: ensure user ID exists
+      const userId = localStorage.getItem("userid");
+      if (!userId || userId.length === 0) {
+        console.warn("Missing user ID in admin panel");
+        localStorage.clear();
+        location.href = "index.html";
+        return;
       }
 
       let allRows = [];

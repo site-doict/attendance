@@ -260,14 +260,22 @@ if('serviceWorker' in navigator){
     .catch(err => console.log("SW error:", err));
 }
 
-// If already logged in, redirect
+// If already logged in, redirect with basic validation
 const existingId = localStorage.getItem("userid");
 const existingRole = localStorage.getItem("role");
-if(existingId){
-    if(existingRole === "admin" || existingRole === "superadmin"){
+if(existingId && existingId.length > 0){
+    // Basic validation: ensure role is valid
+    const validRoles = ["user", "admin", "superadmin"];
+    const isValidRole = validRoles.includes(existingRole);
+    
+    if(isValidRole && (existingRole === "admin" || existingRole === "superadmin")){
         location.href = "./admin.html";
-    } else {
+    } else if(isValidRole && existingRole === "user"){
         location.href = "./dashboard.html";
+    } else {
+        // Invalid role detected - clear and redirect to login
+        localStorage.clear();
+        console.warn("Invalid role detected, clearing session");
     }
 }
 
@@ -280,9 +288,64 @@ function login(){
 
     errEl.innerText = "";
 
-    if(!id || !pass){
-        errEl.innerText = "❌ Enter ID and Password";
+    // Rate limiting check
+    const now = Date.now();
+    const attempts = JSON.parse(localStorage.getItem("loginAttempts") || '{"count": 0, "firstAttempt": 0}');
+    
+    // Reset if 15 minutes have passed
+    if (now - attempts.firstAttempt > 15 * 60 * 1000) {
+        attempts.count = 0;
+        attempts.firstAttempt = 0;
+    }
+    
+    // Check if blocked
+    if (attempts.count >= 5) {
+        const remainingTime = Math.ceil((15 * 60 * 1000 - (now - attempts.firstAttempt)) / 60000);
+        errEl.innerText = `Too many failed attempts. Try again in ${remainingTime} minutes.`;
         return;
+    }
+
+    // Input validation
+    if(!id || !pass){
+        errEl.innerText = "Enter ID and Password";
+        // Record failed attempt
+        attempts.count++;
+        attempts.firstAttempt = attempts.firstAttempt || now;
+        localStorage.setItem("loginAttempts", JSON.stringify(attempts));
+        return;
+    }
+    
+    // Validate user ID format (alphanumeric + basic symbols, max 20 chars)
+    const idPattern = /^[a-zA-Z0-9\-_\.]{1,20}$/;
+    if(!idPattern.test(id)){
+        errEl.innerText = "Invalid ID format. Use letters, numbers, -, _, . only";
+        // Record failed attempt
+        attempts.count++;
+        attempts.firstAttempt = attempts.firstAttempt || now;
+        localStorage.setItem("loginAttempts", JSON.stringify(attempts));
+        errEl.innerText = "❌ Invalid ID format. Use letters, numbers, -, _, . only";
+        return;
+    }
+    
+    // Validate password length (min 6, max 50 chars)
+    if(pass.length < 6 || pass.length > 50){
+        errEl.innerText = "❌ Password must be 6-50 characters";
+        return;
+    }
+    
+    // Prevent common injection patterns
+    const dangerousPatterns = [
+        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+        /javascript:/gi,
+        /on\w+\s*=/gi,
+        /['"\\]/g
+    ];
+    
+    for(let pattern of dangerousPatterns){
+        if(pattern.test(id) || pattern.test(pass)){
+            errEl.innerText = "❌ Invalid characters detected";
+            return;
+        }
     }
 
     loadEl.style.display = "block";
