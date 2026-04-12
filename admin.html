@@ -1377,7 +1377,7 @@
         const table = document.getElementById("mainTable");
         const noData = document.getElementById("noData");
 
-        tbody.innerHTML = "";
+        tbody.replaceChildren();
 
         if (!rows || rows.length === 0) {
           table.style.display = "none";
@@ -1397,14 +1397,32 @@
 
           const tr = document.createElement("tr");
           if (rowCls) tr.className = rowCls;
-          tr.innerHTML = `
-            <td><strong>${r.id || "---"}</strong></td>
-            <td style="text-align:left;">${r.name || "---"}</td>
-            <td>${r.date || "---"}</td>
-            <td>${r.inTime || "---"}</td>
-            <td>${r.outTime || "---"}</td>
-            <td><span class="badge ${badgeCls}">${status || "---"}</span></td>
-        `;
+
+          const tdId = document.createElement("td");
+          const idStrong = document.createElement("strong");
+          idStrong.textContent = r.id || "---";
+          tdId.appendChild(idStrong);
+
+          const tdName = document.createElement("td");
+          tdName.style.textAlign = "left";
+          tdName.textContent = r.name || "---";
+
+          const tdDate = document.createElement("td");
+          tdDate.textContent = r.date || "---";
+
+          const tdIn = document.createElement("td");
+          tdIn.textContent = r.inTime || "---";
+
+          const tdOut = document.createElement("td");
+          tdOut.textContent = r.outTime || "---";
+
+          const tdStatus = document.createElement("td");
+          const badge = document.createElement("span");
+          badge.className = "badge " + badgeCls;
+          badge.textContent = status || "---";
+          tdStatus.appendChild(badge);
+
+          tr.append(tdId, tdName, tdDate, tdIn, tdOut, tdStatus);
           tbody.appendChild(tr);
         });
       }
@@ -1840,17 +1858,66 @@
               const btnClass = (u.status && u.status.toLowerCase() === "inactive") ? "btn-success" : "btn-danger";
 
               const tr = document.createElement("tr");
-              tr.innerHTML = `
-                <td style="padding: 10px; border: 1px solid #eee;"><strong>${u.id}</strong></td>
-                <td style="padding: 10px; border: 1px solid #eee;">${u.name}</td>
-                <td style="padding: 10px; border: 1px solid #eee; font-size: 13px; color: #555;">${u.email}</td>
-                <td style="padding: 10px; border: 1px solid #eee;">${u.role}</td>
-                <td style="padding: 10px; border: 1px solid #eee; font-weight: bold;">${statusLabel}</td>
-                <td style="padding: 10px; border: 1px solid #eee; text-align: center; white-space: nowrap;">
-                  <button class="btn ${btnClass}" style="padding: 4px 8px; font-size: 12px;" onclick="toggleUserStatus('${u.id}', '${u.name}')">${btnLabel}</button>
-                  <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; margin-left: 5px;" onclick="deleteUser('${u.id}', '${u.name}')">🗑️ Delete</button>
-                </td>
-              `;
+
+              const tdId = document.createElement("td");
+              tdId.style.padding = "10px";
+              tdId.style.border = "1px solid #eee";
+              const idStrong = document.createElement("strong");
+              idStrong.textContent = String(u.id);
+              tdId.appendChild(idStrong);
+
+              const tdName = document.createElement("td");
+              tdName.style.padding = "10px";
+              tdName.style.border = "1px solid #eee";
+              tdName.textContent = u.name != null ? String(u.name) : "";
+
+              const tdEmail = document.createElement("td");
+              tdEmail.style.padding = "10px";
+              tdEmail.style.border = "1px solid #eee";
+              tdEmail.style.fontSize = "13px";
+              tdEmail.style.color = "#555";
+              tdEmail.textContent = u.email != null ? String(u.email) : "";
+
+              const tdRole = document.createElement("td");
+              tdRole.style.padding = "10px";
+              tdRole.style.border = "1px solid #eee";
+              tdRole.textContent = u.role != null ? String(u.role) : "";
+
+              const tdStat = document.createElement("td");
+              tdStat.style.padding = "10px";
+              tdStat.style.border = "1px solid #eee";
+              tdStat.style.fontWeight = "bold";
+              tdStat.textContent = statusLabel;
+
+              const tdAct = document.createElement("td");
+              tdAct.style.padding = "10px";
+              tdAct.style.border = "1px solid #eee";
+              tdAct.style.textAlign = "center";
+              tdAct.style.whiteSpace = "nowrap";
+
+              const btnToggle = document.createElement("button");
+              btnToggle.className = "btn " + btnClass;
+              btnToggle.style.padding = "4px 8px";
+              btnToggle.style.fontSize = "12px";
+              btnToggle.textContent = btnLabel;
+              btnToggle.addEventListener("click", () => toggleUserStatus(u.id, u.name));
+
+              const btnDel = document.createElement("button");
+              btnDel.className = "btn btn-danger";
+              btnDel.style.padding = "4px 8px";
+              btnDel.style.fontSize = "12px";
+              btnDel.style.marginLeft = "5px";
+              btnDel.textContent = "🗑️ Delete";
+              btnDel.addEventListener("click", () => deleteUser(u.id, u.name));
+
+              tdAct.appendChild(btnToggle);
+              tdAct.appendChild(btnDel);
+              tr.appendChild(tdId);
+              tr.appendChild(tdName);
+              tr.appendChild(tdEmail);
+              tr.appendChild(tdRole);
+              tr.appendChild(tdStat);
+              tr.appendChild(tdAct);
               tbody.appendChild(tr);
             });
           })
@@ -2001,13 +2068,40 @@
               if (d.id === "ID" || !d.id) return; // skip header
               
               const tr = document.createElement("tr");
-              tr.innerHTML = `
-                <td style="padding: 10px; border: 1px solid #eee;"><strong>${d.id}</strong></td>
-                <td style="padding: 10px; border: 1px solid #eee; font-size: 13px; color: #555; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${d.fp}</td>
-                <td style="padding: 10px; border: 1px solid #eee; text-align: center;">
-                  <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="resetDevice('${d.id}')">🔄 Reset Device</button>
-                </td>
-              `;
+
+              const tdId = document.createElement("td");
+              tdId.style.padding = "10px";
+              tdId.style.border = "1px solid #eee";
+              const idStrong = document.createElement("strong");
+              idStrong.textContent = String(d.id);
+              tdId.appendChild(idStrong);
+
+              const tdFp = document.createElement("td");
+              tdFp.style.padding = "10px";
+              tdFp.style.border = "1px solid #eee";
+              tdFp.style.fontSize = "13px";
+              tdFp.style.color = "#555";
+              tdFp.style.maxWidth = "200px";
+              tdFp.style.overflow = "hidden";
+              tdFp.style.textOverflow = "ellipsis";
+              tdFp.style.whiteSpace = "nowrap";
+              tdFp.textContent = d.fp != null ? String(d.fp) : "";
+
+              const tdBtn = document.createElement("td");
+              tdBtn.style.padding = "10px";
+              tdBtn.style.border = "1px solid #eee";
+              tdBtn.style.textAlign = "center";
+              const btnReset = document.createElement("button");
+              btnReset.className = "btn btn-danger";
+              btnReset.style.padding = "4px 8px";
+              btnReset.style.fontSize = "12px";
+              btnReset.textContent = "🔄 Reset Device";
+              btnReset.addEventListener("click", () => resetDevice(d.id));
+              tdBtn.appendChild(btnReset);
+
+              tr.appendChild(tdId);
+              tr.appendChild(tdFp);
+              tr.appendChild(tdBtn);
               tbody.appendChild(tr);
             });
           })
@@ -2035,13 +2129,41 @@
             // Show latest first
             data.reverse().forEach(l => {
               const tr = document.createElement("tr");
-              tr.innerHTML = `
-                <td style="padding: 10px; border: 1px solid #eee;"><strong>${l.id}</strong></td>
-                <td style="padding: 10px; border: 1px solid #eee;">${l.name}</td>
-                <td style="padding: 10px; border: 1px solid #eee;">${formatDate(l.start)}</td>
-                <td style="padding: 10px; border: 1px solid #eee;">${formatDate(l.end)}</td>
-                <td style="padding: 10px; border: 1px solid #eee; font-size: 11px; color: #888;">${formatDate(l.timestamp)}</td>
-              `;
+
+              const tdId = document.createElement("td");
+              tdId.style.padding = "10px";
+              tdId.style.border = "1px solid #eee";
+              const idStrong = document.createElement("strong");
+              idStrong.textContent = l.id != null ? String(l.id) : "";
+              tdId.appendChild(idStrong);
+
+              const tdName = document.createElement("td");
+              tdName.style.padding = "10px";
+              tdName.style.border = "1px solid #eee";
+              tdName.textContent = l.name != null ? String(l.name) : "";
+
+              const tdStart = document.createElement("td");
+              tdStart.style.padding = "10px";
+              tdStart.style.border = "1px solid #eee";
+              tdStart.textContent = formatDate(l.start);
+
+              const tdEnd = document.createElement("td");
+              tdEnd.style.padding = "10px";
+              tdEnd.style.border = "1px solid #eee";
+              tdEnd.textContent = formatDate(l.end);
+
+              const tdTs = document.createElement("td");
+              tdTs.style.padding = "10px";
+              tdTs.style.border = "1px solid #eee";
+              tdTs.style.fontSize = "11px";
+              tdTs.style.color = "#888";
+              tdTs.textContent = formatDate(l.timestamp);
+
+              tr.appendChild(tdId);
+              tr.appendChild(tdName);
+              tr.appendChild(tdStart);
+              tr.appendChild(tdEnd);
+              tr.appendChild(tdTs);
               tbody.appendChild(tr);
             });
           })
