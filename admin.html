@@ -1237,6 +1237,7 @@
         if(data.valid && (data.role === "admin" || data.role === "superadmin")) {
           // Session valid - continue loading admin panel
           console.log("Admin session validated");
+          loadData();
         } else {
           // Invalid session - clear and redirect
           localStorage.clear();
@@ -1674,6 +1675,7 @@
           fd.append("type", "updatesettings");
           fd.append("key", u.key);
           fd.append("value", u.value);
+          fd.append("sessionId", sessionId);
 
           fetch(WEB_APP_URL, { method: "POST", body: fd })
             .then((r) => r.json())
@@ -1745,6 +1747,7 @@
         fd.append("recipients", finalRecipients);
         fd.append("subject", subject);
         fd.append("message", message);
+        fd.append("sessionId", sessionId);
 
         statusEl.className = "save-status";
         statusEl.innerText = "📤 Sending emails...";
@@ -1797,6 +1800,7 @@
         fd.append("email", email);
         fd.append("pass", pass);
         fd.append("role", role);
+        fd.append("sessionId", sessionId);
 
         statusEl.className = "save-status";
         statusEl.innerText = "⏳ Creating user...";
@@ -1932,6 +1936,7 @@
         const fd = new FormData();
         fd.append("type", "deleteuser");
         fd.append("userid", id);
+        fd.append("sessionId", sessionId);
         
         const tbody = document.getElementById("usersListBody");
         tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Deleting...</td></tr>';
@@ -1958,6 +1963,7 @@
         const fd = new FormData();
         fd.append("type", "toggleuserstatus");
         fd.append("userid", id);
+        fd.append("sessionId", sessionId);
         
         const tbody = document.getElementById("usersListBody");
         tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Updating...</td></tr>';
@@ -2023,6 +2029,7 @@
         fd.append("userid", id);
         fd.append("startdate", start);
         fd.append("enddate", end);
+        fd.append("sessionId", sessionId);
 
         statusEl.className = "save-status";
         statusEl.innerText = "⏳ Granting leave and sending email...";
@@ -2191,6 +2198,7 @@
         const fd = new FormData();
         fd.append("type", "deletedevice");
         fd.append("userid", id);
+        fd.append("sessionId", sessionId);
         
         const tbody = document.getElementById("devicesListBody");
         tbody.innerHTML = '<tr><td colspan="3" style="padding: 15px; text-align: center; color: #888;">⏳ Resetting...</td></tr>';
@@ -2219,10 +2227,6 @@
         location.href = "index.html";
       }
 
-      // =============================================
-      // INIT
-      // =============================================
-      loadData();
       }
     </script>
   <script>

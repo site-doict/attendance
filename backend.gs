@@ -231,7 +231,7 @@ function doGet(e){
 
   const action = String(e.parameter.action || "history").trim().toLowerCase();
   const sessionId = e.parameter.sessionId;
-  const publicActions = ["history", "login", "test", "validatesession"];
+  const publicActions = ["history", "login", "test", "validatesession", "deletesession"];
   let sessionCtx = null;
 
   if(publicActions.indexOf(action) === -1) {
@@ -290,8 +290,46 @@ function doGet(e){
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ========== LOGOUT — remove session row (client clears localStorage after) ==========
+  if(action === "deletesession"){
+    const sid = String(e.parameter.sessionId || "").trim();
+    if(!sid) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Missing sessionId"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    deleteSession(sid);
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // ========== GET HISTORY (single user) ==========
   if(action === "history"){
+    const sid = String(e.parameter.sessionId || "").trim();
+    if(!sid) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Missing sessionId"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    const sessionValidation = validateSession(sid);
+    if(!sessionValidation.valid) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: sessionValidation.error || "Invalid session"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    const uidStr = String(e.parameter.id || "").trim();
+    const role = String(sessionValidation.role || "").toLowerCase();
+    if(String(sessionValidation.userId).trim() !== uidStr &&
+       role !== "admin" && role !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Forbidden"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
     const rows = getHistoryInternal(e.parameter.id);
     return ContentService
       .createTextOutput(JSON.stringify(rows))
@@ -574,6 +612,17 @@ function doPost(e){
   const name   = e.parameter.name;
   const status = e.parameter.status;
   const type   = e.parameter.type;
+
+  const adminOnlyPostTypes = ["updatesettings", "createuser", "toggleuserstatus", "deleteuser", "grantleave", "deletedevice", "sendemail"];
+  if(type && adminOnlyPostTypes.indexOf(String(type).trim()) !== -1) {
+    const r = String(sessionValidation.role || "").toLowerCase();
+    if(r !== "admin" && r !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Forbidden"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
 
   const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
   const now   = new Date();

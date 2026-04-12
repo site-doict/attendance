@@ -1010,9 +1010,10 @@ function markOut(){
     const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
 
     // Get latest rows from history
-    fetch(`${WEB_APP_URL}?action=history&id=${encodeURIComponent(userData.id)}`)
+    fetch(`${WEB_APP_URL}?action=history&id=${encodeURIComponent(userData.id)}&sessionId=${encodeURIComponent(sessionId)}`)
     .then(r => r.json())
     .then(rows => {
+        if (!Array.isArray(rows)) throw new Error("history");
         const rec = rows.find(r =>
             String(r.id).trim() === userData.id &&
             String(r.date).trim() === todayStr
@@ -1035,8 +1036,18 @@ function markOut(){
 
 // ================= LOGOUT =================
 function logout(){
-    localStorage.clear();
-    location.href = "index.html";
+    const sid = localStorage.getItem("sessionId");
+    const finish = () => {
+        localStorage.clear();
+        location.href = "index.html";
+    };
+    if(!sid) {
+        finish();
+        return;
+    }
+    fetch(`${WEB_APP_URL}?action=deletesession&sessionId=${encodeURIComponent(sid)}`, { redirect: "follow" })
+        .catch(() => {})
+        .finally(() => finish());
 }
 
 // ================= PUSH PERMISSION =================
