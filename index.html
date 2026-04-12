@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Office Attendance</title>
 
+<!-- Security Headers -->
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-XSS-Protection" content="1; mode=block">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://docs.google.com;">
+
 <!-- PWA -->
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#1a1a1a">
@@ -381,6 +388,9 @@ function login(){
 
                     found = true;
 
+                    // Clear login attempts on successful login
+                    localStorage.removeItem("loginAttempts");
+
                     localStorage.setItem("userid", uID);
                     localStorage.setItem("name",   uName);
                     localStorage.setItem("role",   uRole);
@@ -394,7 +404,11 @@ function login(){
             });
 
             if(!found){
-                errEl.innerText = "❌ Wrong ID or Password";
+                // Record failed attempt for rate limiting
+                attempts.count++;
+                attempts.firstAttempt = attempts.firstAttempt || now;
+                localStorage.setItem("loginAttempts", JSON.stringify(attempts));
+                errEl.innerText = "Wrong ID or Password";
             }
         },
 
