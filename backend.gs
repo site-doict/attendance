@@ -461,6 +461,21 @@ function doPost(e){
   // Auto-setup sessions sheet on first run
   setupSessionsSheet();
 
+  const action = e.parameter.action || "";
+
+  // Login uses POST without a session (same behavior as doGet)
+  if(action === "login"){
+    try {
+      return loginUser(e);
+    } catch(err) {
+      Logger.log("Login error (doPost): " + err.toString());
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Login processing error: " + err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   const sessionId = e.parameter.sessionId;
   
   // Validate session for all protected operations
