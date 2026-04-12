@@ -12,6 +12,20 @@ const TIMEZONE    = "GMT+6";
 // SESSION MANAGEMENT FUNCTIONS
 // =============================================
 
+function setupSessionsSheet() {
+  const ss = SpreadsheetApp.getActive();
+  let sessionSheet = ss.getSheetByName("sessions");
+  
+  if(!sessionSheet) {
+    sessionSheet = ss.insertSheet("sessions");
+    sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
+    Logger.log("✅ Created sessions sheet with headers");
+  }
+  
+  // Clean up expired sessions on setup
+  cleanupExpiredSessions();
+}
+
 function createSession(userId, role) {
   const sessionId = Utilities.getUuid();
   const expiry = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
@@ -192,6 +206,9 @@ function isWeekendOrHoliday(date){
 // =============================================
 
 function doGet(e){
+
+  // Auto-setup sessions sheet on first run
+  setupSessionsSheet();
 
   const action = e.parameter.action || "history";
   const sessionId = e.parameter.sessionId;
@@ -418,6 +435,9 @@ function doGet(e){
 // =============================================
 
 function doPost(e){
+
+  // Auto-setup sessions sheet on first run
+  setupSessionsSheet();
 
   const sessionId = e.parameter.sessionId;
   
