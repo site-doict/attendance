@@ -131,7 +131,62 @@ function cleanupExpiredSessions() {
   for(let i = toDelete.length - 1; i >= 0; i--) {
     sessionSheet.deleteRow(toDelete[i]);
   }
-} 
+}
+
+// =============================================
+// PASSWORD HASHING (SHA-256 + per-password salt)
+// =============================================
+
+/**
+ * @param {string} password - plain text (caller ensures non-empty when used)
+ * @returns {string} stored form "salt:hexHash" — salt from Utilities.getUuid(), hex = SHA-256(salt + password)
+ */
+function hashPassword(password) {
+  const salt = Utilities.getUuid();
+  const input = salt + String(password);
+  const bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    input,
+    Utilities.Charset.UTF_8
+  );
+  return salt + ":" + bytesToHex(bytes);
+}
+
+/**
+ * @param {byte[]} bytes - digest from Utilities.computeDigest
+ * @returns {string} lowercase hex
+ */
+function bytesToHex(bytes) {
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) {
+    const b = (bytes[i] + 256) % 256;
+    hex += ("0" + b.toString(16)).slice(-2);
+  }
+  return hex;
+}
+
+/**
+ * @param {string} inputPassword - plain text from login
+ * @param {string} storedHash - value from sheet: must be "salt:hexHash" from hashPassword()
+ * @returns {boolean}
+ */
+function verifyPassword(inputPassword, storedHash) {
+  const stored = String(storedHash || "").trim();
+  if (!stored) return false;
+  const colon = stored.indexOf(":");
+  if (colon === -1) return false;
+  const salt = stored.substring(0, colon);
+  const expectedHex = stored.substring(colon + 1).trim();
+  if (!salt || !expectedHex) return false;
+  const input = salt + String(inputPassword);
+  const bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    input,
+    Utilities.Charset.UTF_8
+  );
+  const actualHex = bytesToHex(bytes);
+  return actualHex === expectedHex;
+}
 
 // =============================================
 // HELPER: READ SETTINGS FROM SHEET
