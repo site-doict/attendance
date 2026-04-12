@@ -389,6 +389,11 @@ function login(){
     })
     .then(res => {
         console.log("Login response status:", res.status);
+        console.log("Login response headers:", res.headers);
+        return res.json();
+    })
+    .then(res => {
+        console.log("Login response status:", res.status);
         return res.json();
     })
     .then(data => {

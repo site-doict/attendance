@@ -226,7 +226,15 @@ function doGet(e){
 
   // ========== LOGIN ==========
   if(action === "login"){
-    return loginUser(e);
+    try {
+      return loginUser(e);
+    } catch(err) {
+      Logger.log("Login error: " + err.toString());
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Login processing error: " + err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
   }
 
   // ========== TEST ENDPOINT ==========
@@ -867,8 +875,13 @@ function resolveNoSignOutStatus(originalStatus){
 // =============================================
 
 function loginUser(e) {
+  // For POST requests, parameters come in e.parameter
   const id = e.parameter.id;
   const pass = e.parameter.pass;
+  
+  // Debug: Log received parameters and request method
+  Logger.log("Login request - Method: " + e.postData ? "POST" : "GET");
+  Logger.log("Login request received - ID: " + id + ", Pass: " + (pass ? "***" : "null"));
   
   if(!id || !pass) {
     return ContentService.createTextOutput(JSON.stringify({
@@ -877,6 +890,7 @@ function loginUser(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
   
+  // Get user data and create session
   const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
   if(!userSheet) {
     return ContentService.createTextOutput(JSON.stringify({
@@ -923,6 +937,7 @@ function loginUser(e) {
     }
   }
   
+  // No user found
   return ContentService.createTextOutput(JSON.stringify({
     success: false,
     error: "Invalid ID or Password"
