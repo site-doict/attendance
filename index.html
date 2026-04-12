@@ -426,6 +426,28 @@ document.addEventListener("keydown", function(e){
     if(e.key === "Enter") login();
 });
 
+// Clear failed attempts helper
+function clearFailedAttempts() {
+    localStorage.removeItem("loginAttempts");
+    console.log("✅ Failed attempts cleared");
+}
+
+// Show remaining lockout time
+function showLockoutTime() {
+    const attempts = JSON.parse(localStorage.getItem("loginAttempts") || '{"count": 0, "firstAttempt": 0}');
+    const now = Date.now();
+    const remainingTime = Math.ceil((15 * 60 * 1000 - (now - attempts.firstAttempt)) / 60000);
+    
+    if(remainingTime > 0) {
+        const errEl = document.getElementById("error");
+        errEl.innerText = `Too many failed attempts. Try again in ${remainingTime} minutes.`;
+        console.log(`🔒 Account locked. ${remainingTime} minutes remaining.`);
+    }
+}
+
+// Auto-check lockout status every minute
+setInterval(showLockoutTime, 60000);
+
 // Test backend connection
 function testBackend() {
     console.log("Testing backend connection...");
