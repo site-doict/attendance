@@ -755,14 +755,14 @@
 
     <!-- ===== TABS ===== -->
     <div class="tabs">
-      <button class="tab active" onclick="showTab('attendance')">
+      <button type="button" class="tab active" onclick="showTab(event, 'attendance')">
         📊 Attendance
       </button>
-      <button class="tab" onclick="showTab('settings')">⚙️ Settings</button>
-      <button class="tab" onclick="showTab('leaves')">📅 Leaves</button>
-      <button class="tab" onclick="showTab('email')">📧 Send Email</button>
-      <button class="tab" onclick="showTab('users')">👥 Manage Users</button>
-      <button class="tab" onclick="showTab('devices')">📱 Devices</button>
+      <button type="button" class="tab" onclick="showTab(event, 'settings')">⚙️ Settings</button>
+      <button type="button" class="tab" onclick="showTab(event, 'leaves')">📅 Leaves</button>
+      <button type="button" class="tab" onclick="showTab(event, 'email')">📧 Send Email</button>
+      <button type="button" class="tab" onclick="showTab(event, 'users')">👥 Manage Users</button>
+      <button type="button" class="tab" onclick="showTab(event, 'devices')">📱 Devices</button>
     </div>
 
     <!-- ===== TAB: ATTENDANCE ===== -->
@@ -829,14 +829,13 @@
         </div>
 
         <button class="btn btn-primary" onclick="clearFilters()">✖ Clear</button>
-        <button class="btn btn-success" onclick="loadData()">🔄 Refresh</button>
       </div>
 
       <!-- Table -->
       <div class="table-box">
         <div id="loader">
           <div class="spinner-modern"></div>
-          <div>Loading Administrative Data...</div>
+          <div class="loader-label">Loading Administrative Data...</div>
         </div>
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
           <table id="mainTable" style="display: none; min-width: 520px; width: 100%;">
@@ -1251,11 +1250,16 @@
       });
 
       let allRows = [];
+      let loadDataRequestId = 0;
 
       // =============================================
       // TAB SWITCHING
       // =============================================
-      function showTab(tabName) {
+      function showTab(ev, tabName) {
+        const attendancePanel = document.getElementById("tab-attendance");
+        const wasOnAttendance =
+          attendancePanel && attendancePanel.classList.contains("active");
+
         document
           .querySelectorAll(".tab")
           .forEach((t) => t.classList.remove("active"));
@@ -1263,11 +1267,17 @@
           .querySelectorAll(".tab-content")
           .forEach((c) => c.classList.remove("active"));
 
-        event.target.classList.add("active");
+        const tabBtn =
+          ev && ev.currentTarget
+            ? ev.currentTarget
+            : ev && ev.target && ev.target.closest
+              ? ev.target.closest(".tab")
+              : null;
+        if (tabBtn) tabBtn.classList.add("active");
         document.getElementById("tab-" + tabName).classList.add("active");
 
         if (tabName === "attendance") {
-          loadData();
+          if (!wasOnAttendance) loadData();
         } else if (tabName === "settings") {
           loadSettings();
         } else if (tabName === "leaves") {
@@ -1284,34 +1294,105 @@
       // LOAD ATTENDANCE DATA
       // =============================================
       function loadData() {
+        const sid = localStorage.getItem("sessionId");
+        if (!sid) {
+          localStorage.clear();
+          location.href = "index.html";
+          return;
+        }
+
         const loader = document.getElementById("loader");
         const table = document.getElementById("mainTable");
         const noData = document.getElementById("noData");
+        const loaderLabel = loader.querySelector(".loader-label");
+        const requestId = ++loadDataRequestId;
 
-        // Only show loader if table is empty to prevent blinking on refresh
+        function resetLoaderLabel() {
+          if (loaderLabel) loaderLabel.textContent = "Loading Administrative Data...";
+        }
+
         if (allRows.length === 0) {
+          resetLoaderLabel();
           loader.style.display = "block";
           table.style.display = "none";
           noData.style.display = "none";
         }
 
+        const adminBody = new URLSearchParams({
+          action: "admindata",
+          sessionId: sid,
+        });
 
-        fetch(`${WEB_APP_URL}?action=admindata&sessionId=${encodeURIComponent(sessionId)}`, { redirect: "follow" })
-          .then((r) => r.text())
-          .then((text) => JSON.parse(text))
+        fetch(WEB_APP_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          },
+          body: adminBody,
+          redirect: "follow",
+          cache: "no-store",
+          credentials: "omit",
+        })
+          .then((r) => {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.text();
+          })
+          .then((text) => {
+            if (requestId !== loadDataRequestId) return null;
+            let trimmed = String(text).replace(/^\uFEFF/, "").trim();
+            if (trimmed.startsWith(")]}'")) trimmed = trimmed.slice(4).trim();
+            if (!trimmed) throw new Error("Empty response");
+            return JSON.parse(trimmed);
+          })
           .then((rows) => {
-            if(rows && typeof rows === "object" && !Array.isArray(rows) && rows.success === false) {
+            if (rows === null) return;
+            if (requestId !== loadDataRequestId) return;
+
+            if (
+              rows &&
+              typeof rows === "object" &&
+              !Array.isArray(rows) &&
+              rows.success === false
+            ) {
               throw new Error(rows.error || "Load failed");
             }
-            allRows = Array.isArray(rows) ? rows : [];
+            if (!Array.isArray(rows)) {
+              console.error("admindata: expected array, got:", rows);
+              throw new Error("Unexpected response shape");
+            }
+
+            if (rows.length === 0 && allRows.length > 0) {
+              resetLoaderLabel();
+              document.getElementById("lastUpdated").innerText =
+                "⚠️ Empty response — showing last loaded data — " +
+                new Date().toLocaleTimeString();
+              applyFilters();
+              loader.style.display = "none";
+              return;
+            }
+
+            allRows = rows;
+            resetLoaderLabel();
             document.getElementById("lastUpdated").innerText =
               "Updated: " + new Date().toLocaleTimeString();
             applyFilters();
             loader.style.display = "none";
           })
           .catch((err) => {
+            if (requestId !== loadDataRequestId) return;
             console.error("Load error:", err);
-            loader.innerText = "❌ Failed to load data.";
+            resetLoaderLabel();
+            if (allRows.length === 0) {
+              if (loaderLabel) loaderLabel.textContent = "❌ Failed to load data.";
+              loader.style.display = "block";
+              table.style.display = "none";
+              noData.style.display = "none";
+            } else {
+              loader.style.display = "none";
+              document.getElementById("lastUpdated").innerText =
+                "⚠️ Could not update data — " + new Date().toLocaleTimeString();
+              applyFilters();
+            }
           });
       }
 
@@ -1337,9 +1418,9 @@
             !status || String(r.status || "").includes(status);
 
           const rowDate = parseSheetDate(String(r.date || ""));
-          const fromDate = dateFrom ? new Date(dateFrom) : null;
-          const toDate = dateTo ? new Date(dateTo) : null;
-          if (toDate) toDate.setHours(23, 59, 59);
+          const fromDate = parseFilterDateInput(dateFrom);
+          const toDate = parseFilterDateInput(dateTo);
+          if (toDate) toDate.setHours(23, 59, 59, 999);
 
           const matchDate =
             (!fromDate && !toDate) ||
@@ -1359,10 +1440,24 @@
         const parts = d.split("/");
         if (parts.length !== 3) return null;
         return new Date(
-          parseInt(parts[2]),
-          parseInt(parts[0]) - 1,
-          parseInt(parts[1]),
+          parseInt(parts[2], 10),
+          parseInt(parts[0], 10) - 1,
+          parseInt(parts[1], 10),
         );
+      }
+
+      /** <input type="date"> value (YYYY-MM-DD) as local midnight — avoids UTC shift vs sheet dates */
+      function parseFilterDateInput(ymd) {
+        if (!ymd) return null;
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd).trim());
+        if (!m) return null;
+        const y = parseInt(m[1], 10);
+        const mo = parseInt(m[2], 10) - 1;
+        const day = parseInt(m[3], 10);
+        const d = new Date(y, mo, day);
+        if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== day)
+          return null;
+        return d;
       }
 
       function clearFilters() {
@@ -2236,6 +2331,24 @@
           .catch(() => {})
           .finally(() => finish());
       }
+
+      // Inline onclick handlers resolve on `window` — ensure Live Server / all browsers see these
+      window.showTab = showTab;
+      window.applyFilters = applyFilters;
+      window.clearFilters = clearFilters;
+      window.logout = logout;
+      window.saveSettings = saveSettings;
+      window.clearClosure = clearClosure;
+      window.getCurrentAdminLocation = getCurrentAdminLocation;
+      window.grantLeave = grantLeave;
+      window.sendCustomEmail = sendCustomEmail;
+      window.loadUsers = loadUsers;
+      window.createUser = createUser;
+      window.loadDevices = loadDevices;
+      window.resetDevice = resetDevice;
+      window.loadSettings = loadSettings;
+      window.loadUsersForLeave = loadUsersForLeave;
+      window.loadLeavesList = loadLeavesList;
 
       }
     </script>

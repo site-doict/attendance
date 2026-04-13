@@ -274,6 +274,58 @@ function isWeekendOrHoliday(date){
   return holidayList.includes(dayName);
 }
 
+/** All attendance rows for admin dashboard (shared by doGet/doPost admindata). */
+function getAdminAttendanceRows(){
+  const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
+  const data  = sheet.getDataRange().getValues();
+  let rows    = [];
+
+  for(let i = 1; i < data.length; i++){
+    const r = data[i];
+    if(!r[1] || String(r[1]).trim() === "") continue;
+
+    let inTime = r[4];
+    if(inTime instanceof Date){
+      inTime = Utilities.formatDate(inTime, TIMEZONE, "h:mm a");
+    } else {
+      inTime = String(inTime).replace(/^'+/, "");
+    }
+
+    let outTime = r[5];
+    if(outTime instanceof Date){
+      outTime = Utilities.formatDate(outTime, TIMEZONE, "h:mm a");
+    } else {
+      outTime = String(outTime).replace(/^'+/, "");
+    }
+
+    let date = r[3];
+    if(date instanceof Date){
+      date = Utilities.formatDate(date, TIMEZONE, "M/d/yyyy");
+    } else {
+      date = String(date).replace(/^'+/, "");
+    }
+
+    let timestamp = r[0];
+    if(timestamp instanceof Date){
+      timestamp = Utilities.formatDate(timestamp, TIMEZONE, "M/d/yyyy h:mm a");
+    } else {
+      timestamp = String(timestamp);
+    }
+
+    rows.push({
+      timestamp: timestamp,
+      date   : date,
+      id     : String(r[1]).trim(),
+      name   : String(r[2]).trim(),
+      inTime : inTime,
+      outTime: outTime,
+      status : String(r[8]).trim()
+    });
+  }
+
+  return rows;
+}
+
 
 // =============================================
 // doGet - GET HISTORY, ADMIN DATA & CHECK DEVICE
@@ -432,53 +484,7 @@ function doGet(e){
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
-    const data  = sheet.getDataRange().getValues();
-    let rows    = [];
-
-    for(let i = 1; i < data.length; i++){
-      const r = data[i];
-      if(!r[1] || String(r[1]).trim() === "") continue;
-
-      let inTime = r[4];
-      if(inTime instanceof Date){
-        inTime = Utilities.formatDate(inTime, TIMEZONE, "h:mm a");
-      } else {
-        inTime = String(inTime).replace(/^'+/, "");
-      }
-
-      let outTime = r[5];
-      if(outTime instanceof Date){
-        outTime = Utilities.formatDate(outTime, TIMEZONE, "h:mm a");
-      } else {
-        outTime = String(outTime).replace(/^'+/, "");
-      }
-
-      let date = r[3];
-      if(date instanceof Date){
-        date = Utilities.formatDate(date, TIMEZONE, "M/d/yyyy");
-      } else {
-        date = String(date).replace(/^'+/, "");
-      }
-
-      let timestamp = r[0];
-      if(timestamp instanceof Date){
-        timestamp = Utilities.formatDate(timestamp, TIMEZONE, "M/d/yyyy h:mm a");
-      } else {
-        timestamp = String(timestamp);
-      }
-
-      rows.push({
-        timestamp: timestamp,
-        date   : date,
-        id     : String(r[1]).trim(),
-        name   : String(r[2]).trim(),
-        inTime : inTime,
-        outTime: outTime,
-        status : String(r[8]).trim()
-      });
-    }
-
+    const rows = getAdminAttendanceRows();
     return ContentService
       .createTextOutput(JSON.stringify(rows))
       .setMimeType(ContentService.MimeType.JSON);
@@ -630,7 +636,7 @@ function doPost(e){
   // Auto-setup sessions sheet on first run
   setupSessionsSheet();
 
-  const action = e.parameter.action || "";
+  const action = String(e.parameter.action || "").trim().toLowerCase();
 
   // Login uses POST without a session (same behavior as doGet)
   if(action === "login"){
@@ -661,6 +667,21 @@ function doPost(e){
       success: false,
       error: sessionValidation.error || "Invalid session"
     })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // POST avoids browser/proxy GET caching issues when reloading the admin table
+  if(action === "admindata"){
+    const adminRole = String(sessionValidation.role || "").toLowerCase();
+    if(adminRole !== "admin" && adminRole !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Forbidden"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    const rows = getAdminAttendanceRows();
+    return ContentService
+      .createTextOutput(JSON.stringify(rows))
+      .setMimeType(ContentService.MimeType.JSON);
   }
   
   const id     = e.parameter.id;
