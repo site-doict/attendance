@@ -707,8 +707,10 @@ function controlButtons(rows){
     const [endHour, endMin] = String(settings.officeEndTime).split(":").map(Number);
     
     // Calculate window times (in minutes from midnight)
-    const IN_START = startHour * 60 + startMin;  // Office start time
-    const IN_CLOSE = IN_START + (parseInt(settings.signInWindowMins) || 60);  // Start + window
+    const officeStartMins = startHour * 60 + startMin;
+    const SIGN_IN_EARLY_MINS = 30;
+    const IN_OPEN = officeStartMins - SIGN_IN_EARLY_MINS; // Sign In appears 30 min before official start
+    const IN_CLOSE = officeStartMins + (parseInt(settings.signInWindowMins) || 60); // Start + admin window
     const OUT_START = endHour * 60 + endMin - (parseInt(settings.signOutGraceMins) || 10);  // End - grace
     const OUT_CLOSE = endHour * 60 + endMin + 60;  // End + 1 hour
 
@@ -769,16 +771,18 @@ function controlButtons(rows){
     // ========== NO SIGN IN YET ==========
     if(!rec || !rec.inTime || rec.inTime === "---" || rec.inTime === ""){
 
-        if(mins >= IN_START && mins <= IN_CLOSE){
-            // Normal sign in window - show button
+        if(mins >= IN_OPEN && mins <= IN_CLOSE){
+            // Sign in window: from 30 min before office start until start + signInWindowMins
             inBtn.style.display = "inline-block";
 
-    } else if(mins < IN_START){
-            const startDisplay = settings.officeStartTime;
-            const [winMins] = String(settings.signInWindowMins).split(":").map(Number);
-            const ampm1 = startHour >= 12 ? "PM" : "AM";
-            const displayStart = convertTo12Hour(startHour, startMin) + " " + ampm1;
-            showStatusBox("🔴 Sign In button opens at " + displayStart, "red");
+    } else if(mins < IN_OPEN){
+            let openHr = startHour;
+            let openMi = startMin - SIGN_IN_EARLY_MINS;
+            if(openMi < 0){ openMi += 60; openHr -= 1; }
+            if(openHr < 0){ openHr += 24; }
+            const ampmOpen = openHr >= 12 ? "PM" : "AM";
+            const displayOpen = convertTo12Hour(openHr, openMi) + " " + ampmOpen;
+            showStatusBox("🔴 Sign In button opens at " + displayOpen, "red");
 
         } else if(mins > IN_CLOSE && mins < OUT_START){
             // Very late, BEFORE 3:30 - show message only, NO button yet
