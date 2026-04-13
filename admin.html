@@ -1318,48 +1318,78 @@
           noData.style.display = "none";
         }
 
-        const adminBody = new URLSearchParams({
-          action: "admindata",
-          sessionId: sid,
-        });
+        function parseAdminJsonText(text) {
+          let trimmed = String(text).replace(/^\uFEFF/, "").trim();
+          if (trimmed.startsWith(")]}'")) trimmed = trimmed.slice(4).trim();
+          if (!trimmed) throw new Error("Empty response");
+          return JSON.parse(trimmed);
+        }
 
-        fetch(WEB_APP_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-          },
-          body: adminBody,
-          redirect: "follow",
-          cache: "no-store",
-          credentials: "omit",
-        })
-          .then((r) => {
-            if (!r.ok) throw new Error("HTTP " + r.status);
-            return r.text();
+        function fetchAdminRowsAsArray() {
+          const adminBody = new URLSearchParams({
+            action: "admindata",
+            sessionId: sid,
+          });
+          return fetch(WEB_APP_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            },
+            body: adminBody,
+            redirect: "follow",
+            cache: "no-store",
+            credentials: "omit",
           })
-          .then((text) => {
-            if (requestId !== loadDataRequestId) return null;
-            let trimmed = String(text).replace(/^\uFEFF/, "").trim();
-            if (trimmed.startsWith(")]}'")) trimmed = trimmed.slice(4).trim();
-            if (!trimmed) throw new Error("Empty response");
-            return JSON.parse(trimmed);
-          })
+            .then((r) => {
+              if (!r.ok) throw new Error("HTTP " + r.status);
+              return r.text();
+            })
+            .then((text) => {
+              const data = parseAdminJsonText(text);
+              if (
+                data &&
+                typeof data === "object" &&
+                !Array.isArray(data) &&
+                data.success === false
+              ) {
+                throw new Error(data.error || "Load failed");
+              }
+              if (Array.isArray(data)) return data;
+              const getUrl = `${WEB_APP_URL}?action=admindata&sessionId=${encodeURIComponent(sid)}&_ts=${Date.now()}`;
+              return fetch(getUrl, {
+                method: "GET",
+                redirect: "follow",
+                cache: "no-store",
+                credentials: "omit",
+              }).then((r2) => {
+                if (!r2.ok) throw new Error("GET HTTP " + r2.status);
+                return r2.text();
+              }).then((text2) => {
+                const data2 = parseAdminJsonText(text2);
+                if (
+                  data2 &&
+                  typeof data2 === "object" &&
+                  !Array.isArray(data2) &&
+                  data2.success === false
+                ) {
+                  throw new Error(data2.error || "Load failed");
+                }
+                return data2;
+              });
+            })
+            .then((data) => {
+              if (!Array.isArray(data)) {
+                console.error("admindata: expected array, got:", data);
+                throw new Error("Unexpected response shape");
+              }
+              return data;
+            });
+        }
+
+        fetchAdminRowsAsArray()
           .then((rows) => {
-            if (rows === null) return;
             if (requestId !== loadDataRequestId) return;
-
-            if (
-              rows &&
-              typeof rows === "object" &&
-              !Array.isArray(rows) &&
-              rows.success === false
-            ) {
-              throw new Error(rows.error || "Load failed");
-            }
-            if (!Array.isArray(rows)) {
-              console.error("admindata: expected array, got:", rows);
-              throw new Error("Unexpected response shape");
-            }
+            if (!rows) return;
 
             if (rows.length === 0 && allRows.length > 0) {
               resetLoaderLabel();
@@ -1437,13 +1467,28 @@
 
       function parseSheetDate(d) {
         if (!d) return null;
-        const parts = d.split("/");
+        const s = String(d).trim().replace(/^'+/, "");
+        const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        if (iso) {
+          const y = parseInt(iso[1], 10);
+          const m = parseInt(iso[2], 10) - 1;
+          const day = parseInt(iso[3], 10);
+          const dt = new Date(y, m, day);
+          if (dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === day)
+            return dt;
+        }
+        const parts = s.split("/");
         if (parts.length !== 3) return null;
-        return new Date(
-          parseInt(parts[2], 10),
-          parseInt(parts[0], 10) - 1,
-          parseInt(parts[1], 10),
-        );
+        const p0 = parseInt(parts[0], 10);
+        const p1 = parseInt(parts[1], 10);
+        const p2 = parseInt(parts[2], 10);
+        if (p2 >= 100) {
+          return new Date(p2, p0 - 1, p1);
+        }
+        if (p0 > 12) {
+          return new Date(p2, p1 - 1, p0);
+        }
+        return new Date(p2, p0 - 1, p1);
       }
 
       /** <input type="date"> value (YYYY-MM-DD) as local midnight — avoids UTC shift vs sheet dates */

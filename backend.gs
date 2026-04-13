@@ -631,17 +631,59 @@ function doGet(e){
 // doPost - MARK ATTENDANCE
 // =============================================
 
+/** Merge e.parameter with urlencoded POST body (some GAS runtimes omit fields from e.parameter). */
+function parseUrlEncodedBody_(contents) {
+  const out = {};
+  if (!contents) return out;
+  String(contents).split("&").forEach(function (pair) {
+    const i = pair.indexOf("=");
+    const k = i === -1 ? pair : pair.substring(0, i);
+    const v = i === -1 ? "" : pair.substring(i + 1);
+    let dk;
+    let dv;
+    try {
+      dk = decodeURIComponent(k.replace(/\+/g, " "));
+      dv = decodeURIComponent(v.replace(/\+/g, " "));
+    } catch (err) {
+      return;
+    }
+    if (dk) out[dk] = dv;
+  });
+  return out;
+}
+
 function doPost(e){
 
   // Auto-setup sessions sheet on first run
   setupSessionsSheet();
 
-  const action = String(e.parameter.action || "").trim().toLowerCase();
+  let postFields = {};
+  const ct = String((e.postData && e.postData.type) || "").toLowerCase();
+  if (e.postData && e.postData.contents &&
+      (ct.indexOf("application/x-www-form-urlencoded") !== -1 || ct === "")) {
+    postFields = parseUrlEncodedBody_(e.postData.contents);
+  }
+
+  function postParam(key) {
+    const a = e.parameter[key];
+    if (a !== undefined && a !== null && String(a) !== "") return String(a);
+    if (postFields[key] !== undefined && postFields[key] !== null && String(postFields[key]) !== "")
+      return String(postFields[key]);
+    return "";
+  }
+
+  const action = String(postParam("action")).trim().toLowerCase();
 
   // Login uses POST without a session (same behavior as doGet)
   if(action === "login"){
     try {
-      return loginUser(e);
+      return loginUser({
+        parameter: {
+          id: postParam("id"),
+          pass: postParam("pass"),
+        },
+        postData: e.postData,
+      });
     } catch(err) {
       Logger.log("Login error (doPost): " + err.toString());
       return ContentService.createTextOutput(JSON.stringify({
@@ -651,7 +693,7 @@ function doPost(e){
     }
   }
 
-  const sessionId = e.parameter.sessionId;
+  const sessionId = postParam("sessionId");
   
   // Validate session for all protected operations
   if(!sessionId) {
@@ -684,10 +726,10 @@ function doPost(e){
       .setMimeType(ContentService.MimeType.JSON);
   }
   
-  const id     = e.parameter.id;
-  const name   = e.parameter.name;
-  const status = e.parameter.status;
-  const type   = e.parameter.type;
+  const id     = postParam("id");
+  const name   = postParam("name");
+  const status = postParam("status");
+  const type   = postParam("type");
 
   const adminOnlyPostTypes = ["updatesettings", "createuser", "toggleuserstatus", "deleteuser", "grantleave", "deletedevice", "sendemail"];
   if(type && adminOnlyPostTypes.indexOf(String(type).trim()) !== -1) {
@@ -775,8 +817,8 @@ function doPost(e){
 // ---------- UPDATE SETTINGS (admin only) ----------
 
 if(type === "updatesettings"){
-    const key = e.parameter.key;
-    const value = e.parameter.value;
+    const key = postParam("key");
+    const value = postParam("value");
     
     const settingsSheet = SpreadsheetApp.getActive().getSheetByName("settings");
     if(!settingsSheet){
@@ -819,11 +861,11 @@ for(let i = 1; i < data.length; i++){
 
   // ---------- CREATE USER (admin only) ----------
   if(type === "createuser"){
-    const uid = e.parameter.userid;
-    const uname = e.parameter.name;
-    const uemail = e.parameter.email;
-    const upass = e.parameter.pass;
-    const urole = e.parameter.role || "user";
+    const uid = postParam("userid");
+    const uname = postParam("name");
+    const uemail = postParam("email");
+    const upass = postParam("pass");
+    const urole = postParam("role") || "user";
 
     const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
     if(!userSheet){
@@ -867,7 +909,7 @@ for(let i = 1; i < data.length; i++){
 
   // ---------- TOGGLE USER STATUS (admin only) ----------
   if(type === "toggleuserstatus"){
-    const targetId = e.parameter.userid;
+    const targetId = postParam("userid");
     const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
     if(!userSheet){
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"Users sheet not found"})).setMimeType(ContentService.MimeType.JSON);
@@ -902,7 +944,7 @@ for(let i = 1; i < data.length; i++){
 
   // ---------- DELETE USER (admin only) ----------
   if(type === "deleteuser"){
-    const targetId = e.parameter.userid;
+    const targetId = postParam("userid");
     const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
     if(!userSheet){
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"Users sheet not found"})).setMimeType(ContentService.MimeType.JSON);
@@ -934,9 +976,9 @@ for(let i = 1; i < data.length; i++){
 
   // ---------- GRANT LEAVE (admin only) ----------
   if(type === "grantleave"){
-    const uid = e.parameter.userid;
-    const start = e.parameter.startdate; // YYYY-MM-DD
-    const end = e.parameter.enddate; // YYYY-MM-DD
+    const uid = postParam("userid");
+    const start = postParam("startdate"); // YYYY-MM-DD
+    const end = postParam("enddate"); // YYYY-MM-DD
     
     const ss = SpreadsheetApp.getActive();
     let leaveSheet = ss.getSheetByName("leaves");
@@ -991,7 +1033,7 @@ for(let i = 1; i < data.length; i++){
 
   // ---------- DELETE DEVICE (admin only) ----------
   if(type === "deletedevice"){
-    const targetId = e.parameter.userid;
+    const targetId = postParam("userid");
     const deviceSheet = SpreadsheetApp.getActive().getSheetByName("devices");
     if(!deviceSheet){
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"Devices sheet not found"})).setMimeType(ContentService.MimeType.JSON);
@@ -1019,9 +1061,9 @@ for(let i = 1; i < data.length; i++){
 
   // ---------- SEND CUSTOM EMAIL (admin only) ----------
   if(type === "sendemail"){
-    const recipients = e.parameter.recipients;
-    const subject = e.parameter.subject;
-    const message = e.parameter.message;
+    const recipients = postParam("recipients");
+    const subject = postParam("subject");
+    const message = postParam("message");
     
     const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
     const userRows = userSheet.getDataRange().getValues();
