@@ -1,754 +1,832 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Admin Attendance Dashboard</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Security Headers -->
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-    <!-- CSP temporarily disabled - causing connection issues -->
-<!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://docs.google.com https://docs.googleusercontent.com; frame-src 'self' https://docs.google.com;"> -->
+  <title>Admin Attendance Dashboard</title>
 
-    <!-- PWA -->
-    <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#1a1a1a" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <meta name="apple-mobile-web-app-title" content="Office Attendance" />
-    <link rel="apple-touch-icon" href="./icon-192.png" />
+  <!-- Security Headers -->
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <!-- CSP temporarily disabled - causing connection issues -->
+  <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://docs.google.com https://docs.googleusercontent.com; frame-src 'self' https://docs.google.com;"> -->
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#1a1a1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Office Attendance" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
 
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
 
-      html {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden; /* Lock the viewport */
-        position: fixed;
-        width: 100%;
-      }
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-
-
-      body {
-        font-family: 'Outfit', sans-serif;
-        background: #0f172a;
-        margin: 0;
-        padding: 0;
-        color: white;
-        height: 100%;
-        width: 100%;
-        overflow: hidden; /* Main body no longer scrolls */
-        position: fixed;
-        touch-action: none;
-      }
-
-      .scroll-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch; /* Momentum scrolling */
-        padding: 20px;
-        z-index: 1;
-        touch-action: pan-y;
-      }
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      /* Lock the viewport */
+      position: fixed;
+      width: 100%;
+    }
 
 
 
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #0f172a;
+      margin: 0;
+      padding: 0;
+      color: white;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      /* Main body no longer scrolls */
+      position: fixed;
+      touch-action: none;
+    }
 
-
-
-
-
-/* --- Animated Background (Mesh Gradient) --- */
-.animated-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -2;
+    .scroll-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      /* Momentum scrolling */
+      padding: 20px;
+      z-index: 1;
+      touch-action: pan-y;
+    }
 
 
 
 
-    background: #0f172a;
-    background-image: 
+
+
+
+
+    /* --- Animated Background (Mesh Gradient) --- */
+    .animated-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+
+
+
+
+      background: #0f172a;
+      background-image:
         radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.5) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.45) 0px, transparent 50%),
         radial-gradient(at 100% 100%, rgba(30, 58, 138, 0.45) 0px, transparent 50%),
         radial-gradient(at 0% 100%, rgba(76, 29, 149, 0.4) 0px, transparent 50%),
         radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.3) 0px, transparent 50%);
-    background-size: 200% 200%;
-    animation: mesh 20s ease infinite;
-}
+      background-size: 200% 200%;
+      animation: mesh 20s ease infinite;
+    }
 
-@keyframes mesh {
-    0% { background-position: 0% 0%; }
-    50% { background-position: 100% 100%; }
-    100% { background-position: 0% 0%; }
-}
-
-#particles {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    pointer-events: none;
-}
-
-
-
-
-
-      /* ===== HEADER ===== */
-      .header {
-        max-width: 1300px;
-        margin: 0 auto 20px;
-        background: rgba(15, 23, 42, 0.45);
-        backdrop-filter: blur(25px);
-        -webkit-backdrop-filter: blur(25px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-bottom: 2px solid rgba(59, 130, 246, 0.3);
-        padding: 20px 30px;
-        border-radius: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-        position: relative;
-        overflow: visible; /* Changed from hidden for table scroll safety */
+    @keyframes mesh {
+      0% {
+        background-position: 0% 0%;
       }
 
-      .header::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
+      50% {
+        background-position: 100% 100%;
+      }
+
+      100% {
+        background-position: 0% 0%;
+      }
+    }
+
+    #particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+
+
+
+
+    /* ===== HEADER ===== */
+    .header {
+      max-width: 1300px;
+      margin: 0 auto 20px;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+      padding: 20px 30px;
+      border-radius: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: visible;
+      /* Changed from hidden for table scroll safety */
+    }
+
+    .header::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: -100%;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+      animation: search-glow 4s linear infinite;
+    }
+
+    @keyframes search-glow {
+      0% {
         left: -100%;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #3b82f6, transparent);
-        animation: search-glow 4s linear infinite;
       }
 
-      @keyframes search-glow {
-        0% { left: -100%; }
-        100% { left: 100%; }
+      100% {
+        left: 100%;
       }
+    }
 
-      h2 {
-        color: #fff;
-        font-size: 24px;
-        font-weight: 600;
-        transition: font-size 0.3s ease;
-      }
+    h2 {
+      color: #fff;
+      font-size: 24px;
+      font-weight: 600;
+      transition: font-size 0.3s ease;
+    }
 
-      .header-btns {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
+    .header-btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
-      .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: bold;
-        min-height: 44px; /* Touch target */
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      min-height: 44px;
+      /* Touch target */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-      .btn-primary {
-        background: #0056b3;
-        color: white;
-      }
+    .btn-primary {
+      background: #0056b3;
+      color: white;
+    }
 
-      .btn-primary:hover {
-        background: #004099;
-      }
+    .btn-primary:hover {
+      background: #004099;
+    }
 
-      .btn-danger {
-        background: #dc3545;
-        color: white;
-      }
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
 
-      .btn-danger:hover {
-        background: #b02a37;
-      }
+    .btn-danger:hover {
+      background: #b02a37;
+    }
 
-      .btn-success {
-        background: #28a745;
-        color: white;
-      }
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
 
-      .btn-success:hover {
-        background: #1e7e34;
-      }
+    .btn-success:hover {
+      background: #1e7e34;
+    }
 
-      /* ===== TABS ===== */
-      .tabs {
-        max-width: 1300px;
-        margin: 0 auto 20px;
-        display: flex;
-        gap: 8px;
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(15px);
-        padding: 12px;
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        overflow-x: auto;
-        white-space: nowrap;
-        -webkit-overflow-scrolling: touch;
-      }
+    /* ===== TABS ===== */
+    .tabs {
+      max-width: 1300px;
+      margin: 0 auto 20px;
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(15px);
+      padding: 12px;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
 
-      .tab {
-        flex: 0 0 auto;
-        padding: 10px 15px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: bold;
-        color: rgba(255, 255, 255, 0.85);
-        white-space: nowrap;
-        transition: all 0.3s ease;
-      }
+    .tab {
+      flex: 0 0 auto;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.85);
+      white-space: nowrap;
+      transition: all 0.3s ease;
+    }
 
-      .tab.active {
-        background: #3b82f6;
-        color: white;
-        border-color: #3b82f6;
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-      }
+    .tab.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    }
 
-      /* ===== TAB CONTENT ===== */
-      .tab-content {
-        display: none;
-      }
+    /* ===== TAB CONTENT ===== */
+    .tab-content {
+      display: none;
+    }
 
-      .tab-content.active {
-        display: block;
-      }
+    .tab-content.active {
+      display: block;
+    }
 
-      /* ===== SETTINGS PANEL ===== */
-      .settings-grid {
-        max-width: 1200px;
-        margin: 0 auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 15px;
-      }
+    /* ===== SETTINGS PANEL ===== */
+    .settings-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 15px;
+    }
 
-      .settings-card {
-        background: rgba(15, 23, 42, 0.45);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        color: white;
-        transition: all 0.3s ease;
-      }
+    .settings-card {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      color: white;
+      transition: all 0.3s ease;
+    }
 
-      .settings-card:hover {
-        transform: translateY(-3px);
-        border-color: rgba(59, 130, 246, 0.3);
-        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.1);
-      }
+    .settings-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(59, 130, 246, 0.3);
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.1);
+    }
 
-      .settings-card h3 {
-        color: #3b82f6;
-        margin-bottom: 20px;
-        font-size: 18px;
-        font-weight: 600;
-        border-bottom: 1px solid rgba(59, 130, 246, 0.3);
-        padding-bottom: 10px;
-      }
+    .settings-card h3 {
+      color: #3b82f6;
+      margin-bottom: 20px;
+      font-size: 18px;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+      padding-bottom: 10px;
+    }
 
-      .form-group {
-        margin-bottom: 15px;
-      }
+    .form-group {
+      margin-bottom: 15px;
+    }
 
-      .form-group label {
-        display: block;
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.8);
-        margin-bottom: 8px;
-        font-weight: 500;
-      }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
 
-      .form-group input,
-      .form-group select,
-      .form-group textarea {
-        width: 100%;
-        padding: 10px 12px;
-        background: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        font-size: 14px;
-        color: white;
-        outline: none;
-        transition: all 0.3s ease;
-      }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 14px;
+      color: white;
+      outline: none;
+      transition: all 0.3s ease;
+    }
 
-      .form-group input:focus,
-      .form-group select:focus,
-      .form-group textarea:focus {
-        border-color: #3b82f6;
-        background: rgba(255, 255, 255, 0.1);
-      }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #3b82f6;
+      background: rgba(255, 255, 255, 0.1);
+    }
 
-      .form-group small {
-        display: block;
-        color: #888;
-        font-size: 12px;
-        margin-top: 3px;
-      }
+    .form-group small {
+      display: block;
+      color: #888;
+      font-size: 12px;
+      margin-top: 3px;
+    }
 
-      .save-status {
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 13px;
-        margin-top: 10px;
-        display: none;
-      }
+    .save-status {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
 
-      .save-status.success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-      }
+    .save-status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
 
-      .save-status.error {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-      }
+    .save-status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
 
-      /* ===== EMAIL COMPOSER ===== */
-      .email-card {
-        max-width: 800px;
-        margin: 0 auto;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        color: white;
-      }
+    /* ===== EMAIL COMPOSER ===== */
+    .email-card {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      color: white;
+    }
 
-      /* ===== SUMMARY CARDS ===== */
-      .summary-cards {
-        max-width: 1300px;
-        margin: 0 auto 20px;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: 12px;
-      }
+    /* ===== SUMMARY CARDS ===== */
+    .summary-cards {
+      max-width: 1300px;
+      margin: 0 auto 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
 
-      .card {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px 10px;
-        border-radius: 15px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        color: white;
-      }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px 10px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      color: white;
+    }
 
-      .card .count {
-        font-size: 32px;
-        font-weight: 600;
-        margin-bottom: 5px;
-      }
+    .card .count {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
 
-      .card .label {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
-        line-height: 1.2;
-      }
+    .card .label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.2;
+    }
 
-      .card.total { border-bottom: 4px solid #3b82f6; }
-      .card.present { border-bottom: 4px solid #10b981; }
-      .card.late { border-bottom: 4px solid #f59e0b; }
-      .card.early { border-bottom: 4px solid #f97316; }
-      .card.verylate { border-bottom: 4px solid #ef4444; }
-      .card.absent { border-bottom: 4px solid #6b7280; }
-      .card.nosign { border-bottom: 4px solid #8b5cf6; }
+    .card.total {
+      border-bottom: 4px solid #3b82f6;
+    }
 
-      /* ===== FILTERS & GRID ===== */
+    .card.present {
+      border-bottom: 4px solid #10b981;
+    }
+
+    .card.late {
+      border-bottom: 4px solid #f59e0b;
+    }
+
+    .card.early {
+      border-bottom: 4px solid #f97316;
+    }
+
+    .card.verylate {
+      border-bottom: 4px solid #ef4444;
+    }
+
+    .card.absent {
+      border-bottom: 4px solid #6b7280;
+    }
+
+    .card.nosign {
+      border-bottom: 4px solid #8b5cf6;
+    }
+
+    /* ===== FILTERS & GRID ===== */
+    .filter-bar {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 1300px;
+      margin: 0 auto 15px auto;
+      align-items: center;
+    }
+
+    .filter-bar .search-input {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+
+    @media (min-width: 769px) {
       .filter-bar {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 10px;
-        width: 100%;
-        max-width: 1300px;
-        margin: 0 auto 15px auto;
-        align-items: center;
+        grid-template-columns: repeat(5, 1fr);
       }
 
       .filter-bar .search-input {
         grid-column: 1 / -1;
-        width: 100%;
       }
 
-      @media (min-width: 769px) {
-        .filter-bar {
-          grid-template-columns: repeat(5, 1fr);
-        }
+      /* Desktop alignment for all row 2 items */
+      .filter-bar>*:not(.search-input) {
+        grid-row: 2;
+      }
+    }
 
-        .filter-bar .search-input {
-          grid-column: 1 / -1;
-        }
-        /* Desktop alignment for all row 2 items */
-        .filter-bar > *:not(.search-input) {
-          grid-row: 2;
-        }
+
+    @media (max-width: 768px) {
+      .filter-bar {
+        grid-template-columns: 1fr 1fr;
       }
 
+      .filter-bar .search-input {
+        grid-column: 1 / -1;
+      }
+    }
 
-      @media (max-width: 768px) {
-        .filter-bar {
-          grid-template-columns: 1fr 1fr;
-        }
-        .filter-bar .search-input {
-          grid-column: 1 / -1;
-        }
+    @media (max-width: 480px) {
+      .filter-bar {
+        grid-template-columns: 1fr;
       }
 
-      @media (max-width: 480px) {
-        .filter-bar {
-          grid-template-columns: 1fr;
-        }
-        .filter-bar .search-input {
-          grid-column: 1;
-        }
+      .filter-bar .search-input {
+        grid-column: 1;
       }
+    }
 
-      /* Global Filter & Area Element Rules */
-      .filter-bar input,
-      .filter-bar select,
-      .filter-bar button {
-        min-height: 48px;
-        width: 100%;
-        box-sizing: border-box;
-        font-size: 14px;
-        border-radius: 10px;
-        padding: 10px 14px;
-        background: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: white;
-        outline: none;
-      }
+    /* Global Filter & Area Element Rules */
+    .filter-bar input,
+    .filter-bar select,
+    .filter-bar button {
+      min-height: 48px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 14px;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      outline: none;
+    }
 
-      /* Fix for dropdown options not showing on some Desktop browsers */
-      .filter-bar select option {
-        background: #ffffff !important;
-        color: #1a1a1a !important;
-      }
+    /* Fix for dropdown options not showing on some Desktop browsers */
+    .filter-bar select option {
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+    }
 
-      .filter-bar label {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
-        font-weight: 500;
-        white-space: nowrap;
-      }
+    .filter-bar label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 500;
+      white-space: nowrap;
+    }
 
-      .filter-group {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 0 14px;
-        min-height: 48px;
-        box-sizing: border-box;
-      }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 0 14px;
+      min-height: 48px;
+      box-sizing: border-box;
+    }
 
-      .filter-group input {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        width: 100%;
-      }
+    .filter-group input {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100%;
+    }
 
 
-      
-      .filter-bar button {
-        cursor: pointer;
-        font-weight: bold;
-        transition: all 0.3s ease;
-      }
-      
-      .filter-bar button:hover {
-        background: rgba(255, 255, 255, 0.15);
-        transform: translateY(-2px);
-      }
+
+    .filter-bar button {
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .filter-bar button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
 
 
-      /* ===== MAIN TABLE BOX ===== */
-      .table-box {
-        max-width: 1300px;
-        margin: 0 auto 20px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 25px;
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    /* ===== MAIN TABLE BOX ===== */
+    .table-box {
+      max-width: 1300px;
+      margin: 0 auto 20px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    th {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      font-weight: 600;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(10px);
+    }
+
+    tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+      white-space: normal;
+      word-break: break-word;
+      text-align: center;
+      max-width: 90px;
+      line-height: 1.3;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: normal;
+      word-break: break-word;
+      text-align: center;
+      display: inline-block;
+      max-width: 90px;
+      line-height: 1.3;
+      font-weight: 600;
+    }
+
+    .badge-present {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-late {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-early {
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .badge-verylate {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .badge-absent {
+      background: rgba(107, 114, 128, 0.15);
+      color: #9ca3af;
+      border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+
+    .badge-nosignout {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .badge-default {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Row Highlights - Ultra Subtle */
+    tr.tr-verylate {
+      background: rgba(239, 68, 68, 0.04) !important;
+    }
+
+    tr.tr-absent {
+      background: rgba(107, 114, 128, 0.04) !important;
+    }
+
+    tr.tr-late {
+      background: rgba(245, 158, 11, 0.03) !important;
+    }
+
+
+    .badge-absent {
+      background: #6b7280;
+      color: white;
+    }
+
+    .badge-nosignout {
+      background: #8b5cf6;
+      color: white;
+      box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+    }
+
+    .badge-default {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    #loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      color: #3b82f6;
+    }
+
+    .spinner-modern {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
       }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
+      100% {
+        transform: rotate(360deg);
       }
+    }
 
-      th,
-      td {
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        padding: 12px;
-        font-size: 13px;
-        text-align: center;
-      }
-
-      th {
-        background: rgba(59, 130, 246, 0.2);
-        color: #60a5fa;
-        font-weight: 600;
-        white-space: nowrap;
-        position: sticky;
-        top: 0;
-        backdrop-filter: blur(10px);
-      }
-
-      tr:nth-child(even) {
-        background: rgba(255, 255, 255, 0.02);
-      }
-
-      tr:hover {
-        background: rgba(255, 255, 255, 0.05);
-      }
-
-      .badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: bold;
-        color: white;
-        white-space: normal;
-        word-break: break-word;
-        text-align: center;
-        max-width: 90px;
-        line-height: 1.3;
-      }
-
-      .status-badge {
-        font-size: 11px;
-        padding: 4px 10px;
-        border-radius: 20px;
-        white-space: normal;
-        word-break: break-word;
-        text-align: center;
-        display: inline-block;
-        max-width: 90px;
-        line-height: 1.3;
-        font-weight: 600;
-      }
-
-      .badge-present {
-        background: rgba(16, 185, 129, 0.15);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-      }
-
-      .badge-late {
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-      }
-
-      .badge-early {
-        background: rgba(249, 115, 22, 0.15);
-        color: #f97316;
-        border: 1px solid rgba(249, 115, 22, 0.3);
-      }
-
-      .badge-verylate {
-        background: rgba(239, 68, 68, 0.15);
-        color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-      }
-
-      .badge-absent {
-        background: rgba(107, 114, 128, 0.15);
-        color: #9ca3af;
-        border: 1px solid rgba(107, 114, 128, 0.3);
-      }
-
-      .badge-nosignout {
-        background: rgba(139, 92, 246, 0.15);
-        color: #a78bfa;
-        border: 1px solid rgba(139, 92, 246, 0.3);
-      }
-
-      .badge-default {
-        background: rgba(255, 255, 255, 0.05);
-        color: rgba(255, 255, 255, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      /* Row Highlights - Ultra Subtle */
-      tr.tr-verylate {
-        background: rgba(239, 68, 68, 0.04) !important;
-      }
-      tr.tr-absent {
-        background: rgba(107, 114, 128, 0.04) !important;
-      }
-      tr.tr-late {
-        background: rgba(245, 158, 11, 0.03) !important;
-      }
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: #9ca3af;
+    }
 
 
-      .badge-absent {
-        background: #6b7280;
-        color: white;
+    /* Tablet & Mobile Responsiveness */
+
+    @media (max-width: 768px) {
+      .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
       }
 
-      .badge-nosignout {
-        background: #8b5cf6;
-        color: white;
-        box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+      .header {
+        padding: 15px 20px;
       }
+    }
 
-      .badge-default {
-        background: rgba(255, 255, 255, 0.1);
-        color: rgba(255, 255, 255, 0.7);
-      }
-
-      #loader {
-        display: flex;
+    @media (max-width: 600px) {
+      .header {
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 60px;
-        color: #3b82f6;
+        align-items: flex-start;
+        gap: 15px;
       }
 
-      .spinner-modern {
-        width: 40px;
-        height: 40px;
-        border: 4px solid rgba(255, 255, 255, 0.1);
-        border-top: 4px solid #3b82f6;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 15px;
+      .header-btns {
+        width: 100%;
       }
 
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      .header-btns button {
+        flex: 1;
       }
 
-      .no-data {
-        text-align: center;
-        padding: 40px;
-        color: #9ca3af;
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
       }
 
-
-      /* Tablet & Mobile Responsiveness */
-
-      @media (max-width: 768px) {
-        .summary-cards {
-          grid-template-columns: repeat(2, 1fr);
-        }
-        .header {
-          padding: 15px 20px;
-        }
+      h2 {
+        font-size: 20px;
       }
 
-      @media (max-width: 600px) {
-        .header {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 15px;
-        }
-        .header-btns {
-          width: 100%;
-        }
-        .header-btns button {
-          flex: 1;
-        }
-        .settings-grid {
-          grid-template-columns: 1fr;
-        }
+      .tab {
+        padding: 8px 12px;
+        font-size: 13px;
       }
 
-      @media (max-width: 480px) {
-        body { padding: 10px; }
-        h2 { font-size: 20px; }
-        .tab { 
-          padding: 8px 12px; 
-          font-size: 13px; 
-        }
-        .summary-cards {
-          grid-template-columns: 1fr;
-        }
-        .card .count { font-size: 28px; }
-        .btn { width: 100%; min-height: 48px; }
-        .filters { flex-direction: column; align-items: stretch; gap: 10px; }
-        .filters input, .filters select, .filters button { width: 100%; }
-        .table-box { padding: 10px; }
+      .summary-cards {
+        grid-template-columns: 1fr;
       }
-    </style>
-  </head>
 
-  <body style="touch-action: pan-y;">
-    <!-- Animated Background (Mesh) -->
-    <div class="animated-bg"></div>
-    <canvas id="particles"></canvas>
-    <div id="app-wrapper" class="scroll-container">
+      .card .count {
+        font-size: 28px;
+      }
+
+      .btn {
+        width: 100%;
+        min-height: 48px;
+      }
+
+      .filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .filters input,
+      .filters select,
+      .filters button {
+        width: 100%;
+      }
+
+      .table-box {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body style="touch-action: pan-y;">
+  <!-- Animated Background (Mesh) -->
+  <div class="animated-bg"></div>
+  <canvas id="particles"></canvas>
+  <div id="app-wrapper" class="scroll-container">
     <!-- ===== HEADER ===== -->
 
     <div class="header">
       <h2>🏢 Admin Dashboard</h2>
       <div class="header-btns">
-        <span id="lastUpdated" style="font-size: 12px; color: #94a3b8"
-          >⏳ Loading...</span
-        >
+        <span id="lastUpdated" style="font-size: 12px; color: #94a3b8">⏳ Loading...</span>
         <button class="btn btn-danger" onclick="logout()">Logout</button>
       </div>
     </div>
@@ -801,13 +879,8 @@
 
       <!-- Filters -->
       <div class="filter-bar">
-        <input
-          class="search-input"
-          type="text"
-          id="searchInput"
-          placeholder="🔍 Search by name or ID..."
-          oninput="applyFilters()"
-        />
+        <input class="search-input" type="text" id="searchInput" placeholder="🔍 Search by name or ID..."
+          autocomplete="off" spellcheck="false" oninput="applyFilters()" />
         <select id="statusFilter" onchange="applyFilters()">
           <option value="">All Status</option>
           <option value="Present">Present</option>
@@ -820,12 +893,12 @@
 
         <div class="filter-group">
           <label>From:</label>
-          <input type="date" id="dateFrom" onchange="applyFilters()" />
+          <input type="date" id="dateFrom" autocomplete="off" onchange="applyFilters()" />
         </div>
 
         <div class="filter-group">
           <label>To:</label>
-          <input type="date" id="dateTo" onchange="applyFilters()" />
+          <input type="date" id="dateTo" autocomplete="off" onchange="applyFilters()" />
         </div>
 
         <button class="btn btn-primary" onclick="clearFilters()">✖ Clear</button>
@@ -919,11 +992,7 @@
           <button class="btn btn-success" onclick="saveSettings('closure')">
             💾 Save Closure
           </button>
-          <button
-            class="btn btn-danger"
-            onclick="clearClosure()"
-            style="margin-left: 5px"
-          >
+          <button class="btn btn-danger" onclick="clearClosure()" style="margin-left: 5px">
             ✖ Clear
           </button>
           <div class="save-status" id="status-closure"></div>
@@ -951,11 +1020,7 @@
           <h3>🏖️ Weekend/Holidays</h3>
           <div class="form-group">
             <label>Weekly Off Days</label>
-            <input
-              type="text"
-              id="customHolidays"
-              placeholder="Friday,Saturday"
-            />
+            <input type="text" id="customHolidays" placeholder="Friday,Saturday" />
             <small>Enter day names separated by commas</small>
           </div>
           <button class="btn btn-success" onclick="saveSettings('holidays')">
@@ -967,11 +1032,12 @@
         <!-- Office Location Settings -->
         <div class="settings-card">
           <h3>📍 Office Location</h3>
-          <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Manually enter the coordinates, or get your current location.</p>
+          <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Manually enter the coordinates, or get your
+            current location.</p>
           <button class="btn btn-primary" onclick="getCurrentAdminLocation()" style="margin-bottom: 15px;">
             🗺️ Use My Current Location
           </button>
-          
+
           <div class="form-group" style="display: flex; gap: 10px;">
             <div style="flex: 1;">
               <label>Latitude</label>
@@ -998,11 +1064,13 @@
     <!-- ===== TAB: LEAVES ===== -->
     <div id="tab-leaves" class="tab-content">
       <div class="email-card">
-        <h3 style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
+        <h3
+          style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
           📅 Grant Leave
         </h3>
-        <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">Select an employee and specify their leave duration. An email will be sent automatically and they won't be marked absent.</p>
-        
+        <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">Select an employee and specify
+          their leave duration. An email will be sent automatically and they won't be marked absent.</p>
+
         <div class="form-group">
           <label>Employee</label>
           <select id="leaveUserId">
@@ -1024,7 +1092,8 @@
         </button>
         <div id="leaveStatus" class="save-status"></div>
 
-        <h3 style="color: #0056b3; margin-top: 30px; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
+        <h3
+          style="color: #0056b3; margin-top: 30px; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
           📋 Existing Leave Records
         </h3>
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
@@ -1039,7 +1108,10 @@
               </tr>
             </thead>
             <tbody id="leavesListBody">
-               <tr><td colspan="5" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading records...</td></tr>
+              <tr>
+                <td colspan="5" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading
+                  records...</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1049,14 +1121,12 @@
     <!-- ===== TAB: SEND EMAIL ===== -->
     <div id="tab-email" class="tab-content">
       <div class="email-card">
-        <h3
-          style="
+        <h3 style="
             color: #3b82f6;
             margin-bottom: 20px;
             border-bottom: 1px solid rgba(59, 130, 246, 0.3);
             padding-bottom: 10px;
-          "
-        >
+          ">
           📧 Send Custom Email
         </h3>
 
@@ -1077,20 +1147,12 @@
 
         <div class="form-group">
           <label>Subject</label>
-          <input
-            type="text"
-            id="emailSubject"
-            placeholder="Enter email subject"
-          />
+          <input type="text" id="emailSubject" placeholder="Enter email subject" />
         </div>
 
         <div class="form-group">
           <label>Message</label>
-          <textarea
-            id="emailMessage"
-            rows="8"
-            placeholder="Type your message here..."
-          ></textarea>
+          <textarea id="emailMessage" rows="8" placeholder="Type your message here..."></textarea>
         </div>
 
         <button class="btn btn-success" onclick="sendCustomEmail()">
@@ -1104,10 +1166,12 @@
     <div id="tab-users" class="tab-content">
       <!-- Users List -->
       <div class="email-card" style="margin-bottom: 20px;">
-        <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
+        <h3
+          style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
           👥 Current Users
         </h3>
-        <button class="btn btn-primary" onclick="loadUsers()" style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
+        <button class="btn btn-primary" onclick="loadUsers()"
+          style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
           <table style="min-width: 520px; width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
@@ -1120,14 +1184,18 @@
               </tr>
             </thead>
             <tbody id="usersListBody">
-              <tr><td colspan="5" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading users...</td></tr>
+              <tr>
+                <td colspan="5" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading
+                  users...</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
 
       <div class="email-card">
-        <h3 style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
+        <h3
+          style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
           👥 Add New User
         </h3>
 
@@ -1169,11 +1237,14 @@
     <!-- ===== TAB: DEVICES ===== -->
     <div id="tab-devices" class="tab-content">
       <div class="email-card">
-        <h3 style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
+        <h3
+          style="color: #3b82f6; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
           📱 Current Devices
         </h3>
-        <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">View or Reset fingerprint devices associated with employees. Usually necessary when an employee changes their mobile phone.</p>
-        <button class="btn btn-primary" onclick="loadDevices()" style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
+        <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">View or Reset fingerprint
+          devices associated with employees. Usually necessary when an employee changes their mobile phone.</p>
+        <button class="btn btn-primary" onclick="loadDevices()"
+          style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
           <table style="min-width: 520px; width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
@@ -1184,70 +1255,73 @@
               </tr>
             </thead>
             <tbody id="devicesListBody">
-              <tr><td colspan="3" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading devices...</td></tr>
+              <tr>
+                <td colspan="3" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading
+                  devices...</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    </div> <!-- End app-wrapper -->
+  </div> <!-- End app-wrapper -->
 
-    <script>
+  <script>
 
-      // =============================================
-      // CONFIG & STABILITY
-      // =============================================
-      
-      // Lock background height in pixels to prevent mobile "push"
-      function lockBackgroundHeight() {
-        const h = window.innerHeight;
-        const bg = document.querySelector('.animated-bg');
-        const particles = document.getElementById('particles');
-        if (bg) bg.style.height = h + 'px';
-        if (particles) particles.style.height = h + 'px';
-        return h;
-      }
-      const LOCKED_HEIGHT = lockBackgroundHeight();
+    // =============================================
+    // CONFIG & STABILITY
+    // =============================================
 
-      // ===== SERVICE WORKER =====
+    // Lock background height in pixels to prevent mobile "push"
+    function lockBackgroundHeight() {
+      const h = window.innerHeight;
+      const bg = document.querySelector('.animated-bg');
+      const particles = document.getElementById('particles');
+      if (bg) bg.style.height = h + 'px';
+      if (particles) particles.style.height = h + 'px';
+      return h;
+    }
+    const LOCKED_HEIGHT = lockBackgroundHeight();
 
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("./sw.js")
-          .then(() => console.log("SW registered"))
-          .catch((err) => console.log("SW error:", err));
-      }
+    // ===== SERVICE WORKER =====
 
-      const WEB_APP_URL =
-        "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("./sw.js")
+        .then(() => console.log("SW registered"))
+        .catch((err) => console.log("SW error:", err));
+    }
 
-      // Auth check with session validation (no top-level `return` — it breaks the whole script)
-      const sessionId = localStorage.getItem("sessionId");
-      if(!sessionId) {
-        localStorage.clear();
-        location.href = "index.html";
-      } else {
+    const WEB_APP_URL =
+      "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
+
+    // Auth check with session validation (no top-level `return` — it breaks the whole script)
+    const sessionId = localStorage.getItem("sessionId");
+    if (!sessionId) {
+      localStorage.clear();
+      location.href = "index.html";
+    } else {
 
       // Validate session with server
       fetch(`${WEB_APP_URL}?action=validatesession&sessionId=${encodeURIComponent(sessionId)}`)
-      .then(res => res.json())
-      .then(data => {
-        if(data.valid && (data.role === "admin" || data.role === "superadmin")) {
-          // Session valid - continue loading admin panel
-          console.log("Admin session validated");
-          loadData();
-        } else {
-          // Invalid session - clear and redirect
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid && (data.role === "admin" || data.role === "superadmin")) {
+            // Session valid - continue loading admin panel
+            console.log("Admin session validated");
+            loadData();
+          } else {
+            // Invalid session - clear and redirect
+            localStorage.clear();
+            location.href = "index.html";
+          }
+        })
+        .catch(err => {
+          console.error("Session validation failed:", err);
           localStorage.clear();
           location.href = "index.html";
-        }
-      })
-      .catch(err => {
-        console.error("Session validation failed:", err);
-        localStorage.clear();
-        location.href = "index.html";
-      });
+        });
 
       let allRows = [];
       let loadDataRequestId = 0;
@@ -1267,7 +1341,19 @@
           if (noData) noData.style.display = "none";
         }
 
-        applyFilters();
+        // Check if filters are accidentally filtering everything
+        const search = document.getElementById("searchInput")?.value?.trim() || "";
+        const status = document.getElementById("statusFilter")?.value || "";
+        const dateFrom = document.getElementById("dateFrom")?.value || "";
+        const dateTo = document.getElementById("dateTo")?.value || "";
+
+        // If all filters are empty but applyFilters would return 0, reload data
+        if (!search && !status && !dateFrom && !dateTo) {
+          applyFilters();
+        } else {
+          // Filters are active, just apply them
+          applyFilters();
+        }
       }
 
       // =============================================
@@ -1420,6 +1506,22 @@
       }
 
       function applyFilters() {
+        console.log("applyFilters called, allRows.length =", allRows.length);
+
+        // CRITICAL FIX: If no data loaded yet, show loader and exit
+        if (!allRows || allRows.length === 0) {
+          const loader = document.getElementById("loader");
+          const table = document.getElementById("mainTable");
+          const noData = document.getElementById("noData");
+
+          if (loader) loader.style.display = "block";
+          if (table) table.style.display = "none";
+          if (noData) noData.style.display = "none";
+
+          console.log("applyFilters: No data to filter, showing loader");
+          return;
+        }
+
         const search = document
           .getElementById("searchInput")
           .value.trim()
@@ -1427,6 +1529,8 @@
         const status = document.getElementById("statusFilter").value;
         const dateFrom = document.getElementById("dateFrom").value;
         const dateTo = document.getElementById("dateTo").value;
+
+        console.log("Filters JSON:", JSON.stringify({ search, status, dateFrom, dateTo }));
 
         let filtered = allRows.filter((r) => {
           const matchSearch =
@@ -1455,10 +1559,10 @@
           return matchSearch && matchStatus && matchDate;
         });
 
+        console.log("Filtered rows:", filtered.length);
         renderTable(filtered);
         updateCards(filtered);
       }
-
       function parseSheetDate(d) {
         if (!d) return null;
         const s = String(d).trim().replace(/^'+/, "");
@@ -1515,6 +1619,16 @@
         tbody.replaceChildren();
 
         if (!rows || rows.length === 0) {
+          const search = document.getElementById("searchInput")?.value?.trim() || "";
+          const status = document.getElementById("statusFilter")?.value || "";
+          const dateFrom = document.getElementById("dateFrom")?.value || "";
+          const dateTo = document.getElementById("dateTo")?.value || "";
+          const filtersActive = !!(search || status || dateFrom || dateTo);
+          if (noData) {
+            noData.textContent = filtersActive
+              ? "⚠️ No records match your filters. Click ✖ Clear."
+              : "⚠️ No records found.";
+          }
           table.style.display = "none";
           noData.style.display = "block";
           return;
@@ -1678,7 +1792,7 @@
               settings.emailsPaused || "no";
             document.getElementById("customHolidays").value =
               settings.customHolidays || "Friday,Saturday";
-              
+
             // Location
             document.getElementById("officeLat").value = settings.officeLat || "24.8946369";
             document.getElementById("officeLng").value = settings.officeLng || "89.7183403";
@@ -1969,10 +2083,10 @@
       function loadUsers() {
         const tbody = document.getElementById("usersListBody");
         tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Loading users...</td></tr>';
-        
+
         // Ensure table has the Status header
         const theadTr = document.querySelector("#tab-users thead tr");
-        if(theadTr.children.length === 5) {
+        if (theadTr.children.length === 5) {
           const statusTh = document.createElement("th");
           statusTh.style.padding = "10px";
           statusTh.style.border = "1px solid #ddd";
@@ -1990,7 +2104,7 @@
             }
             users.forEach(u => {
               if (u.id === "ID" || !u.id) return; // skip header
-              
+
               const statusLabel = (u.status && u.status.toLowerCase() === "inactive") ? "🔴 Inactive" : "🟢 Active";
               const btnLabel = (u.status && u.status.toLowerCase() === "inactive") ? "🟢 Activate" : "🔴 Deactivate";
               const btnClass = (u.status && u.status.toLowerCase() === "inactive") ? "btn-success" : "btn-danger";
@@ -2066,19 +2180,19 @@
 
       function deleteUser(id, name) {
         if (!confirm(`⚠️ WARNING: This will PERMANENTLY delete user ${name} (${id}) and all their device records. Deactivate instead if you just want to block them temporarily. \n\nAre you sure you want to delete?`)) return;
-        
+
         const fd = new FormData();
         fd.append("type", "deleteuser");
         fd.append("userid", id);
         fd.append("sessionId", sessionId);
-        
+
         const tbody = document.getElementById("usersListBody");
         tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Deleting...</td></tr>';
-        
+
         fetch(WEB_APP_URL, { method: "POST", body: fd })
           .then(r => r.json())
           .then(d => {
-            if(d.success) {
+            if (d.success) {
               loadUsers();
             } else {
               alert("Wait, failed to delete: " + (d.error || "Unknown"));
@@ -2093,19 +2207,19 @@
 
       function toggleUserStatus(id, name) {
         if (!confirm(`Are you sure you want to toggle status for user ${name} (${id})?`)) return;
-        
+
         const fd = new FormData();
         fd.append("type", "toggleuserstatus");
         fd.append("userid", id);
         fd.append("sessionId", sessionId);
-        
+
         const tbody = document.getElementById("usersListBody");
         tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Updating...</td></tr>';
-        
+
         fetch(WEB_APP_URL, { method: "POST", body: fd })
           .then(r => r.json())
           .then(d => {
-            if(d.success) {
+            if (d.success) {
               loadUsers();
             } else {
               alert("Wait, failed to update: " + (d.error || "Unknown"));
@@ -2124,7 +2238,7 @@
       function loadUsersForLeave() {
         const select = document.getElementById("leaveUserId");
         select.innerHTML = '<option value="">⏳ Loading...</option>';
-        
+
         fetch(`${WEB_APP_URL}?action=getusers&sessionId=${encodeURIComponent(sessionId)}`)
           .then(r => r.json())
           .then(users => {
@@ -2196,7 +2310,7 @@
       function loadDevices() {
         const tbody = document.getElementById("devicesListBody");
         tbody.innerHTML = '<tr><td colspan="3" style="padding: 15px; text-align: center; color: #888;">⏳ Loading devices...</td></tr>';
-        
+
         fetch(`${WEB_APP_URL}?action=getdevices&sessionId=${encodeURIComponent(sessionId)}`)
           .then(r => r.json())
           .then(devices => {
@@ -2207,7 +2321,7 @@
             }
             devices.forEach(d => {
               if (d.id === "ID" || !d.id) return; // skip header
-              
+
               const tr = document.createElement("tr");
 
               const tdId = document.createElement("td");
@@ -2317,9 +2431,9 @@
         if (!d || d === "---") return "---";
         const date = new Date(d);
         if (isNaN(date)) return d;
-        
+
         // Return date with time if it's a timestamp
-        const timeStr = date.getHours() > 0 || date.getMinutes() > 0 
+        const timeStr = date.getHours() > 0 || date.getMinutes() > 0
           ? " | " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : "";
 
@@ -2328,19 +2442,19 @@
 
       function resetDevice(id) {
         if (!confirm(`Are you sure you want to completely clear the device fingerprint for Employee ID: ${id}?`)) return;
-        
+
         const fd = new FormData();
         fd.append("type", "deletedevice");
         fd.append("userid", id);
         fd.append("sessionId", sessionId);
-        
+
         const tbody = document.getElementById("devicesListBody");
         tbody.innerHTML = '<tr><td colspan="3" style="padding: 15px; text-align: center; color: #888;">⏳ Resetting...</td></tr>';
-        
+
         fetch(WEB_APP_URL, { method: "POST", body: fd })
           .then(r => r.json())
           .then(d => {
-            if(d.success) {
+            if (d.success) {
               loadDevices();
             } else {
               alert("Wait, failed to reset device: " + (d.error || "Unknown"));
@@ -2367,7 +2481,7 @@
           return;
         }
         fetch(`${WEB_APP_URL}?action=deletesession&sessionId=${encodeURIComponent(sid)}`, { redirect: "follow" })
-          .catch(() => {})
+          .catch(() => { })
           .finally(() => finish());
       }
 
@@ -2389,85 +2503,86 @@
       window.loadUsersForLeave = loadUsersForLeave;
       window.loadLeavesList = loadLeavesList;
 
-      }
-    </script>
+    }
+  </script>
   <script>
     // --- Particle System ---
-    (function() {
-        const canvas = document.getElementById('particles');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        const count = 75;
-        let lastWidth = window.innerWidth;
+    (function () {
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      const count = 75;
+      let lastWidth = window.innerWidth;
 
-        function init() {
-            canvas.width = window.innerWidth;
-            canvas.height = typeof LOCKED_HEIGHT !== 'undefined' && LOCKED_HEIGHT > 0 ? LOCKED_HEIGHT : Math.max(window.innerHeight, document.documentElement.clientHeight);
-            particles = [];
+      function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = typeof LOCKED_HEIGHT !== 'undefined' && LOCKED_HEIGHT > 0 ? LOCKED_HEIGHT : Math.max(window.innerHeight, document.documentElement.clientHeight);
+        particles = [];
 
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    vx: (Math.random() - 0.5) * 0.4,
-                    vy: (Math.random() - 0.5) * 0.4,
-                    size: Math.random() * 2 + 1
-                });
-            }
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            size: Math.random() * 2 + 1
+          });
         }
+      }
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.strokeStyle = 'rgba(59, 130, 246, 0.12)';
-            
-            for (let i = 0; i < particles.length; i++) {
-                let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.12)';
 
-                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        for (let i = 0; i < particles.length; i++) {
+          let p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
 
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
+          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
-                for (let j = i + 1; j < particles.length; j++) {
-                    let p2 = particles[j];
-                    let dx = p.x - p2.x;
-                    let dy = p.y - p2.y;
-                    let dist = Math.sqrt(dx * dx + dy * dy);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
 
-                    if (dist < 110) {
-                        ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-                    }
-                }
+          for (let j = i + 1; j < particles.length; j++) {
+            let p2 = particles[j];
+            let dx = p.x - p2.x;
+            let dy = p.y - p2.y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 110) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
             }
-            requestAnimationFrame(draw);
+          }
         }
+        requestAnimationFrame(draw);
+      }
 
-        // Debounced resize to prevent blinking when toolbars hide/show
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                // Only re-init if width changed (avoiding height-only triggers from scroll)
-                if (window.innerWidth !== lastWidth) {
-                    lastWidth = window.innerWidth;
-                    init();
-                }
-            }, 250);
-        });
+      // Debounced resize to prevent blinking when toolbars hide/show
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          // Only re-init if width changed (avoiding height-only triggers from scroll)
+          if (window.innerWidth !== lastWidth) {
+            lastWidth = window.innerWidth;
+            init();
+          }
+        }, 250);
+      });
 
-        init();
-        draw();
+      init();
+      draw();
     })();
 
-</script>
+  </script>
 
 </body>
-</html>
+
+</html>s
