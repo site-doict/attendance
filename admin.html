@@ -1252,6 +1252,24 @@
       let allRows = [];
       let loadDataRequestId = 0;
 
+      /** Re-draw attendance table from memory (no server round-trip). */
+      function refreshAttendanceView() {
+        const loader = document.getElementById("loader");
+        const table = document.getElementById("mainTable");
+        const noData = document.getElementById("noData");
+        const lbl = loader && loader.querySelector(".loader-label");
+
+        if (lbl) lbl.textContent = "Loading Administrative Data...";
+        if (loader) loader.style.display = "none";
+
+        if (allRows.length > 0) {
+          if (table) table.style.display = "table";
+          if (noData) noData.style.display = "none";
+        }
+
+        applyFilters();
+      }
+
       // =============================================
       // TAB SWITCHING
       // =============================================
@@ -1277,7 +1295,13 @@
         document.getElementById("tab-" + tabName).classList.add("active");
 
         if (tabName === "attendance") {
-          if (!wasOnAttendance) loadData();
+          if (!wasOnAttendance) {
+            if (allRows.length > 0) {
+              refreshAttendanceView();
+            } else {
+              loadData();
+            }
+          }
         } else if (tabName === "settings") {
           loadSettings();
         } else if (tabName === "leaves") {
@@ -1326,16 +1350,9 @@
         }
 
         function fetchAdminRowsAsArray() {
-          const adminBody = new URLSearchParams({
-            action: "admindata",
-            sessionId: sid,
-          });
-          return fetch(WEB_APP_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-            },
-            body: adminBody,
+          const getUrl = `${WEB_APP_URL}?action=admindata&sessionId=${encodeURIComponent(sid)}&_ts=${Date.now()}&_r=${Math.random()}`;
+          return fetch(getUrl, {
+            method: "GET",
             redirect: "follow",
             cache: "no-store",
             credentials: "omit",
@@ -1354,30 +1371,6 @@
               ) {
                 throw new Error(data.error || "Load failed");
               }
-              if (Array.isArray(data)) return data;
-              const getUrl = `${WEB_APP_URL}?action=admindata&sessionId=${encodeURIComponent(sid)}&_ts=${Date.now()}`;
-              return fetch(getUrl, {
-                method: "GET",
-                redirect: "follow",
-                cache: "no-store",
-                credentials: "omit",
-              }).then((r2) => {
-                if (!r2.ok) throw new Error("GET HTTP " + r2.status);
-                return r2.text();
-              }).then((text2) => {
-                const data2 = parseAdminJsonText(text2);
-                if (
-                  data2 &&
-                  typeof data2 === "object" &&
-                  !Array.isArray(data2) &&
-                  data2.success === false
-                ) {
-                  throw new Error(data2.error || "Load failed");
-                }
-                return data2;
-              });
-            })
-            .then((data) => {
               if (!Array.isArray(data)) {
                 console.error("admindata: expected array, got:", data);
                 throw new Error("Unexpected response shape");
@@ -1429,7 +1422,8 @@
       function applyFilters() {
         const search = document
           .getElementById("searchInput")
-          .value.toLowerCase();
+          .value.trim()
+          .toLowerCase();
         const status = document.getElementById("statusFilter").value;
         const dateFrom = document.getElementById("dateFrom").value;
         const dateTo = document.getElementById("dateTo").value;
