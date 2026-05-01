@@ -685,6 +685,27 @@
       background: rgba(245, 158, 11, 0.03) !important;
     }
 
+    /* Off Day Consolidated Row */
+    tr.tr-offday {
+      background: rgba(239, 68, 68, 0.15) !important;
+      border: 2px solid rgba(239, 68, 68, 0.3) !important;
+    }
+
+    tr.tr-offday td {
+      color: #ffffff !important;
+      font-weight: bold !important;
+      text-align: center !important;
+      font-size: 14px !important;
+    }
+
+    tr.tr-offday td:first-child {
+      border-radius: 8px 0 0 8px;
+    }
+
+    tr.tr-offday td:last-child {
+      border-radius: 0 8px 8px 0;
+    }
+
 
     .badge-absent {
       background: #6b7280;
@@ -1637,42 +1658,83 @@
         table.style.display = "table";
         noData.style.display = "none";
 
-        const sorted = [...rows].reverse();
+        // Group records by date
+        const groupedByDate = {};
+        rows.forEach(r => {
+          const date = r.date || "---";
+          if (!groupedByDate[date]) {
+            groupedByDate[date] = [];
+          }
+          groupedByDate[date].push(r);
+        });
 
-        sorted.forEach((r) => {
-          const status = String(r.status || "").trim();
-          const badgeCls = getBadgeClass(status);
-          const rowCls = getRowClass(status);
+        // Sort dates in descending order
+        const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
+          const dateA = parseSheetDate(a);
+          const dateB = parseSheetDate(b);
+          return dateB - dateA;
+        });
 
-          const tr = document.createElement("tr");
-          if (rowCls) tr.className = rowCls;
+        sortedDates.forEach(date => {
+          const dateRecords = groupedByDate[date];
+          
+          // Check if all records for this date are "Off Day"
+          const allOffDay = dateRecords.every(r => String(r.status || "").trim() === "Off Day");
+          
+          if (allOffDay && dateRecords.length > 1) {
+            // Create a single consolidated row for Off Day
+            const offDayType = getOffDayType(date);
+            
+            const tr = document.createElement("tr");
+            tr.className = "tr-offday";
+            
+            // Create a single cell that spans all columns
+            const tdConsolidated = document.createElement("td");
+            tdConsolidated.colSpan = 6;
+            tdConsolidated.textContent = `${date} - ${offDayType}`;
+            
+            tr.appendChild(tdConsolidated);
+            tbody.appendChild(tr);
+          } else {
+            // Show individual records normally
+            const sortedRecords = [...dateRecords].reverse();
+            
+            sortedRecords.forEach((r) => {
+              const status = String(r.status || "").trim();
+              const badgeCls = getBadgeClass(status);
+              const rowCls = getRowClass(status);
 
-          const tdId = document.createElement("td");
-          const idStrong = document.createElement("strong");
-          idStrong.textContent = r.id || "---";
-          tdId.appendChild(idStrong);
+              const tr = document.createElement("tr");
+              if (rowCls) tr.className = rowCls;
 
-          const tdName = document.createElement("td");
-          tdName.style.textAlign = "left";
-          tdName.textContent = r.name || "---";
+              const tdId = document.createElement("td");
+              const idStrong = document.createElement("strong");
+              idStrong.textContent = r.id || "---";
+              tdId.appendChild(idStrong);
 
-          const tdDate = document.createElement("td");
-          tdDate.textContent = r.date || "---";
+              const tdName = document.createElement("td");
+              tdName.style.textAlign = "left";
+              tdName.textContent = r.name || "---";
 
-          const tdIn = document.createElement("td");
-          tdIn.textContent = r.inTime || "---";
+              const tdDate = document.createElement("td");
+              tdDate.textContent = r.date || "---";
 
-          const tdOut = document.createElement("td");
-          tdOut.textContent = r.outTime || "---";
+              const tdIn = document.createElement("td");
+              tdIn.textContent = r.inTime || "---";
 
-          const tdStatus = document.createElement("td");
-          const badge = document.createElement("span");
-          badge.className = "badge " + badgeCls;
-          badge.textContent = status || "---";
-          tdStatus.appendChild(badge);
+              const tdOut = document.createElement("td");
+              tdOut.textContent = r.outTime || "---";
 
-          tr.append(tdId, tdName, tdDate, tdIn, tdOut, tdStatus);
-          tbody.appendChild(tr);
+              const tdStatus = document.createElement("td");
+              const badge = document.createElement("span");
+              badge.className = "badge " + badgeCls;
+              badge.textContent = status || "---";
+              tdStatus.appendChild(badge);
+
+              tr.append(tdId, tdName, tdDate, tdIn, tdOut, tdStatus);
+              tbody.appendChild(tr);
+            });
+          }
         });
       }
 
@@ -1697,6 +1759,40 @@
         if (s === "absent") return "badge-absent";
         if (s.includes("no sign out")) return "badge-nosignout";
         return "badge-default";
+      }
+
+      function getOffDayType(dateStr) {
+        const dateObj = parseSheetDate(dateStr);
+        if (!dateObj) return "Off Day";
+        
+        // Check if it's within office closure period
+        const officeClosedFrom = document.getElementById("officeClosedFrom")?.value;
+        const officeClosedTo = document.getElementById("officeClosedTo")?.value;
+        
+        if (officeClosedFrom && officeClosedTo) {
+          const fromDate = new Date(officeClosedFrom);
+          const toDate = new Date(officeClosedTo);
+          toDate.setHours(23, 59, 59, 999);
+          
+          if (dateObj >= fromDate && dateObj <= toDate) {
+            return "Office Closed";
+          }
+        }
+        
+        // Check if it's a weekend/holiday
+        const customHolidays = document.getElementById("customHolidays")?.value || "Friday,Saturday";
+        const holidayList = customHolidays.split(",").map(d => d.trim().toLowerCase());
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        const dayOfWeek = dateObj.getDay();
+        const dayName = dayNames[dayOfWeek];
+        
+        if (holidayList.includes(dayName)) {
+          // Capitalize first letter of day name
+          const formattedDayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+          return `${formattedDayName} Off`;
+        }
+        
+        return "Off Day";
       }
 
       function updateCards(rows) {
