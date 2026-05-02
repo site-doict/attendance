@@ -274,6 +274,42 @@ function isWeekendOrHoliday(date){
   return holidayList.includes(dayName);
 }
 
+/** Get attendance summary for real-time dashboard (optimized performance). */
+function getAttendanceSummary(){
+  const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
+  const data  = sheet.getDataRange().getValues();
+  
+  let present = 0, absent = 0, late = 0, early = 0, vlate = 0, nosign = 0, total = 0;
+  const today = Utilities.formatDate(new Date(), TIMEZONE, "M/d/yyyy");
+  
+  for(let i = 1; i < data.length; i++){
+    const row = data[i];
+    const date = row[0] instanceof Date ? Utilities.formatDate(row[0], TIMEZONE, "M/d/yyyy") : String(row[0] || "").replace(/^'+/, "");
+    const status = String(row[5] || "").trim();
+    
+    if(date === today && status){
+      total++;
+      if(status === "Present") present++;
+      else if(status === "Absent") absent++;
+      else if(status === "Late Entry") late++;
+      else if(status.includes("Early Leave")) early++;
+      else if(status.includes("Very Late")) vlate++;
+      else if(status.includes("No Sign Out") || (String(row[6] || "").replace(/^'+/, "").trim() === "---" && status !== "Absent")) nosign++;
+    }
+  }
+  
+  return {
+    total: total,
+    present: present,
+    absent: absent,
+    late: late,
+    early: early,
+    vlate: vlate,
+    nosign: nosign,
+    timestamp: new Date().toISOString()
+  };
+}
+
 /** All attendance rows for admin dashboard (shared by doGet/doPost admindata). */
 function getAdminAttendanceRows(){
   const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
@@ -338,7 +374,7 @@ function doGet(e){
 
   const action = String(e.parameter.action || "history").trim().toLowerCase();
   const sessionId = e.parameter.sessionId;
-  const publicActions = ["history", "login", "test", "validatesession", "deletesession"];
+  const publicActions = ["history", "login", "test", "validatesession", "deletesession", "realtimedata"];
   let sessionCtx = null;
 
   if(publicActions.indexOf(action) === -1) {
@@ -490,6 +526,21 @@ function doGet(e){
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ========== GET REAL-TIME DATA (optimized for polling) ==========
+  if(action === "realtimedata"){
+    const adminRole = String(sessionCtx.role || "").toLowerCase();
+    if(adminRole !== "admin" && adminRole !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Forbidden"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const summary = getAttendanceSummary();
+    return ContentService
+      .createTextOutput(JSON.stringify(summary))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   // ========== CHECK DEVICE ==========
   if(action === "checkdevice"){
@@ -723,6 +774,21 @@ function doPost(e){
     const rows = getAdminAttendanceRows();
     return ContentService
       .createTextOutput(JSON.stringify(rows))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // GET REAL-TIME DATA (optimized for polling)
+  if(action === "realtimedata"){
+    const adminRole = String(sessionValidation.role || "").toLowerCase();
+    if(adminRole !== "admin" && adminRole !== "superadmin") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Forbidden"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    const summary = getAttendanceSummary();
+    return ContentService
+      .createTextOutput(JSON.stringify(summary))
       .setMimeType(ContentService.MimeType.JSON);
   }
   

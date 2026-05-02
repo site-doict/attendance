@@ -384,7 +384,45 @@
       color: white;
     }
 
-    /* ===== SUMMARY CARDS ===== */
+    /* Live Indicator Styles */
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-right: 10px;
+    }
+
+    .live-status {
+      font-size: 12px;
+      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    .live-status.updating {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+      border-color: rgba(59, 130, 246, 0.3);
+      animation: none;
+    }
+
+    .live-status.paused {
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.3);
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    /* Enhanced Summary Cards */
     .summary-cards {
       max-width: 1300px;
       margin: 0 auto 20px;
@@ -402,18 +440,66 @@
       text-align: center;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       color: white;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
 
     .card .count {
       font-size: 32px;
       font-weight: 600;
       margin-bottom: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .card.updating .count {
+      transform: scale(1.05);
+      color: #3b82f6;
     }
 
     .card .label {
       font-size: 13px;
       color: rgba(255, 255, 255, 0.6);
       line-height: 1.2;
+    }
+
+    /* Chart Container */
+    .chart-container {
+      max-width: 1300px;
+      margin: 0 auto 20px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .chart-title {
+      color: #3b82f6;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chart-placeholder {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 14px;
+      text-align: center;
     }
 
     .card.total {
@@ -847,7 +933,11 @@
     <div class="header">
       <h2>🏢 Admin Dashboard</h2>
       <div class="header-btns">
-        <span id="lastUpdated" style="font-size: 12px; color: #94a3b8">⏳ Loading...</span>
+        <div class="live-indicator">
+          <span id="liveStatus" class="live-status">🟢 Live</span>
+          <span id="lastUpdated" style="font-size: 12px; color: #94a3b8">⏳ Loading...</span>
+        </div>
+        <button class="btn btn-primary" onclick="toggleAutoRefresh()" id="autoRefreshBtn">⏸️ Pause</button>
         <button class="btn btn-danger" onclick="logout()">Logout</button>
       </div>
     </div>
@@ -866,6 +956,15 @@
 
     <!-- ===== TAB: ATTENDANCE ===== -->
     <div id="tab-attendance" class="tab-content active">
+      <!-- Real-time Chart -->
+      <div class="chart-container">
+        <div class="chart-title">📊 Live Attendance Overview</div>
+        <div class="chart-wrapper">
+          <canvas id="attendanceChart" style="width: 100%; height: 100%;"></canvas>
+          <div class="chart-placeholder" id="chartPlaceholder">Loading chart...</div>
+        </div>
+      </div>
+
       <!-- Summary Cards -->
       <div class="summary-cards">
         <div class="card total">
@@ -938,8 +1037,6 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Date</th>
-                <th>Sign In</th>
-                <th>Sign Out</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -1331,7 +1428,10 @@
           if (data.valid && (data.role === "admin" || data.role === "superadmin")) {
             // Session valid - continue loading admin panel
             console.log("Admin session validated");
-            loadData();
+            loadData().then(() => {
+              // Initialize real-time system after initial data load
+              initRealTimeSystem();
+            });
           } else {
             // Invalid session - clear and redirect
             localStorage.clear();
@@ -1346,6 +1446,230 @@
 
       let allRows = [];
       let loadDataRequestId = 0;
+
+      // =============================================
+      // REAL-TIME POLLING SYSTEM
+      // =============================================
+      let autoRefreshInterval = null;
+      let isAutoRefreshEnabled = true;
+      let refreshInterval = 30000; // 30 seconds
+      let userActivityTimer = null;
+      let lastDataUpdate = null;
+
+      // Initialize real-time system
+      function initRealTimeSystem() {
+        startAutoRefresh();
+        setupUserActivityTracking();
+        initChart();
+      }
+
+      // Start auto-refresh
+      function startAutoRefresh() {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        
+        if (isAutoRefreshEnabled) {
+          autoRefreshInterval = setInterval(() => {
+            if (isUserActive()) {
+              refreshDataWithAnimation();
+            }
+          }, refreshInterval);
+          
+          updateLiveStatus('live');
+        }
+      }
+
+      // Stop auto-refresh
+      function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
+        updateLiveStatus('paused');
+      }
+
+      // Toggle auto-refresh
+      function toggleAutoRefresh() {
+        isAutoRefreshEnabled = !isAutoRefreshEnabled;
+        const btn = document.getElementById('autoRefreshBtn');
+        
+        if (isAutoRefreshEnabled) {
+          startAutoRefresh();
+          btn.textContent = '⏸️ Pause';
+          btn.className = 'btn btn-primary';
+        } else {
+          stopAutoRefresh();
+          btn.textContent = '▶️ Resume';
+          btn.className = 'btn btn-success';
+        }
+      }
+
+      // Update live status indicator
+      function updateLiveStatus(status) {
+        const liveStatus = document.getElementById('liveStatus');
+        liveStatus.className = 'live-status';
+        
+        switch(status) {
+          case 'live':
+            liveStatus.textContent = '🟢 Live';
+            liveStatus.classList.add('live-status');
+            break;
+          case 'updating':
+            liveStatus.textContent = '🔄 Updating';
+            liveStatus.classList.add('updating');
+            break;
+          case 'paused':
+            liveStatus.textContent = '⏸️ Paused';
+            liveStatus.classList.add('paused');
+            break;
+          case 'error':
+            liveStatus.textContent = '🔴 Error';
+            liveStatus.classList.add('updating');
+            break;
+        }
+      }
+
+      // Refresh data with animation
+      function refreshDataWithAnimation() {
+        updateLiveStatus('updating');
+        animateCardsUpdating();
+        
+        loadData().then(() => {
+          updateLiveStatus('live');
+          updateChart();
+          lastDataUpdate = new Date();
+        }).catch(err => {
+          console.error('Auto-refresh failed:', err);
+          updateLiveStatus('error');
+        });
+      }
+
+      // Animate cards during update
+      function animateCardsUpdating() {
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+          card.classList.add('updating');
+          setTimeout(() => {
+            card.classList.remove('updating');
+          }, 1000);
+        });
+      }
+
+      // User activity tracking
+      function setupUserActivityTracking() {
+        const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+        
+        events.forEach(event => {
+          document.addEventListener(event, () => {
+            resetUserActivityTimer();
+          }, { passive: true });
+        });
+        
+        resetUserActivityTimer();
+      }
+
+      function resetUserActivityTimer() {
+        if (userActivityTimer) clearTimeout(userActivityTimer);
+        
+        userActivityTimer = setTimeout(() => {
+          // Pause auto-refresh after 5 minutes of inactivity
+          if (isAutoRefreshEnabled) {
+            console.log('Pausing auto-refresh due to inactivity');
+            // Don't auto-pause, just track for analytics
+          }
+        }, 5 * 60 * 1000); // 5 minutes
+      }
+
+      function isUserActive() {
+        return true; // Always active for now, can be enhanced with activity tracking
+      }
+
+      // Initialize Chart (placeholder for now)
+      function initChart() {
+        const canvas = document.getElementById('attendanceChart');
+        const placeholder = document.getElementById('chartPlaceholder');
+        
+        if (canvas && placeholder) {
+          // Hide placeholder, show canvas
+          placeholder.style.display = 'none';
+          drawSimpleChart(canvas);
+        }
+      }
+
+      // Update chart with new data
+      function updateChart() {
+        const canvas = document.getElementById('attendanceChart');
+        if (canvas && allRows.length > 0) {
+          drawSimpleChart(canvas);
+        }
+      }
+
+      // Draw simple chart
+      function drawSimpleChart(canvas) {
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width = canvas.offsetWidth;
+        const height = canvas.height = canvas.offsetHeight;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Calculate data
+        const present = allRows.filter(r => r.status === 'Present').length;
+        const absent = allRows.filter(r => r.status === 'Absent' || !r.status).length;
+        const late = allRows.filter(r => r.status === 'Late Entry').length;
+        
+        const total = present + absent + late;
+        if (total === 0) return;
+        
+        // Draw pie chart
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) / 3;
+        
+        const data = [
+          { label: 'Present', value: present, color: '#10b981' },
+          { label: 'Absent', value: absent, color: '#ef4444' },
+          { label: 'Late', value: late, color: '#f59e0b' }
+        ];
+        
+        let currentAngle = -Math.PI / 2;
+        
+        data.forEach(segment => {
+          const sliceAngle = (segment.value / total) * 2 * Math.PI;
+          
+          // Draw segment
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+          ctx.lineTo(centerX, centerY);
+          ctx.fillStyle = segment.color;
+          ctx.fill();
+          
+          // Draw label
+          const labelAngle = currentAngle + sliceAngle / 2;
+          const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
+          const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 14px Outfit';
+          ctx.textAlign = 'center';
+          ctx.fillText(segment.value, labelX, labelY);
+          
+          currentAngle += sliceAngle;
+        });
+        
+        // Draw legend
+        let legendY = 30;
+        data.forEach(segment => {
+          ctx.fillStyle = segment.color;
+          ctx.fillRect(20, legendY - 10, 15, 15);
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '12px Outfit';
+          ctx.textAlign = 'left';
+          ctx.fillText(`${segment.label}: ${segment.value}`, 45, legendY);
+          
+          legendY += 25;
+        });
+      }
 
       /** Re-draw attendance table from memory (no server round-trip). */
       function refreshAttendanceView() {
@@ -1486,7 +1810,7 @@
             });
         }
 
-        fetchAdminRowsAsArray()
+        return fetchAdminRowsAsArray()
           .then((rows) => {
             if (requestId !== loadDataRequestId) return;
             if (!rows) return;
@@ -1498,7 +1822,7 @@
                 new Date().toLocaleTimeString();
               applyFilters();
               loader.style.display = "none";
-              return;
+              return rows;
             }
 
             allRows = rows;
@@ -1507,6 +1831,7 @@
               "Updated: " + new Date().toLocaleTimeString();
             applyFilters();
             loader.style.display = "none";
+            return rows;
           })
           .catch((err) => {
             if (requestId !== loadDataRequestId) return;
@@ -1523,6 +1848,7 @@
                 "⚠️ Could not update data — " + new Date().toLocaleTimeString();
               applyFilters();
             }
+            throw err;
           });
       }
 
@@ -1719,19 +2045,24 @@
               const tdDate = document.createElement("td");
               tdDate.textContent = r.date || "---";
 
-              const tdIn = document.createElement("td");
-              tdIn.textContent = r.inTime || "---";
-
-              const tdOut = document.createElement("td");
-              tdOut.textContent = r.outTime || "---";
-
               const tdStatus = document.createElement("td");
-              const badge = document.createElement("span");
-              badge.className = "badge " + badgeCls;
-              badge.textContent = status || "---";
-              tdStatus.appendChild(badge);
+              
+              // Create special styling for Absent status
+              if (status === "Absent") {
+                tdStatus.style.background = "rgba(220, 38, 38, 0.8)";
+                tdStatus.style.color = "#ffffff";
+                tdStatus.style.fontWeight = "bold";
+                tdStatus.style.textAlign = "center";
+                tdStatus.style.borderRadius = "8px";
+                tdStatus.textContent = "Absent";
+              } else {
+                const badge = document.createElement("span");
+                badge.className = "badge " + badgeCls;
+                badge.textContent = status || "---";
+                tdStatus.appendChild(badge);
+              }
 
-              tr.append(tdId, tdName, tdDate, tdIn, tdOut, tdStatus);
+              tr.append(tdId, tdName, tdDate, tdStatus);
               tbody.appendChild(tr);
             });
           }
@@ -2598,6 +2929,11 @@
       window.loadSettings = loadSettings;
       window.loadUsersForLeave = loadUsersForLeave;
       window.loadLeavesList = loadLeavesList;
+      
+      // Real-time system functions
+      window.toggleAutoRefresh = toggleAutoRefresh;
+      window.initRealTimeSystem = initRealTimeSystem;
+      window.refreshDataWithAnimation = refreshDataWithAnimation;
 
     }
   </script>
