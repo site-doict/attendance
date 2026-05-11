@@ -810,6 +810,13 @@
       border: 1px solid rgba(139, 92, 246, 0.3);
     }
 
+    .badge-combined {
+      background: rgba(220, 38, 38, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(220, 38, 68, 0.3);
+      font-weight: 600;
+    }
+
     .badge-default {
       background: rgba(255, 255, 255, 0.05);
       color: rgba(255, 255, 255, 0.6);
@@ -1124,7 +1131,9 @@
           <option value="Present">Present</option>
           <option value="Late Entry">Late Entry</option>
           <option value="Early Leave">Early Leave</option>
+          <option value="Late Entry | Early Leave">Late Entry | Early Leave</option>
           <option value="Very Late">Very Late</option>
+          <option value="Very Late | Early Leave">Very Late | Early Leave</option>
           <option value="Absent">Absent</option>
           <option value="No Sign Out">No Sign Out</option>
         </select>
@@ -1729,24 +1738,28 @@
         // Clear SVG
         svg.innerHTML = '';
         
-        // Calculate data for all attendance types
+        // Calculate data for all attendance types (including combined statuses)
         const present = allRows.filter(r => r.status === 'Present').length;
         const absent = allRows.filter(r => r.status === 'Absent' || !r.status).length;
         const late = allRows.filter(r => r.status === 'Late Entry').length;
         const early = allRows.filter(r => r.status === 'Early Leave').length;
+        const lateEarly = allRows.filter(r => r.status === 'Late Entry | Early Leave').length;
         const veryLate = allRows.filter(r => r.status === 'Very Late').length;
+        const veryLateEarly = allRows.filter(r => r.status === 'Very Late | Early Leave').length;
         const noSign = allRows.filter(r => r.status === 'No Sign Out').length;
         
-        const total = present + absent + late + early + veryLate + noSign;
+        const total = present + absent + late + early + lateEarly + veryLate + veryLateEarly + noSign;
         if (total === 0) return;
         
-        // Chart data with all categories
+        // Chart data with all categories (including combined)
         const data = [
           { label: 'Present', value: present, color: '#10b981' },
           { label: 'Absent', value: absent, color: '#6b7280' },
           { label: 'Late Entry', value: late, color: '#f59e0b' },
           { label: 'Early Leave', value: early, color: '#f97316' },
+          { label: 'Late Entry | Early Leave', value: lateEarly, color: '#dc3545' },
           { label: 'Very Late', value: veryLate, color: '#ef4444' },
+          { label: 'Very Late | Early Leave', value: veryLateEarly, color: '#dc3545' },
           { label: 'No Sign Out', value: noSign, color: '#8b5cf6' }
         ].filter(item => item.value > 0); // Only show items with data
         
@@ -2266,7 +2279,7 @@
         if (s === "present") return "badge-present";
         if (s.includes("very late")) return "badge-verylate";
         if (s.includes("late entry") && s.includes("early leave"))
-          return "badge-verylate";
+          return "badge-combined";
         if (s.includes("late")) return "badge-late";
         if (s.includes("early")) return "badge-early";
         if (s === "absent") return "badge-absent";
@@ -2312,12 +2325,10 @@
         const total = rows.length;
         const present = rows.filter((r) => r.status === "Present").length;
         const late = rows.filter((r) => r.status === "Late Entry").length;
-        const early = rows.filter(
-          (r) => r.status && r.status.includes("Early Leave"),
-        ).length;
-        const vlate = rows.filter(
-          (r) => r.status && r.status.includes("Very Late"),
-        ).length;
+        const early = rows.filter((r) => r.status === "Early Leave").length;
+        const lateEarly = rows.filter((r) => r.status === "Late Entry | Early Leave").length;
+        const vlate = rows.filter((r) => r.status === "Very Late").length;
+        const vlateEarly = rows.filter((r) => r.status === "Very Late | Early Leave").length;
         const absent = rows.filter(
           (r) => r.status === "Absent" || !r.status,
         ).length;
@@ -2330,9 +2341,9 @@
 
         document.getElementById("cTotal").innerText = total;
         document.getElementById("cPresent").innerText = present;
-        document.getElementById("cLate").innerText = late;
-        document.getElementById("cEarly").innerText = early;
-        document.getElementById("cVLate").innerText = vlate;
+        document.getElementById("cLate").innerText = late + lateEarly; // Show total late including combined
+        document.getElementById("cEarly").innerText = early + lateEarly + vlateEarly; // Show total early including combined
+        document.getElementById("cVLate").innerText = vlate + vlateEarly; // Show total very late including combined
         document.getElementById("cAbsent").innerText = absent;
         document.getElementById("cNoSign").innerText = nosign;
       }
