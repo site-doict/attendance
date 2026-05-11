@@ -496,6 +496,36 @@
       justify-content: center;
     }
 
+    #attendanceChart {
+      width: 100%;
+      height: 100%;
+      min-height: 250px;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+      padding: 0 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
     .chart-placeholder {
       color: rgba(255, 255, 255, 0.6);
       font-size: 14px;
@@ -877,7 +907,20 @@
 
     @media (max-width: 768px) {
       .summary-cards {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .card {
+        padding: 15px 8px;
+      }
+
+      .card .count {
+        font-size: 24px;
+      }
+
+      .card .label {
+        font-size: 11px;
       }
 
       .header {
@@ -886,6 +929,23 @@
     }
 
     @media (max-width: 600px) {
+      .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+
+      .card {
+        padding: 12px 6px;
+      }
+
+      .card .count {
+        font-size: 20px;
+      }
+
+      .card .label {
+        font-size: 10px;
+      }
+
       .header {
         flex-direction: column;
         align-items: flex-start;
@@ -920,11 +980,21 @@
       }
 
       .summary-cards {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+
+      .card {
+        padding: 10px 5px;
       }
 
       .card .count {
-        font-size: 28px;
+        font-size: 18px;
+      }
+
+      .card .label {
+        font-size: 9px;
+        line-height: 1.1;
       }
 
       .btn {
@@ -946,6 +1016,25 @@
 
       .table-box {
         padding: 10px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+
+      .card {
+        padding: 8px 4px;
+      }
+
+      .card .count {
+        font-size: 16px;
+      }
+
+      .card .label {
+        font-size: 8px;
       }
     }
   </style>
@@ -988,9 +1077,10 @@
       <div class="chart-container">
         <div class="chart-title">📊 Live Attendance Overview</div>
         <div class="chart-wrapper">
-          <canvas id="attendanceChart" style="width: 100%; height: 100%;"></canvas>
+          <svg id="attendanceChart" style="width: 100%; height: 100%;"></svg>
           <div class="chart-placeholder" id="chartPlaceholder">Loading chart...</div>
         </div>
+        <div class="chart-legend" id="chartLegend"></div>
       </div>
 
       <!-- Summary Cards -->
@@ -1611,91 +1701,155 @@
         return true; // Always active for now, can be enhanced with activity tracking
       }
 
-      // Initialize Chart (placeholder for now)
+      // Initialize Chart (SVG-based)
       function initChart() {
-        const canvas = document.getElementById('attendanceChart');
+        const svg = document.getElementById('attendanceChart');
         const placeholder = document.getElementById('chartPlaceholder');
         
-        if (canvas && placeholder) {
-          // Hide placeholder, show canvas
+        if (svg && placeholder) {
+          // Hide placeholder, show SVG
           placeholder.style.display = 'none';
-          drawSimpleChart(canvas);
+          drawSVGChart(svg);
         }
       }
 
       // Update chart with new data
       function updateChart() {
-        const canvas = document.getElementById('attendanceChart');
-        if (canvas && allRows.length > 0) {
-          drawSimpleChart(canvas);
+        const svg = document.getElementById('attendanceChart');
+        if (svg && allRows.length > 0) {
+          drawSVGChart(svg);
         }
       }
 
-      // Draw simple chart
-      function drawSimpleChart(canvas) {
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width = canvas.offsetWidth;
-        const height = canvas.height = canvas.offsetHeight;
+      // Draw SVG chart with all attendance categories
+      function drawSVGChart(svg) {
+        const width = svg.clientWidth;
+        const height = svg.clientHeight;
         
-        // Clear canvas
-        ctx.clearRect(0, 0, width, height);
+        // Clear SVG
+        svg.innerHTML = '';
         
-        // Calculate data
+        // Calculate data for all attendance types
         const present = allRows.filter(r => r.status === 'Present').length;
         const absent = allRows.filter(r => r.status === 'Absent' || !r.status).length;
         const late = allRows.filter(r => r.status === 'Late Entry').length;
+        const early = allRows.filter(r => r.status === 'Early Leave').length;
+        const veryLate = allRows.filter(r => r.status === 'Very Late').length;
+        const noSign = allRows.filter(r => r.status === 'No Sign Out').length;
         
-        const total = present + absent + late;
+        const total = present + absent + late + early + veryLate + noSign;
         if (total === 0) return;
         
-        // Draw pie chart
+        // Chart data with all categories
+        const data = [
+          { label: 'Present', value: present, color: '#10b981' },
+          { label: 'Absent', value: absent, color: '#6b7280' },
+          { label: 'Late Entry', value: late, color: '#f59e0b' },
+          { label: 'Early Leave', value: early, color: '#f97316' },
+          { label: 'Very Late', value: veryLate, color: '#ef4444' },
+          { label: 'No Sign Out', value: noSign, color: '#8b5cf6' }
+        ].filter(item => item.value > 0); // Only show items with data
+        
+        // Create SVG elements
         const centerX = width / 2;
         const centerY = height / 2;
         const radius = Math.min(width, height) / 3;
         
-        const data = [
-          { label: 'Present', value: present, color: '#10b981' },
-          { label: 'Absent', value: absent, color: '#ef4444' },
-          { label: 'Late', value: late, color: '#f59e0b' }
-        ];
+        // Create pie slices
+        let currentAngle = -90; // Start from top
+        const anglePerValue = 360 / total;
         
-        let currentAngle = -Math.PI / 2;
-        
-        data.forEach(segment => {
-          const sliceAngle = (segment.value / total) * 2 * Math.PI;
+        data.forEach((segment, index) => {
+          const startAngle = currentAngle;
+          const endAngle = currentAngle + (segment.value * anglePerValue);
           
-          // Draw segment
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-          ctx.lineTo(centerX, centerY);
-          ctx.fillStyle = segment.color;
-          ctx.fill();
+          // Create pie slice path
+          const path = createPieSlice(centerX, centerY, radius, startAngle, endAngle);
+          const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          pathElement.setAttribute('d', path);
+          pathElement.setAttribute('fill', segment.color);
+          pathElement.setAttribute('stroke', 'rgba(255, 255, 255, 0.1)');
+          pathElement.setAttribute('stroke-width', '2');
+          pathElement.style.transition = 'all 0.3s ease';
+          pathElement.style.cursor = 'pointer';
           
-          // Draw label
-          const labelAngle = currentAngle + sliceAngle / 2;
-          const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
-          const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+          // Add hover effect
+          pathElement.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+            this.style.filter = 'brightness(1.2)';
+          });
           
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 14px Outfit';
-          ctx.textAlign = 'center';
-          ctx.fillText(segment.value, labelX, labelY);
+          pathElement.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+            this.style.filter = 'brightness(1)';
+          });
           
-          currentAngle += sliceAngle;
+          svg.appendChild(pathElement);
+          
+          // Add percentage label if segment is large enough
+          const percentage = ((segment.value / total) * 100).toFixed(1);
+          if (percentage > 5) { // Only show label for segments > 5%
+            const labelAngle = (startAngle + endAngle) / 2;
+            const labelRadius = radius * 0.7;
+            const labelX = centerX + Math.cos(labelAngle * Math.PI / 180) * labelRadius;
+            const labelY = centerY + Math.sin(labelAngle * Math.PI / 180) * labelRadius;
+            
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', labelX);
+            text.setAttribute('y', labelY);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'middle');
+            text.setAttribute('fill', 'white');
+            text.setAttribute('font-size', '12');
+            text.setAttribute('font-weight', 'bold');
+            text.setAttribute('font-family', 'Outfit, sans-serif');
+            text.textContent = `${percentage}%`;
+            svg.appendChild(text);
+          }
+          
+          currentAngle = endAngle;
         });
         
-        // Draw legend
-        let legendY = 30;
-        data.forEach(segment => {
-          ctx.fillStyle = segment.color;
-          ctx.fillRect(20, legendY - 10, 15, 15);
+        // Update legend
+        updateLegend(data);
+      }
+      
+      // Create pie slice path
+      function createPieSlice(centerX, centerY, radius, startAngle, endAngle) {
+        const startAngleRad = startAngle * Math.PI / 180;
+        const endAngleRad = endAngle * Math.PI / 180;
+        
+        const x1 = centerX + radius * Math.cos(startAngleRad);
+        const y1 = centerY + radius * Math.sin(startAngleRad);
+        const x2 = centerX + radius * Math.cos(endAngleRad);
+        const y2 = centerY + radius * Math.sin(endAngleRad);
+        
+        const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+        
+        return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+      }
+      
+      // Update chart legend
+      function updateLegend(data) {
+        const legendContainer = document.getElementById('chartLegend');
+        if (!legendContainer) return;
+        
+        legendContainer.innerHTML = '';
+        
+        data.forEach(item => {
+          const legendItem = document.createElement('div');
+          legendItem.className = 'legend-item';
           
-          ctx.fillStyle = '#ffffff';
-          ctx.font = '12px Outfit';
-          ctx.textAlign = 'left';
-          ctx.fillText(`${segment.label}: ${segment.value}`, 45, legendY);
+          const colorBox = document.createElement('div');
+          colorBox.className = 'legend-color';
+          colorBox.style.backgroundColor = item.color;
           
-          legendY += 25;
+          const label = document.createElement('span');
+          label.textContent = `${item.label}: ${item.value}`;
+          
+          legendItem.appendChild(colorBox);
+          legendItem.appendChild(label);
+          legendContainer.appendChild(legendItem);
         });
       }
 
