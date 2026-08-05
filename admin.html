@@ -2596,7 +2596,28 @@
         const statusEl = document.getElementById(statusId);
         statusEl.style.display = "none";
 
-        let completed = 0;
+        let settled = 0;
+        let successCount = 0;
+        let failureCount = 0;
+
+        function finishSave() {
+          if (settled !== updates.length) return;
+
+          if (successCount > 0) {
+            statusEl.className = "save-status success";
+            statusEl.innerText = "✅ Saved successfully!";
+            statusEl.style.display = "block";
+            setTimeout(() => {
+              statusEl.style.display = "none";
+              loadSettings(); // This reloads values from sheet
+            }, 2000);
+          } else {
+            statusEl.className = "save-status error";
+            statusEl.innerText = "❌ Save failed!";
+            statusEl.style.display = "block";
+          }
+        }
+
         updates.forEach((u) => {
           const fd = new FormData();
           fd.append("type", "updatesettings");
@@ -2605,23 +2626,27 @@
           fd.append("sessionId", sessionId);
 
           fetch(WEB_APP_URL, { method: "POST", body: fd })
-            .then((r) => r.json())
-            .then((d) => {
-              completed++;
-              if (completed === updates.length) {
-                statusEl.className = "save-status success";
-                statusEl.innerText = "✅ Saved successfully!";
-                statusEl.style.display = "block";
-                setTimeout(() => {
-                  statusEl.style.display = "none";
-                  loadSettings(); // This reloads values from sheet
-                }, 2000);
+            .then((r) => r.text().then((text) => ({ ok: r.ok, text })))
+            .then(({ ok, text }) => {
+              let parsed = null;
+              try {
+                parsed = JSON.parse(String(text || "").trim());
+              } catch (err) {
+                parsed = null;
+              }
+
+              if (ok || (parsed && parsed.success)) {
+                successCount++;
+              } else {
+                failureCount++;
               }
             })
-            .catch((err) => {
-              statusEl.className = "save-status error";
-              statusEl.innerText = "❌ Save failed!";
-              statusEl.style.display = "block";
+            .catch(() => {
+              failureCount++;
+            })
+            .finally(() => {
+              settled++;
+              finishSave();
             });
         });
       }

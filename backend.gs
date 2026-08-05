@@ -22,8 +22,22 @@ function setupSessionsSheet() {
     Logger.log("✅ Created sessions sheet with headers");
   }
   
-  // Clean up expired sessions on setup
+  // Clean up expired sessions at most once per day so login requests stay fast
+  cleanupExpiredSessionsIfDue();
+}
+
+function cleanupExpiredSessionsIfDue() {
+  const props = PropertiesService.getScriptProperties();
+  const lastRun = Number(props.getProperty("sessionsCleanupLastRun") || 0);
+  const now = Date.now();
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  if (now - lastRun < oneDay) {
+    return;
+  }
+
   cleanupExpiredSessions();
+  props.setProperty("sessionsCleanupLastRun", String(now));
 }
 
 function createSession(userId, role, office) {
