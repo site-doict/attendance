@@ -383,6 +383,7 @@ button{
 
     <h2>Welcome</h2>
     <p id="user"></p>
+    <p id="officeName" style="margin-top:-5px;color:rgba(255,255,255,0.75);font-size:14px;font-weight:600;"></p>
 <div id="clock">00:00:00</div>
 
 <!-- ===== সব মেসেজ আগে ===== -->
@@ -431,6 +432,11 @@ const WEB_APP_URL =
 
 // ================= USER =================
 const sessionId = localStorage.getItem("sessionId");
+const OFFICE_NAMES = {
+  madarganj: "Upazila ICT Office, Madarganj",
+  sarishabari: "Upazila ICT Office, Sarishabari"
+};
+let userOffice = String(localStorage.getItem("userOffice") || "madarganj").toLowerCase();
 if(!sessionId) {
   localStorage.clear();
   location.href = "index.html";
@@ -447,6 +453,8 @@ function validateUserSession() {
     .then(data => {
       if(data.valid) {
         userData = data.user || { id: data.userId, name: data.userId || "" };
+        userOffice = String(data.office || (data.user && data.user.office) || userOffice || "madarganj").toLowerCase();
+        localStorage.setItem("userOffice", userOffice);
         initializeApp();
       } else {
         localStorage.clear();
@@ -463,6 +471,8 @@ function validateUserSession() {
 function initializeApp() {
   if(!userData) return;
   document.getElementById("user").innerText = `ID: ${userData.id} | Name: ${userData.name}`;
+  const officeEl = document.getElementById("officeName");
+  if(officeEl) officeEl.innerText = OFFICE_NAMES[userOffice] || OFFICE_NAMES.madarganj;
   initializeDashboard();
 }
 

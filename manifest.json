@@ -1,7 +1,7 @@
 {
   "name": "Office Attendance",
   "short_name": "Attendance",
-  "description": "Upazila ICT Office, Madarganj, Jamalpur - Attendance System",
+  "description": "Upazila ICT Offices - Attendance System",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

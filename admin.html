@@ -1292,6 +1292,13 @@
           <h3>📍 Office Location</h3>
           <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Manually enter the coordinates, or get your
             current location.</p>
+          <div class="form-group">
+            <label>Office</label>
+            <select id="settingsOffice" onchange="loadSettings()">
+              <option value="madarganj">Upazila ICT Office, Madarganj</option>
+              <option value="sarishabari">Upazila ICT Office, Sarishabari</option>
+            </select>
+          </div>
           <button class="btn btn-primary" onclick="getCurrentAdminLocation()" style="margin-bottom: 15px;">
             🗺️ Use My Current Location
           </button>
@@ -1438,12 +1445,14 @@
                 <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Name</th>
                 <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Email</th>
                 <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Role</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Office</th>
+                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Status</th>
                 <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center;">Action</th>
               </tr>
             </thead>
             <tbody id="usersListBody">
               <tr>
-                <td colspan="5" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading
+                <td colspan="7" style="padding: 15px; text-align: center; color: rgba(255, 255, 255, 0.6);">⏳ Loading
                   users...</td>
               </tr>
             </tbody>
@@ -1482,6 +1491,14 @@
           <select id="newUserRole">
             <option value="user">User</option>
             <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Office</label>
+          <select id="newUserOffice">
+            <option value="madarganj">Upazila ICT Office, Madarganj</option>
+            <option value="sarishabari">Upazila ICT Office, Sarishabari</option>
           </select>
         </div>
 
@@ -2364,10 +2381,27 @@
       // =============================================
       // LOAD SETTINGS
       // =============================================
+      function getSelectedSettingsOffice() {
+        const select = document.getElementById("settingsOffice");
+        const savedOffice = localStorage.getItem("adminSettingsOffice");
+        if (select && savedOffice) {
+          select.value = savedOffice;
+        }
+        const office = select ? String(select.value || "madarganj").toLowerCase() : "madarganj";
+        localStorage.setItem("adminSettingsOffice", office);
+        return office;
+      }
+
+      function officeSettingKey(baseKey, office) {
+        return `${baseKey}_${String(office || "madarganj").toLowerCase()}`;
+      }
+
       function loadSettings() {
         fetch(`${WEB_APP_URL}?action=getsettings&sessionId=${encodeURIComponent(sessionId)}`)
           .then((r) => r.json())
           .then((settings) => {
+            const office = getSelectedSettingsOffice();
+
             // Time fields - format HH:MM
             let startTime = settings.officeStartTime || "09:00";
             if (startTime.includes(":")) startTime = startTime.substring(0, 5);
@@ -2427,9 +2461,9 @@
               settings.customHolidays || "Friday,Saturday";
 
             // Location
-            document.getElementById("officeLat").value = settings.officeLat || "24.8946369";
-            document.getElementById("officeLng").value = settings.officeLng || "89.7183403";
-            document.getElementById("officeRadius").value = settings.officeRadius || "100";
+            document.getElementById("officeLat").value = settings[officeSettingKey("officeLat", office)] || settings.officeLat || "24.8946369";
+            document.getElementById("officeLng").value = settings[officeSettingKey("officeLng", office)] || settings.officeLng || "89.7183403";
+            document.getElementById("officeRadius").value = settings[officeSettingKey("officeRadius", office)] || settings.officeRadius || "100";
 
           })
           .catch((err) => console.error("Failed to load settings:", err));
@@ -2539,10 +2573,11 @@
           ];
           statusId = "status-holidays";
         } else if (type === "location") {
+          const office = getSelectedSettingsOffice();
           updates = [
-            { key: "officeLat", value: document.getElementById("officeLat").value },
-            { key: "officeLng", value: document.getElementById("officeLng").value },
-            { key: "officeRadius", value: document.getElementById("officeRadius").value }
+            { key: officeSettingKey("officeLat", office), value: document.getElementById("officeLat").value },
+            { key: officeSettingKey("officeLng", office), value: document.getElementById("officeLng").value },
+            { key: officeSettingKey("officeRadius", office), value: document.getElementById("officeRadius").value }
           ];
           statusId = "status-location";
         }
@@ -2663,6 +2698,7 @@
         const email = document.getElementById("newUserEmail").value.trim();
         const pass = document.getElementById("newUserPass").value.trim();
         const role = document.getElementById("newUserRole").value;
+        const office = document.getElementById("newUserOffice").value;
         const statusEl = document.getElementById("status-createuser");
 
         statusEl.style.display = "none";
@@ -2681,6 +2717,7 @@
         fd.append("email", email);
         fd.append("pass", pass);
         fd.append("role", role);
+        fd.append("office", office);
         fd.append("sessionId", sessionId);
 
         statusEl.className = "save-status";
@@ -2698,6 +2735,7 @@
               document.getElementById("newUserEmail").value = "";
               document.getElementById("newUserPass").value = "";
               document.getElementById("newUserRole").value = "user";
+              document.getElementById("newUserOffice").value = "madarganj";
               loadUsers(); // refresh the table
             } else {
               statusEl.className = "save-status error";
@@ -2715,24 +2753,14 @@
       // =============================================
       function loadUsers() {
         const tbody = document.getElementById("usersListBody");
-        tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Loading users...</td></tr>';
-
-        // Ensure table has the Status header
-        const theadTr = document.querySelector("#tab-users thead tr");
-        if (theadTr.children.length === 5) {
-          const statusTh = document.createElement("th");
-          statusTh.style.padding = "10px";
-          statusTh.style.border = "1px solid #ddd";
-          statusTh.innerText = "Status";
-          theadTr.insertBefore(statusTh, theadTr.children[4]);
-        }
+        tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #888;">⏳ Loading users...</td></tr>';
 
         fetch(`${WEB_APP_URL}?action=getusers&sessionId=${encodeURIComponent(sessionId)}`)
           .then(r => r.json())
           .then(users => {
             tbody.innerHTML = "";
             if (!users || users.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">No users found in sheet.</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #888;">No users found in sheet.</td></tr>';
               return;
             }
             users.forEach(u => {
@@ -2768,6 +2796,11 @@
               tdRole.style.border = "1px solid #eee";
               tdRole.textContent = u.role != null ? String(u.role) : "";
 
+              const tdOffice = document.createElement("td");
+              tdOffice.style.padding = "10px";
+              tdOffice.style.border = "1px solid #eee";
+              tdOffice.textContent = u.office != null ? String(u.office) : "madarganj";
+
               const tdStat = document.createElement("td");
               tdStat.style.padding = "10px";
               tdStat.style.border = "1px solid #eee";
@@ -2801,13 +2834,14 @@
               tr.appendChild(tdName);
               tr.appendChild(tdEmail);
               tr.appendChild(tdRole);
+              tr.appendChild(tdOffice);
               tr.appendChild(tdStat);
               tr.appendChild(tdAct);
               tbody.appendChild(tr);
             });
           })
           .catch(err => {
-            tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #dc3545;">❌ Error loading users.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #dc3545;">❌ Error loading users.</td></tr>';
           });
       }
 
@@ -2820,7 +2854,7 @@
         fd.append("sessionId", sessionId);
 
         const tbody = document.getElementById("usersListBody");
-        tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Deleting...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #888;">⏳ Deleting...</td></tr>';
 
         fetch(WEB_APP_URL, { method: "POST", body: fd })
           .then(r => r.json())
@@ -2847,7 +2881,7 @@
         fd.append("sessionId", sessionId);
 
         const tbody = document.getElementById("usersListBody");
-        tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">⏳ Updating...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #888;">⏳ Updating...</td></tr>';
 
         fetch(WEB_APP_URL, { method: "POST", body: fd })
           .then(r => r.json())

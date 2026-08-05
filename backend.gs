@@ -26,12 +26,13 @@ function setupSessionsSheet() {
   cleanupExpiredSessions();
 }
 
-function createSession(userId, role) {
+function createSession(userId, role, office) {
   const sessionId = Utilities.getUuid();
   const expiry = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
   const sessionData = {
     userId: userId,
     role: role,
+    office: String(office || "madarganj").trim().toLowerCase(),
     createdAt: new Date(),
     expiresAt: expiry
   };
@@ -64,7 +65,8 @@ function validateSession(sessionId) {
         return {
           valid: true,
           userId: sessionData.userId,
-          role: sessionData.role
+          role: sessionData.role,
+          office: sessionData.office || "madarganj"
         };
       } else {
         // Session expired - clean it up
@@ -246,6 +248,23 @@ function getSettings(){
   }
   
   return settings;
+}
+
+function getOfficeDisplayName(office) {
+  const normalized = String(office || "madarganj").trim().toLowerCase();
+  if (normalized === "sarishabari") return "Upazila ICT Office, Sarishabari";
+  return "Upazila ICT Office, Madarganj";
+}
+
+function getOfficeSettings(office) {
+  const settings = getSettings();
+  const normalized = String(office || "madarganj").trim().toLowerCase();
+  return {
+    officeLat: settings["officeLat_" + normalized] || settings.officeLat,
+    officeLng: settings["officeLng_" + normalized] || settings.officeLng,
+    officeRadius: settings["officeRadius_" + normalized] || settings.officeRadius,
+    officeName: getOfficeDisplayName(normalized)
+  };
 }
 
 function isOfficeClosed(date){
@@ -494,9 +513,10 @@ function doGet(e){
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    const userOffice = sessionCtx.office || "madarganj";
     const deviceStatus = checkDeviceInternal(uid, fp);
     const history = getHistoryInternal(uid);
-    const settings = getSettings();
+    const settings = getOfficeSettings(userOffice);
     const leaveStatus = getUserLeaveStatus(uid);
     
     return ContentService
@@ -576,6 +596,7 @@ function doGet(e){
     const nameCol = headers.indexOf("Name");
     const emailCol = headers.indexOf("Email");
     const roleCol = headers.indexOf("Role");
+    const officeCol = headers.indexOf("Office");
     let statusCol = headers.indexOf("Status");
     
     // Auto-create Status column if missing
@@ -597,6 +618,7 @@ function doGet(e){
         name: nameCol !== -1 ? String(data[i][nameCol]).trim() : "",
         email: emailCol !== -1 ? String(data[i][emailCol]).trim() : "",
         role: roleCol !== -1 ? String(data[i][roleCol]).trim() : "",
+        office: officeCol !== -1 ? String(data[i][officeCol] || "madarganj").trim().toLowerCase() : "madarganj",
         status: rowStatus
       });
     }
@@ -932,6 +954,7 @@ for(let i = 1; i < data.length; i++){
     const uemail = postParam("email");
     const upass = postParam("pass");
     const urole = postParam("role") || "user";
+    const uoffice = String(postParam("office") || "madarganj").trim().toLowerCase();
 
     const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
     if(!userSheet){
@@ -966,6 +989,8 @@ for(let i = 1; i < data.length; i++){
     if (emailCol !== -1) newRow[emailCol] = uemail;
     if (passCol !== -1) newRow[passCol] = hashPassword(upass);
     if (roleCol !== -1) newRow[roleCol] = urole;
+    const officeCol = headers.indexOf("Office");
+    if (officeCol !== -1) newRow[officeCol] = uoffice;
     newRow[statusCol] = "Active"; // Default status
     
     userSheet.appendRow(newRow);
@@ -1229,6 +1254,7 @@ function loginUser(e) {
   const passCol = headers.indexOf("Password");
   const roleCol = headers.indexOf("Role");
   const nameCol = headers.indexOf("Name");
+  const officeCol = headers.indexOf("Office");
   const statusCol = headers.indexOf("Status");
   
   for(let i = 1; i < data.length; i++) {
@@ -1236,6 +1262,7 @@ function loginUser(e) {
     const uPass = String(data[i][passCol] || "").trim();
     const uRole = String(data[i][roleCol] || "user").trim().toLowerCase();
     const uName = String(data[i][nameCol] || "").trim();
+    const uOffice = officeCol !== -1 ? String(data[i][officeCol] || "madarganj").trim().toLowerCase() : "madarganj";
     const uStatus = String(data[i][statusCol] || "active").trim().toLowerCase();
 
     const passwordMatch = uPass.includes(":")
@@ -1250,7 +1277,7 @@ function loginUser(e) {
       }
       
       // Create session and return
-      const sessionId = createSession(uID, uRole);
+      const sessionId = createSession(uID, uRole, uOffice);
       
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -1258,7 +1285,8 @@ function loginUser(e) {
         user: {
           id: uID,
           name: uName,
-          role: uRole
+          role: uRole,
+          office: uOffice
         }
       })).setMimeType(ContentService.MimeType.JSON);
     }
@@ -1305,6 +1333,7 @@ function sendDailyEmails(){
   const nameCol  = userHeaders.indexOf("Name");
   const emailCol = userHeaders.indexOf("Email");
   const roleCol  = userHeaders.indexOf("Role");
+  const officeCol = userHeaders.indexOf("Office");
   const statusCol= userHeaders.indexOf("Status");
 
   if(idCol === -1 || emailCol === -1){
@@ -1375,6 +1404,7 @@ const attRows = attSheet.getDataRange().getValues();
     const uname  = String(u[nameCol] || "").trim();
     const uemail = String(u[emailCol]|| "").trim();
     const urole  = String(u[roleCol] || "user").trim().toLowerCase();
+    const uoffice = officeCol !== -1 ? String(u[officeCol] || "madarganj").trim().toLowerCase() : "madarganj";
     const ustatus = statusCol !== -1 ? String(u[statusCol] || "Active").trim().toLowerCase() : "active";
 
     if(urole === "admin" || urole === "superadmin") continue;
@@ -1453,7 +1483,7 @@ const attRows = attSheet.getDataRange().getValues();
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #ddd;border-radius:10px;overflow:hidden;">
   <div style="background:#1a1a1a;padding:25px;text-align:center;">
     <h2 style="color:white;margin:0;font-size:22px;">&#127970; Office Attendance Report</h2>
-    <p style="color:#aaa;margin:8px 0 0;">Upazila ICT Office, Madarganj, Jamalpur</p>
+    <p style="color:#aaa;margin:8px 0 0;">${getOfficeDisplayName(uoffice)}, Jamalpur</p>
   </div>
   <div style="padding:25px;">
     <p style="font-size:16px;margin-bottom:5px;">Dear <strong>${uname}</strong>,</p>
@@ -1489,7 +1519,7 @@ const attRows = attSheet.getDataRange().getValues();
     </p>
   </div>
   <div style="background:#1a1a1a;padding:12px;text-align:center;font-size:12px;color:#aaa;">
-    Upazila ICT Office, Madarganj, Jamalpur &nbsp;|&nbsp; Attendance Management System
+    ${getOfficeDisplayName(uoffice)} &nbsp;|&nbsp; Attendance Management System
   </div>
 </div>
 </body></html>`;
@@ -1551,7 +1581,7 @@ const attRows = attSheet.getDataRange().getValues();
 <div style="font-family:Arial,sans-serif;max-width:750px;margin:auto;border:1px solid #ddd;border-radius:10px;overflow:hidden;">
   <div style="background:#1a1a1a;padding:25px;text-align:center;">
     <h2 style="color:white;margin:0;font-size:22px;">&#127970; Daily Attendance Summary</h2>
-    <p style="color:#aaa;margin:6px 0 0;">Upazila ICT Office, Madarganj, Jamalpur</p>
+    <p style="color:#aaa;margin:6px 0 0;">Attendance Management System</p>
     <p style="color:#fff;margin:8px 0 0;font-size:19px;font-weight:bold;">${dateDisplay}</p>
   </div>
   <div style="padding:25px;">
@@ -1602,7 +1632,7 @@ const attRows = attSheet.getDataRange().getValues();
     </p>
   </div>
   <div style="background:#1a1a1a;padding:12px;text-align:center;font-size:12px;color:#aaa;">
-    Upazila ICT Office, Madarganj, Jamalpur &nbsp;|&nbsp; Attendance Management System
+    Attendance Management System
   </div>
 </div>
 </body></html>`;
@@ -1715,6 +1745,7 @@ function sendHolidayEveEmails(){
 
   const nameCol  = headers.indexOf("Name");
   const emailCol = headers.indexOf("Email");
+  const officeCol = headers.indexOf("Office");
 
   let holidayLabel = "";
   if(isTomorrowWeekend)  holidayLabel = "সাপ্তাহিক ছুটি (শুক্র ও শনিবার)";
@@ -1727,6 +1758,7 @@ function sendHolidayEveEmails(){
     const u      = userRows[i];
     const uname  = String(u[nameCol]  || "").trim();
     const uemail = String(u[emailCol] || "").trim();
+    const uoffice = officeCol !== -1 ? String(u[officeCol] || "madarganj").trim().toLowerCase() : "madarganj";
 
     if(!uemail) continue;
 
@@ -1763,7 +1795,7 @@ function sendHolidayEveEmails(){
     </p>
   </div>
   <div style="background:#1a1a2e;padding:12px;text-align:center;font-size:12px;color:#a0c4ff;">
-    Upazila ICT Office, Madarganj, Jamalpur &nbsp;|&nbsp; Attendance Management System
+    ${getOfficeDisplayName(uoffice)} &nbsp;|&nbsp; Attendance Management System
   </div>
 </div>
 </body></html>`;

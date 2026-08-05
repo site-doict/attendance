@@ -247,7 +247,7 @@ button:hover::after {
 <div class="login-box">
     <div class="logo-float">🏢</div>
     <h2>Office Attendance</h2>
-    <p>Upazila ICT Office, Madarganj</p>
+    <p>Upazila ICT Office</p>
 
     <input type="text" id="userid" placeholder="Enter Employee ID" autocomplete="off">
     <input type="password" id="password" placeholder="Enter Password">
@@ -398,8 +398,9 @@ function login(){
         loadEl.style.display = "none";
 
         if(data.success) {
-            // Store only sessionId in localStorage
+            // Store session and office context in localStorage
             localStorage.setItem("sessionId", data.sessionId);
+            localStorage.setItem("userOffice", data.user && data.user.office ? data.user.office : "madarganj");
             console.log("Login successful, sessionId:", data.sessionId);
             
             if(data.user.role === "admin" || data.user.role === "superadmin"){
