@@ -335,6 +335,12 @@
       color: white;
       outline: none;
       transition: all 0.3s ease;
+      color-scheme: dark;
+    }
+
+    .form-group select option {
+      background: #0f172a !important;
+      color: #ffffff !important;
     }
 
     .form-group input:focus,
@@ -1959,6 +1965,7 @@
             }
           }
         } else if (tabName === "settings") {
+          restoreSelectedSettingsOffice();
           loadSettings();
         } else if (tabName === "leaves") {
           loadUsersForLeave();
@@ -2383,13 +2390,17 @@
       // =============================================
       function getSelectedSettingsOffice() {
         const select = document.getElementById("settingsOffice");
+        const office = select ? String(select.value || "madarganj").toLowerCase() : "madarganj";
+        localStorage.setItem("adminSettingsOffice", office);
+        return office;
+      }
+
+      function restoreSelectedSettingsOffice() {
+        const select = document.getElementById("settingsOffice");
         const savedOffice = localStorage.getItem("adminSettingsOffice");
         if (select && savedOffice) {
           select.value = savedOffice;
         }
-        const office = select ? String(select.value || "madarganj").toLowerCase() : "madarganj";
-        localStorage.setItem("adminSettingsOffice", office);
-        return office;
       }
 
       function officeSettingKey(baseKey, office) {
