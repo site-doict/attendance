@@ -58,10 +58,38 @@ function createSession(userId, role, office) {
   }
   
   sessionSheet.appendRow([sessionId, JSON.stringify(sessionData), sessionData.createdAt, sessionData.expiresAt]);
+  try {
+    CacheService.getScriptCache().put("session:" + sessionId, JSON.stringify({
+      valid: true,
+      userId: userId,
+      role: role,
+      office: String(office || "madarganj").trim().toLowerCase(),
+      expiresAt: expiry.toISOString()
+    }), 21600);
+  } catch (err) {}
   return sessionId;
 }
 
 function validateSession(sessionId) {
+  const cacheKey = "session:" + String(sessionId || "").trim();
+  if (cacheKey !== "session:") {
+    try {
+      const cached = CacheService.getScriptCache().get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const expiresAt = new Date(parsed.expiresAt);
+        if (parsed.valid && new Date() <= expiresAt) {
+          return {
+            valid: true,
+            userId: parsed.userId,
+            role: parsed.role,
+            office: parsed.office || "madarganj"
+          };
+        }
+      }
+    } catch (err) {}
+  }
+
   const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
   if(!sessionSheet) {
     return {valid: false, error: "No sessions sheet found"};
@@ -76,6 +104,15 @@ function validateSession(sessionId) {
       const expiresAt = new Date(sessionData.expiresAt);
       
       if(now <= expiresAt) {
+        try {
+          CacheService.getScriptCache().put(cacheKey, JSON.stringify({
+            valid: true,
+            userId: sessionData.userId,
+            role: sessionData.role,
+            office: sessionData.office || "madarganj",
+            expiresAt: expiresAt.toISOString()
+          }), Math.max(60, Math.min(21600, Math.floor((expiresAt.getTime() - now.getTime()) / 1000))));
+        } catch (err) {}
         return {
           valid: true,
           userId: sessionData.userId,
@@ -115,6 +152,9 @@ function getUserDisplayName(userId) {
 function deleteSession(sessionId) {
   const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
   if(!sessionSheet) return;
+  try {
+    CacheService.getScriptCache().remove("session:" + String(sessionId || "").trim());
+  } catch (err) {}
   
   const data = sessionSheet.getDataRange().getValues();
   for(let i = 1; i < data.length; i++) {

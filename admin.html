@@ -1577,6 +1577,10 @@
     const WEB_APP_URL =
       "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
+    function getSessionId() {
+      return String(localStorage.getItem("sessionId") || sessionId || "").trim();
+    }
+
     // Auth check with session validation (no top-level `return` — it breaks the whole script)
     const sessionId = localStorage.getItem("sessionId");
     if (!sessionId) {
@@ -2619,11 +2623,18 @@
         }
 
         updates.forEach((u) => {
+          const currentSessionId = getSessionId();
+          if (!currentSessionId) {
+            statusEl.className = "save-status error";
+            statusEl.innerText = "❌ Session expired. Please log in again.";
+            statusEl.style.display = "block";
+            return;
+          }
           const fd = new FormData();
           fd.append("type", "updatesettings");
           fd.append("key", u.key);
           fd.append("value", u.value);
-          fd.append("sessionId", sessionId);
+          fd.append("sessionId", currentSessionId);
 
           fetch(WEB_APP_URL, { method: "POST", body: fd })
             .then((r) => r.text().then((text) => ({ ok: r.ok, text })))
@@ -2746,6 +2757,14 @@
           return;
         }
 
+        const currentSessionId = getSessionId();
+        if (!currentSessionId) {
+          statusEl.className = "save-status error";
+          statusEl.innerText = "❌ Session expired. Please log in again.";
+          statusEl.style.display = "block";
+          return;
+        }
+
         const fd = new FormData();
         fd.append("type", "createuser");
         fd.append("userid", id);
@@ -2754,7 +2773,7 @@
         fd.append("pass", pass);
         fd.append("role", role);
         fd.append("office", office);
-        fd.append("sessionId", sessionId);
+        fd.append("sessionId", currentSessionId);
 
         statusEl.className = "save-status";
         statusEl.innerText = "⏳ Creating user...";
