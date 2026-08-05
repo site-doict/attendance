@@ -36,7 +36,7 @@ function createSession(userId, role) {
     expiresAt: expiry
   };
   
-  const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
+ let sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
   if(!sessionSheet) {
     sessionSheet = SpreadsheetApp.getActive().insertSheet("sessions");
     sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
@@ -374,7 +374,7 @@ function doGet(e){
 
   const action = String(e.parameter.action || "history").trim().toLowerCase();
   const sessionId = e.parameter.sessionId;
-  const publicActions = ["history", "login", "test", "validatesession", "deletesession", "realtimedata"];
+  const publicActions = ["history", "login", "test", "validatesession", "deletesession"];
   let sessionCtx = null;
 
   if(publicActions.indexOf(action) === -1) {
