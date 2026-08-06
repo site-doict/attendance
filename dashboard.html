@@ -560,6 +560,21 @@ function initializeDashboard(silent = false) {
         throw new Error(res.error || "Load failed");
       }
       appSettings = res.settings;
+      // Normalize and validate settings to avoid malformed or missing values
+      try {
+        appSettings.officeStartTime = String(appSettings.officeStartTime || "09:00");
+      } catch(e) { appSettings.officeStartTime = "09:00"; }
+      try {
+        appSettings.officeEndTime = String(appSettings.officeEndTime || "17:00");
+      } catch(e) { appSettings.officeEndTime = "17:00"; }
+      appSettings.signInWindowMins = parseInt(appSettings.signInWindowMins) || 60;
+      appSettings.signInGraceMins = parseInt(appSettings.signInGraceMins) || 15;
+      appSettings.signOutGraceMins = parseInt(appSettings.signOutGraceMins) || 10;
+      // Ensure time strings look like H:MM or HH:MM
+      const timeRe = /^\d{1,2}:\d{2}$/;
+      if(!timeRe.test(appSettings.officeStartTime)) appSettings.officeStartTime = "09:00";
+      if(!timeRe.test(appSettings.officeEndTime)) appSettings.officeEndTime = "17:00";
+      console.log("[initdash] normalized appSettings:", appSettings);
       userLeaveStatus = res.leaveStatus;
       if (res.deviceStatus.status === "blocked") {
         deviceMsg.style.display = "block";
@@ -1101,13 +1116,40 @@ function isWeekendOrHoliday(date) {
 // Helper to check if office is closed for a range
 function isOfficeClosed(date) {
   if (!appSettings || !appSettings.officeClosedFrom || !appSettings.officeClosedTo) return false;
+  // Parse dates in a timezone-safe manner to avoid UTC parsing issues
+  function parseDateOnly(str){
+    if(!str) return null;
+    if(str instanceof Date) return new Date(str.getFullYear(), str.getMonth(), str.getDate(), 0,0,0,0);
+    const s = String(str).trim();
+    // YYYY-MM-DD
+    const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if(isoMatch){
+      const y = parseInt(isoMatch[1], 10);
+      const m = parseInt(isoMatch[2], 10) - 1;
+      const d = parseInt(isoMatch[3], 10);
+      return new Date(y, m, d, 0,0,0,0);
+    }
+    // M/D/YYYY or MM/DD/YYYY
+    const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(slashMatch){
+      const m = parseInt(slashMatch[1], 10) - 1;
+      const d = parseInt(slashMatch[2], 10);
+      const y = parseInt(slashMatch[3], 10);
+      return new Date(y, m, d, 0,0,0,0);
+    }
+    // Fallback to Date constructor
+    const fallback = new Date(s);
+    if(isNaN(fallback.getTime())) return null;
+    return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate(), 0,0,0,0);
+  }
+
   const d = new Date(date);
   d.setHours(0,0,0,0);
-  const from = new Date(appSettings.officeClosedFrom);
-  const to = new Date(appSettings.officeClosedTo);
-  from.setHours(0,0,0,0);
-  to.setHours(23,59,59,999);
-  return d >= from && d <= to;
+  const fromDate = parseDateOnly(appSettings.officeClosedFrom);
+  const toDate = parseDateOnly(appSettings.officeClosedTo);
+  if(!fromDate || !toDate) return false;
+  toDate.setHours(23,59,59,999);
+  return d >= fromDate && d <= toDate;
 }
 
 // Helper to check if a specific date falls within any approved leave
