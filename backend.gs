@@ -249,6 +249,12 @@ function verifyPassword(inputPassword, storedHash) {
 // ==============================================
 
 function getSettings(){
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get("settings_cache_v1");
+  if (cached) {
+    try { return JSON.parse(cached); } catch(err) {}
+  }
+
   const ss = SpreadsheetApp.getActive();
   const settingsSheet = ss.getSheetByName("settings");
   
@@ -301,6 +307,7 @@ function getSettings(){
     if(key) settings[key] = val;
   }
   
+  try { cache.put("settings_cache_v1", JSON.stringify(settings), 120); } catch(err) {}
   return settings;
 }
 
@@ -1003,6 +1010,7 @@ for(let i = 1; i < data.length; i++){
     }
     
     Logger.log("✅ Save complete for: " + key);
+    try { CacheService.getScriptCache().remove("settings_cache_v1"); } catch(err) {}
     return ContentService
       .createTextOutput(JSON.stringify({success:true}))
       .setMimeType(ContentService.MimeType.JSON);
