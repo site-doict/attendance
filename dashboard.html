@@ -381,8 +381,6 @@ button{
       <div class="loading-text">Verifying Device & Loading Data...</div>
     </div>
 
-    <div id="debugInfo" style="display:none; position:fixed; left:10px; bottom:10px; z-index:9999; max-width:320px; background:rgba(0,0,0,0.7); color:#fff; padding:8px; border-radius:8px; font-size:12px; line-height:1.2; white-space:pre-wrap;"></div>
-
     <h2>Welcome</h2>
     <p id="user"></p>
     <p id="officeName" style="margin-top:-5px;color:rgba(255,255,255,0.75);font-size:14px;font-weight:600;"></p>
@@ -538,13 +536,21 @@ function getDeviceFingerprint(){
 }
 
 // Debug helper to show last server responses/errors on the page for troubleshooting
+const DEBUG_UI = new URLSearchParams(window.location.search).get('debug') === '1' || localStorage.getItem('attendanceDebug') === '1';
+
 function setDebugInfo(obj){
   try{
+    console.log('[debugInfo]', obj);
+    if (!DEBUG_UI) return;
     const dbg = document.getElementById('debugInfo') || (function(){
-      const d = document.createElement('div'); d.id = 'debugInfo'; document.body.appendChild(d); return d; })();
+      const d = document.createElement('div');
+      d.id = 'debugInfo';
+      d.style.cssText = 'display:none; position:fixed; left:10px; bottom:10px; z-index:9999; max-width:320px; background:rgba(0,0,0,0.7); color:#fff; padding:8px; border-radius:8px; font-size:12px; line-height:1.2; white-space:pre-wrap;';
+      document.body.appendChild(d);
+      return d;
+    })();
     dbg.style.display = 'block';
     dbg.textContent = JSON.stringify(obj, null, 2);
-    console.log('[debugInfo]', obj);
   } catch(e){ console.log('setDebugInfo error', e); }
 }
 
