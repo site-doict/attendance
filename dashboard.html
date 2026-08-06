@@ -750,7 +750,6 @@ function controlButtons(rows){
         return;
     }
     const officeStartMins = startHour * 60 + startMin;
-    const officeStartMins = startHour * 60 + startMin;
     const SIGN_IN_EARLY_MINS = 30;
     const IN_OPEN = officeStartMins - SIGN_IN_EARLY_MINS; // Sign In appears 30 min before official start
     const IN_CLOSE = officeStartMins + (parseInt(settings.signInWindowMins) || 60); // Start + admin window
