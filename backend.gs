@@ -142,16 +142,23 @@ function createSessionLocked(userId, role, office) {
     }), 21600);
   } catch (err) {}
 
-  try {
-    let sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
-    if(!sessionSheet) {
-      sessionSheet = SpreadsheetApp.getActive().insertSheet("sessions");
-      sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
-    }
+  const lock = LockService.getScriptLock();
+  if (lock.tryLock(3000)) {
+    try {
+      let sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
+      if(!sessionSheet) {
+        sessionSheet = SpreadsheetApp.getActive().insertSheet("sessions");
+        sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
+      }
 
-    sessionSheet.appendRow([sessionId, JSON.stringify(sessionData), sessionData.createdAt, sessionData.expiresAt]);
-  } catch (err) {
-    Logger.log("Session persistence skipped: " + err);
+      sessionSheet.appendRow([sessionId, JSON.stringify(sessionData), sessionData.createdAt, sessionData.expiresAt]);
+    } catch (err) {
+      Logger.log("Session persistence skipped: " + err);
+    } finally {
+      lock.releaseLock();
+    }
+  } else {
+    Logger.log("Session persistence skipped: sheet busy");
   }
   return sessionId;
 }
@@ -275,28 +282,36 @@ function deleteSession(sessionId) {
     }
   }
   
-  // Clean expired sessions
-  cleanupExpiredSessions();
+  // Respect the daily throttle instead of forcing a full cleanup on every logout
+  cleanupExpiredSessionsIfDue();
 }
 
 function cleanupExpiredSessions() {
   const sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
   if(!sessionSheet) return;
-  
+
   const data = sessionSheet.getDataRange().getValues();
   const now = new Date();
-  const toDelete = [];
-  
+  const headerRow = data[0];
+  const keptRows = [];
+
   for(let i = 1; i < data.length; i++) {
-    const expiresAt = new Date(JSON.parse(data[i][1] || "{}").expiresAt);
-    if(now > expiresAt) {
-      toDelete.push(i + 1);
+    let expiresAt;
+    try {
+      expiresAt = new Date(JSON.parse(data[i][1] || "{}").expiresAt);
+    } catch (err) {
+      continue; // drop unparseable rows too
+    }
+    if (now <= expiresAt) {
+      keptRows.push(data[i]);
     }
   }
-  
-  // Delete in reverse order to maintain row numbers
-  for(let i = toDelete.length - 1; i >= 0; i--) {
-    sessionSheet.deleteRow(toDelete[i]);
+
+  // Single batch rewrite instead of N individual deleteRow() calls
+  sessionSheet.clearContents();
+  sessionSheet.getRange(1, 1, 1, headerRow.length).setValues([headerRow]);
+  if (keptRows.length > 0) {
+    sessionSheet.getRange(2, 1, keptRows.length, headerRow.length).setValues(keptRows);
   }
 }
 
