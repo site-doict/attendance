@@ -41,15 +41,7 @@ function cleanupExpiredSessionsIfDue() {
 }
 
 function createSession(userId, role, office) {
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(8000)) {
-    throw new Error("Server busy, please try again");
-  }
-  try {
-    return createSessionLocked(userId, role, office);
-  } finally {
-    lock.releaseLock();
-  }
+  return createSessionLocked(userId, role, office);
 }
 
 function createSessionLocked(userId, role, office) {
@@ -62,14 +54,7 @@ function createSessionLocked(userId, role, office) {
     createdAt: new Date(),
     expiresAt: expiry
   };
-  
- let sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
-  if(!sessionSheet) {
-    sessionSheet = SpreadsheetApp.getActive().insertSheet("sessions");
-    sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
-  }
-  
-  sessionSheet.appendRow([sessionId, JSON.stringify(sessionData), sessionData.createdAt, sessionData.expiresAt]);
+
   try {
     CacheService.getScriptCache().put("session:" + sessionId, JSON.stringify({
       valid: true,
@@ -79,6 +64,18 @@ function createSessionLocked(userId, role, office) {
       expiresAt: expiry.toISOString()
     }), 21600);
   } catch (err) {}
+
+  try {
+    let sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
+    if(!sessionSheet) {
+      sessionSheet = SpreadsheetApp.getActive().insertSheet("sessions");
+      sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
+    }
+
+    sessionSheet.appendRow([sessionId, JSON.stringify(sessionData), sessionData.createdAt, sessionData.expiresAt]);
+  } catch (err) {
+    Logger.log("Session persistence skipped: " + err);
+  }
   return sessionId;
 }
 
@@ -1310,7 +1307,7 @@ function loginUser(e) {
   const pass = e.parameter.pass;
   
   // Debug: Log received parameters and request method
-  Logger.log("Login request - Method: " + e.postData ? "POST" : "GET");
+  Logger.log("Login request - Method: " + (e.postData ? "POST" : "GET"));
   Logger.log("Login request received - ID: " + id + ", Pass: " + (pass ? "***" : "null"));
   
   if(!id || !pass) {
