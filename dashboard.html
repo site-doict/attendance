@@ -381,6 +381,8 @@ button{
       <div class="loading-text">Verifying Device & Loading Data...</div>
     </div>
 
+    <div id="debugInfo" style="display:none; position:fixed; left:10px; bottom:10px; z-index:9999; max-width:320px; background:rgba(0,0,0,0.7); color:#fff; padding:8px; border-radius:8px; font-size:12px; line-height:1.2; white-space:pre-wrap;"></div>
+
     <h2>Welcome</h2>
     <p id="user"></p>
     <p id="officeName" style="margin-top:-5px;color:rgba(255,255,255,0.75);font-size:14px;font-weight:600;"></p>
@@ -464,20 +466,24 @@ function validateUserSession() {
   fetchWithTimeout(`${WEB_APP_URL}?action=validatesession&sessionId=${encodeURIComponent(sessionId)}`)
     .then(res => res.json())
     .then(data => {
+      console.log("[validatesession] response:", data);
+      setDebugInfo({ stage: "validatesession", payload: data });
       if(data.valid) {
         userData = data.user || { id: data.userId, name: data.userId || "" };
         userOffice = String(data.office || (data.user && data.user.office) || userOffice || "madarganj").toLowerCase();
         localStorage.setItem("userOffice", userOffice);
         initializeApp();
       } else {
-        localStorage.clear();
-        location.href = "index.html";
+        // show debug info briefly then redirect
+        setDebugInfo({ stage: "validatesession", payload: data, note: "invalid session - redirecting" });
+        setTimeout(() => { localStorage.clear(); location.href = "index.html"; }, 800);
       }
     })
     .catch(err => {
       console.error("Session validation failed:", err);
-      localStorage.clear();
-      location.href = "index.html";
+      setDebugInfo({ stage: "validatesession", error: String(err) });
+      // redirect for safety
+      setTimeout(() => { localStorage.clear(); location.href = "index.html"; }, 1200);
     });
 }
 
@@ -531,6 +537,17 @@ function getDeviceFingerprint(){
     return Math.abs(hash).toString(16);
 }
 
+// Debug helper to show last server responses/errors on the page for troubleshooting
+function setDebugInfo(obj){
+  try{
+    const dbg = document.getElementById('debugInfo') || (function(){
+      const d = document.createElement('div'); d.id = 'debugInfo'; document.body.appendChild(d); return d; })();
+    dbg.style.display = 'block';
+    dbg.textContent = JSON.stringify(obj, null, 2);
+    console.log('[debugInfo]', obj);
+  } catch(e){ console.log('setDebugInfo error', e); }
+}
+
 // ================= INITIALIZE DASHBOARD =================
 let deviceAllowed = false;
 
@@ -548,7 +565,7 @@ function initializeDashboard(silent = false) {
   const url = `${WEB_APP_URL}?action=initdash&id=${encodeURIComponent(userData.id)}&fp=${encodeURIComponent(fp)}&sessionId=${encodeURIComponent(sessionId)}`;
 
   if (!silent) {
-    const overlay = document.getElementById("loadingOverlay");
+          const overlay = document.getElementById("loadingOverlay");
     overlay.style.display = "flex";
     overlay.style.opacity = "1";
   }
@@ -556,6 +573,8 @@ function initializeDashboard(silent = false) {
   fetchWithTimeout(url)
     .then((r) => r.json())
     .then((res) => {
+      console.log('[initdash] response:', res);
+      setDebugInfo({ stage: 'initdash', payload: res });
       if(res && res.success === false) {
         throw new Error(res.error || "Load failed");
       }
@@ -588,7 +607,7 @@ function initializeDashboard(silent = false) {
       displayHistory(res.history);
 
       if (!silent) {
-        const overlay = document.getElementById("loadingOverlay");
+          const overlay = document.getElementById("loadingOverlay");
         overlay.style.opacity = "0";
         setTimeout(() => {
           overlay.style.display = "none";
@@ -597,6 +616,7 @@ function initializeDashboard(silent = false) {
     })
     .catch((err) => {
       console.log("Initialization failed:", err);
+      setDebugInfo({ stage: 'initdash', error: String(err) });
       const loadingText = document.querySelector("#loadingOverlay .loading-text");
       if(loadingText) {
         // Clear existing content
