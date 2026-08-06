@@ -266,6 +266,19 @@ const USER_SHEET =
 const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .then((res) => { clearTimeout(timer); return res; })
+    .catch((err) => {
+      clearTimeout(timer);
+      if (err.name === "AbortError") {
+        throw new Error("Request timed out. Please try again.");
+      }
+      throw err;
+    });
+}
 // Register Service Worker
 if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js')
@@ -277,7 +290,7 @@ if('serviceWorker' in navigator){
 const existingSessionId = localStorage.getItem("sessionId");
 if(existingSessionId && existingSessionId.length > 0){
     // Validate session with server
-    fetch(`${WEB_APP_URL}?action=validateSession&sessionId=${existingSessionId}`)
+    fetchWithTimeout(`${WEB_APP_URL}?action=validateSession&sessionId=${existingSessionId}`)
     .then(res => res.json())
     .then(data => {
         if(data.valid) {
@@ -382,7 +395,7 @@ function login(){
     const loginUrl = `${WEB_APP_URL}?action=login&id=${encodeURIComponent(id)}&pass=${encodeURIComponent(pass)}`;
     console.log("Login URL:", loginUrl);
 
-    fetch(loginUrl, {
+    fetchWithTimeout(loginUrl, {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded"
@@ -420,7 +433,9 @@ function login(){
     .catch(err => {
         loadEl.style.display = "none";
         console.error("Login fetch error:", err);
-        errEl.innerText = "❌ Cannot connect. Try again.";
+        errEl.innerText = err && err.message === "Request timed out. Please try again."
+            ? "⏱️ Server is busy, please try again."
+            : "❌ Cannot connect. Try again.";
     });
 }
 

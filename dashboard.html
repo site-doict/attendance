@@ -430,6 +430,19 @@ if('serviceWorker' in navigator){
 const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .then((res) => { clearTimeout(timer); return res; })
+    .catch((err) => {
+      clearTimeout(timer);
+      if (err.name === "AbortError") {
+        throw new Error("Request timed out. Please try again.");
+      }
+      throw err;
+    });
+}
 // ================= USER =================
 const sessionId = localStorage.getItem("sessionId");
 const OFFICE_NAMES = {
@@ -448,7 +461,7 @@ let userLeaveStatus = null;
 
 // Validate session on page load
 function validateUserSession() {
-  fetch(`${WEB_APP_URL}?action=validatesession&sessionId=${encodeURIComponent(sessionId)}`)
+  fetchWithTimeout(`${WEB_APP_URL}?action=validatesession&sessionId=${encodeURIComponent(sessionId)}`)
     .then(res => res.json())
     .then(data => {
       if(data.valid) {
@@ -540,7 +553,7 @@ function initializeDashboard(silent = false) {
     overlay.style.opacity = "1";
   }
 
-  fetch(url)
+  fetchWithTimeout(url)
     .then((r) => r.json())
     .then((res) => {
       if(res && res.success === false) {
@@ -950,7 +963,7 @@ function sendData(status, type, lat, lng){
     fd.append("lng",    lng || "");
     fd.append("sessionId", sessionId);
 
-    fetch(WEB_APP_URL, {
+    fetchWithTimeout(WEB_APP_URL, {
         method: "POST",
         body: fd,
         redirect: "follow"
@@ -1029,7 +1042,7 @@ function markOut(){
     const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
 
     // Get latest rows from history
-    fetch(`${WEB_APP_URL}?action=history&id=${encodeURIComponent(userData.id)}&sessionId=${encodeURIComponent(sessionId)}`)
+    fetchWithTimeout(`${WEB_APP_URL}?action=history&id=${encodeURIComponent(userData.id)}&sessionId=${encodeURIComponent(sessionId)}`)
     .then(r => r.json())
     .then(rows => {
         if (!Array.isArray(rows)) throw new Error("history");

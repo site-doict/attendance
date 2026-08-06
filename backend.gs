@@ -41,6 +41,18 @@ function cleanupExpiredSessionsIfDue() {
 }
 
 function createSession(userId, role, office) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(8000)) {
+    throw new Error("Server busy, please try again");
+  }
+  try {
+    return createSessionLocked(userId, role, office);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function createSessionLocked(userId, role, office) {
   const sessionId = Utilities.getUuid();
   const expiry = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
   const sessionData = {
@@ -1345,8 +1357,16 @@ function loginUser(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
       
-      // Create session and return
-      const sessionId = createSession(uID, uRole, uOffice);
+    // Create session and return
+      let sessionId;
+      try {
+        sessionId = createSession(uID, uRole, uOffice);
+      } catch (lockErr) {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: false,
+          error: "Server busy, please try again"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
       
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -2017,8 +2037,16 @@ function checkDeviceInternal(uid, fingerprint){
     }
   }
 
-  sheet.appendRow([uid, fingerprint]);
-  return {status:"registered"};
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(8000)) {
+    return {status: "error", message: "Server busy, please try again"};
+  }
+  try {
+    sheet.appendRow([uid, fingerprint]);
+    return {status:"registered"};
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // =============================================
