@@ -317,7 +317,14 @@ function getOfficeSettings(office) {
     officeLat: settings["officeLat_" + normalized] || settings.officeLat,
     officeLng: settings["officeLng_" + normalized] || settings.officeLng,
     officeRadius: settings["officeRadius_" + normalized] || settings.officeRadius,
-    officeName: getOfficeDisplayName(normalized)
+    officeName: getOfficeDisplayName(normalized),
+    officeStartTime: settings.officeStartTime,
+    officeEndTime: settings.officeEndTime,
+    signInGraceMins: settings.signInGraceMins,
+    signInWindowMins: settings.signInWindowMins,
+    signOutGraceMins: settings.signOutGraceMins,
+    officeClosedFrom: settings.officeClosedFrom,
+    officeClosedTo: settings.officeClosedTo
   };
 }
 

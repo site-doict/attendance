@@ -717,6 +717,11 @@ function controlButtons(rows){
     const [endHour, endMin] = String(settings.officeEndTime).split(":").map(Number);
     
     // Calculate window times (in minutes from midnight)
+    if (!settings.officeStartTime || !settings.officeEndTime || isNaN(startHour) || isNaN(endHour)) {
+        showStatusBox("⏳ Loading attendance settings...", "blue");
+        return;
+    }
+    const officeStartMins = startHour * 60 + startMin;
     const officeStartMins = startHour * 60 + startMin;
     const SIGN_IN_EARLY_MINS = 30;
     const IN_OPEN = officeStartMins - SIGN_IN_EARLY_MINS; // Sign In appears 30 min before official start
