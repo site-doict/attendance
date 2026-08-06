@@ -535,8 +535,10 @@ function getDeviceFingerprint(){
     return Math.abs(hash).toString(16);
 }
 
-// Debug helper to show last server responses/errors on the page for troubleshooting
-const DEBUG_UI = new URLSearchParams(window.location.search).get('debug') === '1' || localStorage.getItem('attendanceDebug') === '1';
+// Debug helper is off by default so server JSON never renders in the UI.
+// Enable only with ?debug=1 when actively troubleshooting.
+localStorage.removeItem('attendanceDebug');
+const DEBUG_UI = new URLSearchParams(window.location.search).get('debug') === '1';
 
 function setDebugInfo(obj){
   try{

@@ -40,12 +40,88 @@ function cleanupExpiredSessionsIfDue() {
   props.setProperty("sessionsCleanupLastRun", String(now));
 }
 
+function getSessionTokenSecret_() {
+  const props = PropertiesService.getScriptProperties();
+  return props.getProperty("sessionTokenSecret") || "attendance-session-secret-v1";
+}
+
+function base64UrlEncode_(value) {
+  return Utilities.base64EncodeWebSafe(Utilities.newBlob(String(value), "text/plain", "x").getBytes()).replace(/=+$/g, "");
+}
+
+function base64UrlDecode_(value) {
+  return Utilities.newBlob(Utilities.base64DecodeWebSafe(String(value))).getDataAsString("UTF-8");
+}
+
+function signSessionPayload_(payload) {
+  const bytes = Utilities.computeHmacSha256Signature(payload, getSessionTokenSecret_());
+  return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/g, "");
+}
+
+function encodeSessionToken_(sessionData) {
+  const payload = {
+    userId: String(sessionData.userId || "").trim(),
+    role: String(sessionData.role || "user").trim().toLowerCase(),
+    office: String(sessionData.office || "madarganj").trim().toLowerCase(),
+    createdAt: sessionData.createdAt instanceof Date ? sessionData.createdAt.toISOString() : String(sessionData.createdAt || new Date().toISOString()),
+    expiresAt: sessionData.expiresAt instanceof Date ? sessionData.expiresAt.toISOString() : String(sessionData.expiresAt || "")
+  };
+  const payloadPart = base64UrlEncode_(JSON.stringify(payload));
+  const signaturePart = signSessionPayload_(payloadPart);
+  return "v2." + payloadPart + "." + signaturePart;
+}
+
+function decodeSessionToken_(sessionId) {
+  const token = String(sessionId || "").trim();
+  if (!token.startsWith("v2.")) {
+    return { valid: false, legacy: true };
+  }
+
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return { valid: false, error: "Invalid session" };
+  }
+
+  const payloadPart = parts[1];
+  const signaturePart = parts[2];
+  if (!payloadPart || !signaturePart) {
+    return { valid: false, error: "Invalid session" };
+  }
+
+  const expectedSignature = signSessionPayload_(payloadPart);
+  if (expectedSignature !== signaturePart) {
+    return { valid: false, error: "Invalid session" };
+  }
+
+  try {
+    const payload = JSON.parse(base64UrlDecode_(payloadPart));
+    const expiresAt = new Date(payload.expiresAt);
+    if (!payload.userId || !payload.role || !payload.office || isNaN(expiresAt.getTime())) {
+      return { valid: false, error: "Invalid session" };
+    }
+
+    if (new Date() > expiresAt) {
+      return { valid: false, error: "Session expired" };
+    }
+
+    return {
+      valid: true,
+      userId: String(payload.userId).trim(),
+      role: String(payload.role).trim().toLowerCase(),
+      office: String(payload.office).trim().toLowerCase(),
+      expiresAt: expiresAt.toISOString(),
+      legacy: false
+    };
+  } catch (err) {
+    return { valid: false, error: "Invalid session" };
+  }
+}
+
 function createSession(userId, role, office) {
   return createSessionLocked(userId, role, office);
 }
 
 function createSessionLocked(userId, role, office) {
-  const sessionId = Utilities.getUuid();
   const expiry = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
   const sessionData = {
     userId: userId,
@@ -54,6 +130,7 @@ function createSessionLocked(userId, role, office) {
     createdAt: new Date(),
     expiresAt: expiry
   };
+  const sessionId = encodeSessionToken_(sessionData);
 
   try {
     CacheService.getScriptCache().put("session:" + sessionId, JSON.stringify({
@@ -80,7 +157,32 @@ function createSessionLocked(userId, role, office) {
 }
 
 function validateSession(sessionId) {
-  const cacheKey = "session:" + String(sessionId || "").trim();
+  const rawSessionId = String(sessionId || "").trim();
+  const cacheKey = "session:" + rawSessionId;
+  const tokenValidation = decodeSessionToken_(rawSessionId);
+  if (tokenValidation.valid) {
+    try {
+      CacheService.getScriptCache().put(cacheKey, JSON.stringify({
+        valid: true,
+        userId: tokenValidation.userId,
+        role: tokenValidation.role,
+        office: tokenValidation.office,
+        expiresAt: tokenValidation.expiresAt
+      }), Math.max(60, Math.min(21600, Math.floor((new Date(tokenValidation.expiresAt).getTime() - Date.now()) / 1000))));
+    } catch (err) {}
+
+    return {
+      valid: true,
+      userId: tokenValidation.userId,
+      role: tokenValidation.role,
+      office: tokenValidation.office
+    };
+  }
+
+  if (tokenValidation.legacy === false) {
+    return { valid: false, error: tokenValidation.error || "Invalid session" };
+  }
+
   if (cacheKey !== "session:") {
     try {
       const cached = CacheService.getScriptCache().get(cacheKey);
