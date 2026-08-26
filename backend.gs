@@ -491,6 +491,25 @@ function isWeekendOrHoliday(date){
   return holidayList.includes(dayName);
 }
 
+function isDeclaredHoliday_(date){
+  const ss = SpreadsheetApp.getActive();
+  const holSheet = ss.getSheetByName("holidays");
+  if(!holSheet) return { isHoliday: false, name: "" };
+
+  const checkStr = Utilities.formatDate(new Date(date), TIMEZONE, "M/d/yyyy");
+  const holData = holSheet.getDataRange().getValues();
+
+  for(let i = 1; i < holData.length; i++){
+    let hDate = holData[i][0];
+    if(hDate instanceof Date) hDate = Utilities.formatDate(hDate, TIMEZONE, "M/d/yyyy");
+    else hDate = String(hDate).replace(/^'+/, "");
+    if(hDate === checkStr){
+      return { isHoliday: true, name: String(holData[i][1] || "").trim() };
+    }
+  }
+  return { isHoliday: false, name: "" };
+}
+
 /** Get attendance summary for real-time dashboard (optimized performance). */
 function getAttendanceSummary(){
   const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
@@ -1139,8 +1158,13 @@ for(let i = 1; i < data.length; i++){
       settingsSheet.appendRow([key, value]);
     }
     
-    Logger.log("✅ Save complete for: " + key);
+       Logger.log("✅ Save complete for: " + key);
     try { CacheService.getScriptCache().remove("settings_cache_v1"); } catch(err) {}
+
+    if(key === "officeClosedFrom" || key === "officeClosedTo"){
+      try { notifyOfficeClosureIfNew_(); } catch(err) { Logger.log("Closure notify error: " + err); }
+    }
+
     return ContentService
       .createTextOutput(JSON.stringify({success:true}))
       .setMimeType(ContentService.MimeType.JSON);
@@ -1405,6 +1429,82 @@ for(let i = 1; i < data.length; i++){
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// =============================================
+// OFF-DAY NOTIFICATION — fires when admin sets/changes
+// the Office Closed From/To dates in the settings panel
+// =============================================
+
+function notifyOfficeClosureIfNew_(){
+  const lock = LockService.getScriptLock();
+  if(!lock.tryLock(5000)) return;
+  try {
+    try { CacheService.getScriptCache().remove("settings_cache_v1"); } catch(err) {}
+    const settings = getSettings();
+    const from = String(settings.officeClosedFrom || "").trim();
+    const to   = String(settings.officeClosedTo || "").trim();
+
+    const props = PropertiesService.getScriptProperties();
+    const lastNotified = props.getProperty("lastNotifiedClosure") || "";
+    const current = from + "|" + to;
+
+    // Skip if incomplete (only one date set so far), cleared, or already notified for this exact range
+    if(!from || !to || current === lastNotified){
+      return;
+    }
+
+    props.setProperty("lastNotifiedClosure", current);
+    sendOfficeClosureEmails_(from, to);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function sendOfficeClosureEmails_(fromStr, toStr){
+  const ss = SpreadsheetApp.getActive();
+  const userSheet = ss.getSheetByName("users");
+  if(!userSheet) return;
+
+  const userRows  = userSheet.getDataRange().getValues();
+  const headers   = userRows[0] || [];
+  const nameCol   = headers.indexOf("Name");
+  const emailCol  = headers.indexOf("Email");
+  const roleCol   = headers.indexOf("Role");
+  const statusCol = headers.indexOf("Status");
+
+  const dateLabel = (fromStr === toStr) ? fromStr : (fromStr + " to " + toStr);
+  let sentCount = 0;
+
+  for(let i = 1; i < userRows.length; i++){
+    const u       = userRows[i];
+    const uname   = String(u[nameCol]  || "").trim();
+    const uemail  = String(u[emailCol] || "").trim();
+    const urole   = roleCol   !== -1 ? String(u[roleCol]   || "user").trim().toLowerCase()   : "user";
+    const ustatus = statusCol !== -1 ? String(u[statusCol] || "Active").trim().toLowerCase() : "active";
+
+    if(!uemail) continue;
+    if(urole === "admin" || urole === "superadmin") continue;
+    if(ustatus === "inactive") continue;
+
+    const subject = "Office Closed - " + dateLabel;
+    const bodyHTML = `
+      <div style="font-family:Arial,sans-serif;padding:20px;">
+        <h2 style="color:#0056b3;">Office Closed / Off Day Notice</h2>
+        <p>Dear ${uname},</p>
+        <p>Please be informed that the office will remain closed on <strong>${dateLabel}</strong>.</p>
+        <p>No attendance is required on this day. Enjoy your time off.</p>
+        <p>Regards,<br>Administrator</p>
+      </div>`;
+
+    try {
+      GmailApp.sendEmail(uemail, subject, "", { htmlBody: bodyHTML });
+      sentCount++;
+    } catch(err) {
+      Logger.log("Failed to send office-closure email to " + uemail + ": " + err);
+    }
+  }
+  Logger.log("Office closure notice sent to " + sentCount + " employees for " + dateLabel);
+}
+
 
 // =============================================
 // HELPER — No Sign Out status resolver
@@ -1524,7 +1624,8 @@ function sendDailyEmails(){
   // Determine if it's a working day
   const isHoliday = isWeekendOrHoliday(now);
   const isClosed  = isOfficeClosed(now);
-  const isOffDay  = isHoliday || isClosed; 
+  const declaredHoliday = isDeclaredHoliday_(now);
+  const isOffDay  = isHoliday || isClosed || declaredHoliday.isHoliday;
 
   const ss        = SpreadsheetApp.getActive();
   const attSheet  = ss.getSheetByName("attendance");
