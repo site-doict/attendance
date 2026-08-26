@@ -468,11 +468,15 @@ function isOfficeClosed(date){
   
   if(!from || !to) return false;
   
-  const checkDate = new Date(date);
-  const fromDate = new Date(from);
-  const toDate = new Date(to);
+  // Compare as YYYY-MM-DD strings in the app's timezone instead of Date
+  // objects. "new Date('YYYY-MM-DD')" parses as UTC midnight, which made
+  // this check silently fail once "now" passed local midnight — i.e.
+  // almost always, since the daily job runs at 9 PM.
+  const checkStr = Utilities.formatDate(new Date(date), TIMEZONE, "yyyy-MM-dd");
+  const fromStr  = String(from).trim().substring(0, 10);
+  const toStr    = String(to).trim().substring(0, 10);
   
-  return checkDate >= fromDate && checkDate <= toDate;
+  return checkStr >= fromStr && checkStr <= toStr;
 }
 
 function isWeekendOrHoliday(date){
