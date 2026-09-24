@@ -29,7 +29,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
 
   <!-- Dynamic Theme Engine -->
-  <script src="theme.js"></script>
+  <script src="theme.js?v=2"></script>
 
   <style>
     * {
@@ -52,7 +52,7 @@
 
     body {
       font-family: 'Outfit', sans-serif;
-      background: #0f172a;
+      background: var(--theme-bg, #0f172a);
       margin: 0;
       padding: 0;
       color: white;
@@ -62,6 +62,7 @@
       /* Main body no longer scrolls */
       position: fixed;
       touch-action: none;
+      transition: background-color 0.5s ease;
     }
 
     .scroll-container {
@@ -94,19 +95,11 @@
       width: 100%;
       height: 100%;
       z-index: -2;
-
-
-
-
-      background: #0f172a;
-      background-image:
-        radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.5) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.45) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(30, 58, 138, 0.45) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(76, 29, 149, 0.4) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.3) 0px, transparent 50%);
+      background: var(--theme-bg, #0f172a);
+      background-image: var(--theme-mesh);
       background-size: 200% 200%;
       animation: mesh 20s ease infinite;
+      transition: background-image 0.5s ease, background-color 0.5s ease;
     }
 
     @keyframes mesh {
@@ -2522,6 +2515,10 @@
       // VISUAL THEME PREVIEW IN ADMIN
       // =============================================
       function renderThemePreviewAdmin(mode) {
+        if (window.ThemeEngine) {
+          const resolvedKey = window.ThemeEngine.resolveThemeKey(mode);
+          window.ThemeEngine.applyTheme(resolvedKey);
+        }
         const box = document.getElementById("themePreviewBox");
         if (!box || !window.ThemeEngine) return;
         const resolvedKey = window.ThemeEngine.resolveThemeKey(mode);
@@ -3318,84 +3315,6 @@
 
     }
   </script>
-  <script>
-    // --- Particle System ---
-    (function () {
-      const canvas = document.getElementById('particles');
-      const ctx = canvas.getContext('2d');
-      let particles = [];
-      const count = 75;
-      let lastWidth = window.innerWidth;
-
-      function init() {
-        canvas.width = window.innerWidth;
-        canvas.height = typeof LOCKED_HEIGHT !== 'undefined' && LOCKED_HEIGHT > 0 ? LOCKED_HEIGHT : Math.max(window.innerHeight, document.documentElement.clientHeight);
-        particles = [];
-
-        for (let i = 0; i < count; i++) {
-          particles.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.4,
-            vy: (Math.random() - 0.5) * 0.4,
-            size: Math.random() * 2 + 1
-          });
-        }
-      }
-
-      function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.12)';
-
-        for (let i = 0; i < particles.length; i++) {
-          let p = particles[i];
-          p.x += p.vx;
-          p.y += p.vy;
-
-          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-
-          for (let j = i + 1; j < particles.length; j++) {
-            let p2 = particles[j];
-            let dx = p.x - p2.x;
-            let dy = p.y - p2.y;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < 110) {
-              ctx.beginPath();
-              ctx.moveTo(p.x, p.y);
-              ctx.lineTo(p2.x, p2.y);
-              ctx.stroke();
-            }
-          }
-        }
-        requestAnimationFrame(draw);
-      }
-
-      // Debounced resize to prevent blinking when toolbars hide/show
-      let resizeTimer;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          // Only re-init if width changed (avoiding height-only triggers from scroll)
-          if (window.innerWidth !== lastWidth) {
-            lastWidth = window.innerWidth;
-            init();
-          }
-        }, 250);
-      });
-
-      init();
-      draw();
-    })();
-
-  </script>
-
 </body>
 
 </html>

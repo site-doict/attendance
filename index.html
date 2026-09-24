@@ -31,7 +31,7 @@
   crossorigin="anonymous"></script>
 
 <!-- Dynamic Visual Theme Engine -->
-<script src="theme.js"></script>
+<script src="theme.js?v=2"></script>
 
 <style>
 *{ box-sizing: border-box; margin:0; padding:0; }
@@ -264,6 +264,11 @@ const USER_SHEET =
 
 const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
+
+// Sync latest visual theme from backend
+if (window.ThemeEngine && window.ThemeEngine.syncFromServer) {
+    window.ThemeEngine.syncFromServer();
+}
 
 function fetchWithTimeout(url, options = {}, timeoutMs = 25000) {
   const controller = new AbortController();

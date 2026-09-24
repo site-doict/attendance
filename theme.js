@@ -474,12 +474,46 @@
     activeThemeKey = theme.id;
     applyCssVariables(theme);
 
-    // Initialize animation once DOM is ready or immediately
+    function applyDomDirect() {
+      if (document.body) {
+        document.body.style.backgroundColor = theme.bg;
+      }
+      const animBg = document.querySelector('.animated-bg');
+      if (animBg) {
+        animBg.style.backgroundColor = theme.bg;
+        animBg.style.backgroundImage = theme.mesh;
+      }
+    }
+
+    // Initialize animation & DOM styles once DOM is ready or immediately
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => startCanvasAnimation(theme));
+      document.addEventListener('DOMContentLoaded', () => {
+        applyDomDirect();
+        startCanvasAnimation(theme);
+      });
     } else {
+      applyDomDirect();
       startCanvasAnimation(theme);
     }
+  }
+
+  /**
+   * Sync theme setting from backend if WEB_APP_URL is present
+   */
+  function syncThemeFromServer() {
+    try {
+      const url = window.WEB_APP_URL || (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : null);
+      if (!url) return;
+      const getThemeUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + 'action=gettheme';
+      fetch(getThemeUrl)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && data.themeMode) {
+            window.ThemeEngine.syncMode(data.themeMode);
+          }
+        })
+        .catch(function () {});
+    } catch (e) {}
   }
 
   /**
@@ -489,6 +523,15 @@
     const savedMode = localStorage.getItem('appThemeMode') || 'daily';
     const resolvedKey = resolveThemeKey(savedMode);
     applyTheme(resolvedKey);
+
+    // Background sync check
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(syncThemeFromServer, 600);
+      });
+    } else {
+      setTimeout(syncThemeFromServer, 600);
+    }
   }
 
   // Pre-apply immediately to prevent FOUT/flicker
@@ -507,6 +550,7 @@
       localStorage.setItem('appThemeMode', mode);
       const resolved = resolveThemeKey(mode);
       applyTheme(resolved);
-    }
+    },
+    syncFromServer: syncThemeFromServer
   };
 })(window, document);

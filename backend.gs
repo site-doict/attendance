@@ -468,7 +468,8 @@ function getOfficeSettings(office) {
     signInWindowMins: settings.signInWindowMins,
     signOutGraceMins: settings.signOutGraceMins,
     officeClosedFrom: settings.officeClosedFrom,
-    officeClosedTo: settings.officeClosedTo
+    officeClosedTo: settings.officeClosedTo,
+    themeMode: settings.themeMode || "daily"
   };
 }
 
@@ -621,7 +622,7 @@ function doGet(e){
 
   const action = String(e.parameter.action || "history").trim().toLowerCase();
   const sessionId = e.parameter.sessionId;
-  const publicActions = ["history", "login", "test", "validatesession", "deletesession"];
+  const publicActions = ["history", "login", "test", "validatesession", "deletesession", "gettheme"];
   let sessionCtx = null;
 
   if(publicActions.indexOf(action) === -1) {
@@ -654,6 +655,14 @@ function doGet(e){
       success: true,
       message: "Backend is deployed and working",
       timestamp: new Date().toISOString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ========== GET THEME ENDPOINT (PUBLIC) ==========
+  if(action === "gettheme"){
+    const settings = getSettings();
+    return ContentService.createTextOutput(JSON.stringify({
+      themeMode: settings.themeMode || "daily"
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
