@@ -28,6 +28,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
 
+  <!-- Dynamic Theme Engine -->
+  <script src="theme.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -1293,6 +1296,30 @@
           <div class="save-status" id="status-holidays"></div>
         </div>
 
+        <!-- Visual Theme Settings -->
+        <div class="settings-card">
+          <h3>🎨 Visual Theme & Animation</h3>
+          <div class="form-group">
+            <label>Theme Mode / সক্রিয় থিম মোড</label>
+            <select id="themeMode" onchange="renderThemePreviewAdmin(this.value)">
+              <option value="daily">🔄 Daily Auto-Rotate (সপ্তাহের প্রতিদিন ভিন্ন থিম)</option>
+              <option value="random">🎲 Random Every Visit (প্রতিবার র্যান্ডম থিম)</option>
+              <option value="aurora">🌌 Midnight Aurora (ডিফল্ট নেভি ব্লু)</option>
+              <option value="emerald">🌿 Cyber Emerald (এমারেল্ড গ্রিন)</option>
+              <option value="ember">🍷 Royal Ember (সানসেট বার্গান্ডি)</option>
+              <option value="cosmic">🔮 Cosmic Nebula (গ্যালক্সি ভায়োলেট)</option>
+              <option value="frost">❄️ Nordic Frost (আইস সায়ান)</option>
+            </select>
+            <small>লগইন ও ড্যাশবোর্ডের ভিজ্যুয়াল লুক এবং অ্যানিমেশন নির্ধারণ করুন</small>
+          </div>
+          <div id="themePreviewBox" style="margin: 10px 0; padding: 12px; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); font-size: 13px;">
+          </div>
+          <button class="btn btn-success" onclick="saveSettings('theme')">
+            💾 Save Theme Setting
+          </button>
+          <div class="save-status" id="status-theme"></div>
+        </div>
+
         <!-- Office Location Settings -->
         <div class="settings-card">
           <h3>📍 Office Location</h3>
@@ -2480,8 +2507,56 @@
             document.getElementById("officeLng").value = settings[officeSettingKey("officeLng", office)] || settings.officeLng || "89.7183403";
             document.getElementById("officeRadius").value = settings[officeSettingKey("officeRadius", office)] || settings.officeRadius || "100";
 
+            // Visual Theme
+            const themeModeEl = document.getElementById("themeMode");
+            if (themeModeEl) {
+              themeModeEl.value = settings.themeMode || "daily";
+              renderThemePreviewAdmin(themeModeEl.value);
+            }
+
           })
           .catch((err) => console.error("Failed to load settings:", err));
+      }
+
+      // =============================================
+      // VISUAL THEME PREVIEW IN ADMIN
+      // =============================================
+      function renderThemePreviewAdmin(mode) {
+        const box = document.getElementById("themePreviewBox");
+        if (!box || !window.ThemeEngine) return;
+        const resolvedKey = window.ThemeEngine.resolveThemeKey(mode);
+        const t = window.ThemeEngine.THEMES[resolvedKey] || window.ThemeEngine.THEMES.aurora;
+
+        let modeLabel = "";
+        if (mode === "daily") {
+          modeLabel = `<strong>🔄 Daily Auto-Rotate</strong> (আজকের সক্রিয় থিম: <span style="color:${t.accent}">${t.nameBN}</span>)`;
+        } else if (mode === "random") {
+          modeLabel = `<strong>🎲 Random Every Visit</strong> (বর্তমান সেশন: <span style="color:${t.accent}">${t.nameBN}</span>)`;
+        } else {
+          modeLabel = `<strong>স্থির থিম:</strong> <span style="color:${t.accent}">${t.nameBN}</span>`;
+        }
+
+        const animDescriptions = {
+          constellation: "🌌 কানেক্টেড কনস্টেলেশন মেশ পার্টিকেল (প্রশান্ত ও বিজ্ঞানসম্মত)",
+          fireflies: "🌿 সফট ভাসমান বায়োলুমিনেসেন্ট গ্লোয়িং অরবস (শান্ত ও মায়াবী)",
+          embers: "🍷 উষ্ণ উর্ধ্বমুখী রাইজিং এম্বার পার্টিকেল (ধীর ও মার্জিত)",
+          stardust: "🔮 ডিপ স্পেস টুইঙ্কলিং স্টার্ডাস্ট ও নেবুলা গ্লো (রহস্যময় ও আধুনিক)",
+          crystals: "❄️ সফট জিওমেট্রিক ফ্রস্টেড ক্রিস্টাল বোকেহ (ক্রিস্প ও রিফ্রেশিং)"
+        };
+
+        box.innerHTML = `
+          <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>${modeLabel}</div>
+            <div style="display:flex; gap:6px;">
+              <span title="Background" style="width:18px;height:18px;border-radius:50%;background:${t.bg};border:1px solid rgba(255,255,255,0.3);display:inline-block;"></span>
+              <span title="Accent" style="width:18px;height:18px;border-radius:50%;background:${t.accent};border:1px solid rgba(255,255,255,0.3);display:inline-block;"></span>
+              <span title="Glow" style="width:18px;height:18px;border-radius:50%;background:${t.glow};border:1px solid rgba(255,255,255,0.3);display:inline-block;"></span>
+            </div>
+          </div>
+          <div style="color:rgba(255,255,255,0.7);font-size:12px;">
+            ✨ অ্যানিমেশন: ${animDescriptions[t.animType] || 'স্মুথ মোশন'}
+          </div>
+        `;
       }
 
       // =============================================
@@ -2595,6 +2670,17 @@
             { key: officeSettingKey("officeRadius", office), value: document.getElementById("officeRadius").value }
           ];
           statusId = "status-location";
+        } else if (type === "theme") {
+          const val = document.getElementById("themeMode").value;
+          updates = [
+            {
+              key: "themeMode",
+              value: val,
+            },
+          ];
+          statusId = "status-theme";
+          localStorage.setItem("appThemeMode", val);
+          if (window.ThemeEngine) window.ThemeEngine.syncMode(val);
         }
 
         const statusEl = document.getElementById(statusId);

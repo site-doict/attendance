@@ -1,4 +1,4 @@
-﻿// =============================================
+// =============================================
 // OFFICE ATTENDANCE SYSTEM - BACKEND v1.6
 // UPDATED: SERVER-SIDE SESSION AUTHENTICATION
 // =============================================
@@ -406,7 +406,8 @@ function getSettings(){
     customHolidays: "Friday,Saturday",
     officeLat: "24.8946369",
     officeLng: "89.7183403",
-    officeRadius: "100"
+    officeRadius: "100",
+    themeMode: "daily"
   };
 
   if(!settingsSheet){

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -30,12 +30,15 @@
   integrity="sha384-D/t0ZMqQW31H3az8ktEiNb39wyKnS82iFY52QPACM+IjKW3jDUhyIgh2PApRqJZs"
   crossorigin="anonymous"></script>
 
+<!-- Dynamic Visual Theme Engine -->
+<script src="theme.js"></script>
+
 <style>
 *{ box-sizing: border-box; margin:0; padding:0; }
 
 body{
     font-family: 'Outfit', sans-serif;
-    background: #0f172a;
+    background: var(--theme-bg, #0f172a);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -43,6 +46,7 @@ body{
     overflow-x: hidden;
     position: relative;
     padding: 20px;
+    transition: background 0.5s ease;
 }
 
 /* --- Animated Background (Mesh Gradient) --- */
@@ -53,13 +57,8 @@ body{
     width: 100%;
     height: 100%;
     z-index: -1;
-    background: #0f172a;
-    background-image:
-        radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.5) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.45) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(30, 58, 138, 0.45) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(76, 29, 149, 0.4) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.3) 0px, transparent 50%);
+    background: var(--theme-bg, #0f172a);
+    background-image: var(--theme-mesh);
     background-size: 200% 200%;
     animation: mesh 20s ease infinite;
 }
@@ -83,10 +82,10 @@ body{
 .login-box{
     position: relative;
     z-index: 10;
-    background: rgba(15, 23, 42, 0.45);
+    background: var(--theme-card-bg, rgba(15, 23, 42, 0.45));
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.1));
     padding: 40px 35px;
     width: 90vw;
     max-width: 360px;
@@ -96,8 +95,8 @@ body{
 }
 
 .login-box:hover {
-    border-color: rgba(59, 130, 246, 0.4);
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border-color: var(--theme-accent, rgba(59, 130, 246, 0.4));
+    box-shadow: 0 0 30px var(--theme-glow, rgba(59, 130, 246, 0.15)), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 /* Floating Logo Animation */
@@ -146,9 +145,9 @@ input{
 input::placeholder { color: rgba(255, 255, 255, 0.6); }
 
 input:focus{
-    border-color: #3b82f6;
+    border-color: var(--theme-accent, #3b82f6);
     background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 15px var(--theme-focus-ring, rgba(59, 130, 246, 0.25));
 }
 
 button{
@@ -156,7 +155,7 @@ button{
     overflow: hidden;
     width: 100%;
     padding: 15px;
-    background: #3b82f6;
+    background: var(--theme-btn-gradient, linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%));
     color: #ffffff;
     border: none;
     cursor: pointer;
@@ -165,13 +164,13 @@ button{
     margin-top: 20px;
     font-weight: 700;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 15px var(--theme-glow, rgba(59, 130, 246, 0.3));
 }
 
 button:hover{
-    background: #2563eb;
+    background: var(--theme-btn-hover, #2563eb);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.45);
+    box-shadow: 0 8px 25px var(--theme-glow, rgba(59, 130, 246, 0.45));
 }
 
 /* Shimmer Effect */
@@ -483,69 +482,6 @@ function testBackend() {
 // Auto-test backend on page load
 setTimeout(testBackend, 1000);
 
-</script>
-
-<script>
-    // --- Particle System ---
-    (function() {
-        const canvas = document.getElementById('particles');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        const count = 70;
-
-        function init() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            particles = [];
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    vx: (Math.random() - 0.5) * 0.5,
-                    vy: (Math.random() - 0.5) * 0.5,
-                    size: Math.random() * 2 + 1
-                });
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.strokeStyle = 'rgba(59, 130, 246, 0.15)';
-
-            for (let i = 0; i < particles.length; i++) {
-                let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-
-                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-
-                for (let j = i + 1; j < particles.length; j++) {
-                    let p2 = particles[j];
-                    let dx = p.x - p2.x;
-                    let dy = p.y - p2.y;
-                    let dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < 120) {
-                        ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-                    }
-                }
-            }
-            requestAnimationFrame(draw);
-        }
-
-        window.addEventListener('resize', init);
-        init();
-        draw();
-    })();
 </script>
 
 </body>

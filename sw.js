@@ -1,10 +1,11 @@
-const CACHE_NAME = 'office-attendance-v2';
+const CACHE_NAME = 'office-attendance-v3';
 
 // Only cache static assets - NOT html files
 const STATIC_CACHE = [
   'icon-192.png',
   'icon-512.png',
   'manifest.json',
+  'theme.js',
   'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js'
 ];
 
