@@ -29,7 +29,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
 
   <!-- Dynamic Theme Engine -->
-  <script src="theme.js?v=2"></script>
+  <script src="theme.js?v=3"></script>
 
   <style>
     * {
@@ -223,6 +223,67 @@
 
     .btn-success:hover {
       background: #1e7e34;
+    }
+
+    /* Table Action Buttons & Groups */
+    .table-btn-group {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      vertical-align: middle;
+    }
+
+    .table-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 4px !important;
+      width: auto !important;
+      min-width: unset !important;
+      max-width: unset !important;
+      min-height: 28px !important;
+      height: 28px !important;
+      padding: 0 10px !important;
+      font-size: 11.5px !important;
+      font-weight: 600 !important;
+      border-radius: 6px !important;
+      white-space: nowrap !important;
+      cursor: pointer !important;
+      border: none !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+      transition: all 0.15s ease !important;
+      box-sizing: border-box !important;
+      line-height: 1 !important;
+    }
+
+    .table-btn:active {
+      transform: scale(0.95) !important;
+    }
+
+    .table-btn-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      color: #ffffff !important;
+    }
+    .table-btn-danger:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    }
+
+    .table-btn-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      color: #ffffff !important;
+    }
+    .table-btn-success:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    }
+
+    .table-btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+      color: #ffffff !important;
+    }
+    .table-btn-primary:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
     }
 
     /* ===== TABS ===== */
@@ -1024,6 +1085,23 @@
         min-height: 48px;
       }
 
+      /* Prevent buttons inside tables from expanding to 100% on mobile */
+      table .btn,
+      td .btn,
+      .table-btn,
+      .table-btn-group,
+      .table-btn-group button {
+        width: auto !important;
+        min-width: unset !important;
+        max-width: unset !important;
+        min-height: 28px !important;
+        height: 28px !important;
+        padding: 0 8px !important;
+        font-size: 11px !important;
+        display: inline-flex !important;
+        flex: none !important;
+      }
+
       .filters {
         flex-direction: column;
         align-items: stretch;
@@ -1461,19 +1539,22 @@
           style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding-bottom: 10px;">
           👥 Current Users
         </h3>
-        <button class="btn btn-primary" onclick="loadUsers()"
-          style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
-          <table style="min-width: 520px; width: 100%; border-collapse: collapse; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <button class="btn btn-primary" onclick="loadUsers()"
+            style="padding: 6px 14px; font-size: 13px; min-height: 36px; width: auto;">🔄 Refresh List</button>
+          <span style="font-size: 11px; color: rgba(255, 255, 255, 0.6);">👉 ডানে-বামে স্ক্রল করুন</span>
+        </div>
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
+          <table style="min-width: 580px; width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
               <tr style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">ID</th>
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Name</th>
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Email</th>
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Role</th>
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Office</th>
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Status</th>
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center;">Action</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: 60px;">ID</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); min-width: 100px;">Name</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); min-width: 130px;">Email</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: 65px;">Role</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: 80px;">Office</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: 80px; text-align: center;">Status</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; width: 150px;">Action</th>
               </tr>
             </thead>
             <tbody id="usersListBody">
@@ -1544,15 +1625,18 @@
         </h3>
         <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">View or Reset fingerprint
           devices associated with employees. Usually necessary when an employee changes their mobile phone.</p>
-        <button class="btn btn-primary" onclick="loadDevices()"
-          style="margin-bottom: 15px; padding: 6px 12px; font-size: 13px;">🔄 Refresh List</button>
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
-          <table style="min-width: 520px; width: 100%; border-collapse: collapse; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <button class="btn btn-primary" onclick="loadDevices()"
+            style="padding: 6px 14px; font-size: 13px; min-height: 36px; width: auto;">🔄 Refresh List</button>
+          <span style="font-size: 11px; color: rgba(255, 255, 255, 0.6);">👉 ডানে-বামে স্ক্রল করুন</span>
+        </div>
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
+          <table style="min-width: 480px; width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
               <tr style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Employee ID</th>
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">Fingerprint Code</th>
-                <th style="padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center;">Action</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: 120px;">Employee ID</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1);">Fingerprint Code</th>
+                <th style="padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; width: 140px;">Action</th>
               </tr>
             </thead>
             <tbody id="devicesListBody">
@@ -2909,65 +2993,76 @@
               const btnClass = (u.status && u.status.toLowerCase() === "inactive") ? "btn-success" : "btn-danger";
 
               const tr = document.createElement("tr");
+              tr.style.borderBottom = "1px solid rgba(255, 255, 255, 0.08)";
 
               const tdId = document.createElement("td");
-              tdId.style.padding = "10px";
-              tdId.style.border = "1px solid #eee";
+              tdId.style.padding = "8px 10px";
+              tdId.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdId.style.fontSize = "13px";
               const idStrong = document.createElement("strong");
               idStrong.textContent = String(u.id);
               tdId.appendChild(idStrong);
 
               const tdName = document.createElement("td");
-              tdName.style.padding = "10px";
-              tdName.style.border = "1px solid #eee";
+              tdName.style.padding = "8px 10px";
+              tdName.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdName.style.fontSize = "13px";
+              tdName.style.fontWeight = "600";
               tdName.textContent = u.name != null ? String(u.name) : "";
 
               const tdEmail = document.createElement("td");
-              tdEmail.style.padding = "10px";
-              tdEmail.style.border = "1px solid #eee";
-              tdEmail.style.fontSize = "13px";
-              tdEmail.style.color = "#555";
+              tdEmail.style.padding = "8px 10px";
+              tdEmail.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdEmail.style.fontSize = "12px";
+              tdEmail.style.color = "rgba(255, 255, 255, 0.75)";
               tdEmail.textContent = u.email != null ? String(u.email) : "";
 
               const tdRole = document.createElement("td");
-              tdRole.style.padding = "10px";
-              tdRole.style.border = "1px solid #eee";
+              tdRole.style.padding = "8px 10px";
+              tdRole.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdRole.style.fontSize = "12px";
               tdRole.textContent = u.role != null ? String(u.role) : "";
 
               const tdOffice = document.createElement("td");
-              tdOffice.style.padding = "10px";
-              tdOffice.style.border = "1px solid #eee";
+              tdOffice.style.padding = "8px 10px";
+              tdOffice.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdOffice.style.fontSize = "12px";
               tdOffice.textContent = u.office != null ? String(u.office) : "madarganj";
 
               const tdStat = document.createElement("td");
-              tdStat.style.padding = "10px";
-              tdStat.style.border = "1px solid #eee";
+              tdStat.style.padding = "8px 10px";
+              tdStat.style.border = "1px solid rgba(255, 255, 255, 0.08)";
               tdStat.style.fontWeight = "bold";
+              tdStat.style.fontSize = "12px";
+              tdStat.style.textAlign = "center";
               tdStat.textContent = statusLabel;
 
               const tdAct = document.createElement("td");
-              tdAct.style.padding = "10px";
-              tdAct.style.border = "1px solid #eee";
+              tdAct.style.padding = "8px 10px";
+              tdAct.style.border = "1px solid rgba(255, 255, 255, 0.08)";
               tdAct.style.textAlign = "center";
               tdAct.style.whiteSpace = "nowrap";
 
+              const btnGroup = document.createElement("div");
+              btnGroup.className = "table-btn-group";
+
               const btnToggle = document.createElement("button");
-              btnToggle.className = "btn " + btnClass;
-              btnToggle.style.padding = "4px 8px";
-              btnToggle.style.fontSize = "12px";
+              btnToggle.type = "button";
+              const isInactive = u.status && u.status.toLowerCase() === "inactive";
+              btnToggle.className = "table-btn " + (isInactive ? "table-btn-success" : "table-btn-danger");
               btnToggle.textContent = btnLabel;
               btnToggle.addEventListener("click", () => toggleUserStatus(u.id, u.name));
 
               const btnDel = document.createElement("button");
-              btnDel.className = "btn btn-danger";
-              btnDel.style.padding = "4px 8px";
-              btnDel.style.fontSize = "12px";
-              btnDel.style.marginLeft = "5px";
+              btnDel.type = "button";
+              btnDel.className = "table-btn table-btn-danger";
               btnDel.textContent = "🗑️ Delete";
               btnDel.addEventListener("click", () => deleteUser(u.id, u.name));
 
-              tdAct.appendChild(btnToggle);
-              tdAct.appendChild(btnDel);
+              btnGroup.appendChild(btnToggle);
+              btnGroup.appendChild(btnDel);
+              tdAct.appendChild(btnGroup);
+
               tr.appendChild(tdId);
               tr.appendChild(tdName);
               tr.appendChild(tdEmail);
@@ -3128,19 +3223,21 @@
               if (d.id === "ID" || !d.id) return; // skip header
 
               const tr = document.createElement("tr");
+              tr.style.borderBottom = "1px solid rgba(255, 255, 255, 0.08)";
 
               const tdId = document.createElement("td");
-              tdId.style.padding = "10px";
-              tdId.style.border = "1px solid #eee";
+              tdId.style.padding = "8px 10px";
+              tdId.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdId.style.fontSize = "13px";
               const idStrong = document.createElement("strong");
               idStrong.textContent = String(d.id);
               tdId.appendChild(idStrong);
 
               const tdFp = document.createElement("td");
-              tdFp.style.padding = "10px";
-              tdFp.style.border = "1px solid #eee";
-              tdFp.style.fontSize = "13px";
-              tdFp.style.color = "#555";
+              tdFp.style.padding = "8px 10px";
+              tdFp.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdFp.style.fontSize = "12px";
+              tdFp.style.color = "rgba(255, 255, 255, 0.75)";
               tdFp.style.maxWidth = "200px";
               tdFp.style.overflow = "hidden";
               tdFp.style.textOverflow = "ellipsis";
@@ -3148,13 +3245,14 @@
               tdFp.textContent = d.fp != null ? String(d.fp) : "";
 
               const tdBtn = document.createElement("td");
-              tdBtn.style.padding = "10px";
-              tdBtn.style.border = "1px solid #eee";
+              tdBtn.style.padding = "8px 10px";
+              tdBtn.style.border = "1px solid rgba(255, 255, 255, 0.08)";
               tdBtn.style.textAlign = "center";
+              tdBtn.style.whiteSpace = "nowrap";
+
               const btnReset = document.createElement("button");
-              btnReset.className = "btn btn-danger";
-              btnReset.style.padding = "4px 8px";
-              btnReset.style.fontSize = "12px";
+              btnReset.type = "button";
+              btnReset.className = "table-btn table-btn-danger";
               btnReset.textContent = "🔄 Reset Device";
               btnReset.addEventListener("click", () => resetDevice(d.id));
               tdBtn.appendChild(btnReset);
@@ -3189,34 +3287,40 @@
             // Show latest first
             data.reverse().forEach(l => {
               const tr = document.createElement("tr");
+              tr.style.borderBottom = "1px solid rgba(255, 255, 255, 0.08)";
 
               const tdId = document.createElement("td");
-              tdId.style.padding = "10px";
-              tdId.style.border = "1px solid #eee";
+              tdId.style.padding = "8px 10px";
+              tdId.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdId.style.fontSize = "13px";
               const idStrong = document.createElement("strong");
               idStrong.textContent = l.id != null ? String(l.id) : "";
               tdId.appendChild(idStrong);
 
               const tdName = document.createElement("td");
-              tdName.style.padding = "10px";
-              tdName.style.border = "1px solid #eee";
+              tdName.style.padding = "8px 10px";
+              tdName.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdName.style.fontSize = "13px";
+              tdName.style.fontWeight = "600";
               tdName.textContent = l.name != null ? String(l.name) : "";
 
               const tdStart = document.createElement("td");
-              tdStart.style.padding = "10px";
-              tdStart.style.border = "1px solid #eee";
+              tdStart.style.padding = "8px 10px";
+              tdStart.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdStart.style.fontSize = "12px";
               tdStart.textContent = formatDate(l.start);
 
               const tdEnd = document.createElement("td");
-              tdEnd.style.padding = "10px";
-              tdEnd.style.border = "1px solid #eee";
+              tdEnd.style.padding = "8px 10px";
+              tdEnd.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+              tdEnd.style.fontSize = "12px";
               tdEnd.textContent = formatDate(l.end);
 
               const tdTs = document.createElement("td");
-              tdTs.style.padding = "10px";
-              tdTs.style.border = "1px solid #eee";
+              tdTs.style.padding = "8px 10px";
+              tdTs.style.border = "1px solid rgba(255, 255, 255, 0.08)";
               tdTs.style.fontSize = "11px";
-              tdTs.style.color = "#888";
+              tdTs.style.color = "rgba(255, 255, 255, 0.65)";
               tdTs.textContent = formatDate(l.timestamp);
 
               tr.appendChild(tdId);

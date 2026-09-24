@@ -163,6 +163,7 @@
     let height = (canvas.height = window.innerHeight);
     let reqId = null;
     let isRunning = true;
+    let drawFrame = null;
 
     function handleResize() {
       width = canvas.width = window.innerWidth;
@@ -187,7 +188,7 @@
         });
       }
 
-      function drawConstellation() {
+      drawFrame = function () {
         if (!isRunning) return;
         ctx.clearRect(0, 0, width, height);
 
@@ -218,9 +219,9 @@
             }
           }
         }
-        reqId = requestAnimationFrame(drawConstellation);
-      }
-      drawConstellation();
+        reqId = requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
     }
 
     // --- 2. Bioluminescent Fireflies (Emerald) ---
@@ -238,7 +239,7 @@
         });
       }
 
-      function drawFireflies() {
+      drawFrame = function () {
         if (!isRunning) return;
         ctx.clearRect(0, 0, width, height);
 
@@ -271,9 +272,9 @@
           ctx.fillStyle = `rgba(209, 250, 229, ${alpha + 0.2})`;
           ctx.fill();
         }
-        reqId = requestAnimationFrame(drawFireflies);
-      }
-      drawFireflies();
+        reqId = requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
     }
 
     // --- 3. Rising Warm Embers (Royal Ember) ---
@@ -293,7 +294,7 @@
         items[i].initialX = items[i].x;
       }
 
-      function drawEmbers() {
+      drawFrame = function () {
         if (!isRunning) return;
         ctx.clearRect(0, 0, width, height);
 
@@ -319,9 +320,9 @@
           ctx.fill();
           ctx.shadowBlur = 0;
         }
-        reqId = requestAnimationFrame(drawEmbers);
-      }
-      drawEmbers();
+        reqId = requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
     }
 
     // --- 4. Twinkling Stardust (Cosmic Nebula) ---
@@ -339,7 +340,7 @@
         });
       }
 
-      function drawStardust() {
+      drawFrame = function () {
         if (!isRunning) return;
         ctx.clearRect(0, 0, width, height);
 
@@ -372,9 +373,9 @@
             ctx.stroke();
           }
         }
-        reqId = requestAnimationFrame(drawStardust);
-      }
-      drawStardust();
+        reqId = requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
     }
 
     // --- 5. Geometric Frost Crystals (Nordic Frost) ---
@@ -394,7 +395,7 @@
         });
       }
 
-      function drawCrystals() {
+      drawFrame = function () {
         if (!isRunning) return;
         ctx.clearRect(0, 0, width, height);
 
@@ -433,35 +434,51 @@
           }
           ctx.restore();
         }
-        reqId = requestAnimationFrame(drawCrystals);
-      }
-      drawCrystals();
+        reqId = requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
     }
 
-    // Handle tab visibility to save mobile battery
-    function handleVisibility() {
-      if (document.hidden) {
-        isRunning = false;
-        if (reqId) cancelAnimationFrame(reqId);
-      } else {
-        if (!isRunning) {
-          isRunning = true;
-          if (animType === 'constellation') drawConstellation();
-          else if (animType === 'fireflies') drawFireflies();
-          else if (animType === 'embers') drawEmbers();
-          else if (animType === 'stardust') drawStardust();
-          else if (animType === 'crystals') drawCrystals();
+    // Handle tab/window visibility and focus smoothly without crashing
+    function resumeAnimation() {
+      if (!isRunning) {
+        isRunning = true;
+        if (drawFrame) {
+          if (reqId) cancelAnimationFrame(reqId);
+          reqId = requestAnimationFrame(drawFrame);
         }
       }
     }
+
+    function pauseAnimation() {
+      isRunning = false;
+      if (reqId) {
+        cancelAnimationFrame(reqId);
+        reqId = null;
+      }
+    }
+
+    function handleVisibility() {
+      if (document.hidden) {
+        pauseAnimation();
+      } else {
+        resumeAnimation();
+      }
+    }
+
     document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', resumeAnimation);
+    window.addEventListener('blur', () => {
+      // Don't completely kill on blur unless document is hidden, but ensures clean frame sync
+      if (document.hidden) pauseAnimation();
+    });
 
     activeAnimInstance = {
       stop: function () {
-        isRunning = false;
-        if (reqId) cancelAnimationFrame(reqId);
+        pauseAnimation();
         window.removeEventListener('resize', handleResize);
         document.removeEventListener('visibilitychange', handleVisibility);
+        window.removeEventListener('focus', resumeAnimation);
       }
     };
   }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'office-attendance-v4';
+const CACHE_NAME = 'office-attendance-v5';
 
 // Only cache static assets - NOT html files
 const STATIC_CACHE = [

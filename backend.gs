@@ -1913,83 +1913,118 @@ const attRows = attSheet.getDataRange().getValues();
 
   let tableRows = "";
   adminRows.forEach((r, i) => {
-    const bg = i % 2 === 0 ? "#ffffff" : "#f9f9f9";
+    const bg = i % 2 === 0 ? "#ffffff" : "#f8fafc";
     tableRows += `
-      <tr style="background:${bg};">
-        <td style="padding:11px 12px;border:1px solid #e0e0e0;">${r.id}</td>
-        <td style="padding:11px 12px;border:1px solid #e0e0e0;font-weight:bold;">${r.name}</td>
-        <td style="padding:11px 12px;border:1px solid #e0e0e0;text-align:center;">${r.inTime}</td>
-        <td style="padding:11px 12px;border:1px solid #e0e0e0;text-align:center;">${r.outTime}</td>
-        <td style="padding:11px 12px;border:1px solid #e0e0e0;text-align:center;">
-          <span style="background:${r.statusColor};color:white;padding:4px 11px;border-radius:20px;font-weight:bold;font-size:12px;">${r.statusEN}</span><br>
-          <small style="color:#666;">${r.statusBN}</small>
+      <tr style="background:${bg};border-bottom:1px solid #e2e8f0;">
+        <td style="padding:8px 4px;border:1px solid #e2e8f0;text-align:center;font-size:12px;font-weight:bold;color:#334155;">${r.id}</td>
+        <td style="padding:8px 8px;border:1px solid #e2e8f0;font-weight:bold;font-size:12px;color:#0f172a;word-break:break-word;">${r.name}</td>
+        <td style="padding:8px 4px;border:1px solid #e2e8f0;text-align:center;font-size:12px;color:#475569;white-space:nowrap;">${r.inTime}</td>
+        <td style="padding:8px 4px;border:1px solid #e2e8f0;text-align:center;font-size:12px;color:#475569;white-space:nowrap;">${r.outTime}</td>
+        <td style="padding:6px 4px;border:1px solid #e2e8f0;text-align:center;">
+          <span style="display:inline-block;background:${r.statusColor};color:white;padding:3px 8px;border-radius:12px;font-weight:bold;font-size:11px;white-space:nowrap;">${r.statusEN}</span>
+          <div style="color:#64748b;font-size:9.5px;margin-top:2px;line-height:1.1;">${r.statusBN}</div>
         </td>
       </tr>`;
   });
 
   const noSignOutBlock = totalNoSignOut > 0 ? `
-    <div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:8px;padding:15px;margin-bottom:20px;">
-      <strong>&#9888;&#65039; ${totalNoSignOut} জন কর্মী আজ Sign Out করেননি।</strong><br>
-      <span style="font-size:13px;color:#555;">Please follow up with the employees listed below who did not sign out.</span>
+    <div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:8px;padding:12px;margin-bottom:18px;">
+      <strong style="color:#856404;font-size:13px;">&#9888;&#65039; ${totalNoSignOut} জন কর্মী আজ Sign Out করেননি।</strong><br>
+      <span style="font-size:12px;color:#666;">Please follow up with the employees listed below who did not sign out.</span>
     </div>` : "";
 
   const adminSubject = "[Daily Attendance Summary] " + dateDisplay;
   const adminBody = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"></head><body>
-<div style="font-family:Arial,sans-serif;max-width:750px;margin:auto;border:1px solid #ddd;border-radius:10px;overflow:hidden;">
-  <div style="background:#1a1a1a;padding:25px;text-align:center;">
-    <h2 style="color:white;margin:0;font-size:22px;">&#127970; Daily Attendance Summary</h2>
-    <p style="color:#aaa;margin:6px 0 0;">Attendance Management System</p>
-    <p style="color:#fff;margin:8px 0 0;font-size:19px;font-weight:bold;">${dateDisplay}</p>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <style>
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { width: 100% !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
+      .email-content { padding: 14px 10px !important; }
+      .stat-card-cell { padding: 8px 4px !important; }
+      .stat-count { font-size: 22px !important; }
+      .stat-label { font-size: 10.5px !important; }
+      .att-tbl th, .att-tbl td { font-size: 11.5px !important; padding: 7px 4px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:10px 0;background:#f1f5f9;font-family:Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div class="email-wrapper" style="font-family:Arial,sans-serif;max-width:680px;width:100%;margin:0 auto;background:#ffffff;border:1px solid #cbd5e1;border-radius:10px;">
+  
+  <!-- Header -->
+  <div style="background:#0f172a;padding:20px 15px;text-align:center;border-top-left-radius:9px;border-top-right-radius:9px;">
+    <h2 style="color:#ffffff;margin:0;font-size:20px;letter-spacing:0.3px;">&#127970; Daily Attendance Summary</h2>
+    <p style="color:#94a3b8;margin:4px 0 0;font-size:13px;">Attendance Management System</p>
+    <p style="color:#38bdf8;margin:6px 0 0;font-size:17px;font-weight:bold;">${dateDisplay}</p>
   </div>
-  <div style="padding:25px;">
+
+  <div class="email-content" style="padding:20px 16px;">
     ${noSignOutBlock}
-    <table style="width:100%;border-collapse:separate;border-spacing:6px;margin-bottom:25px;">
+
+    <!-- 3x2 Responsive Summary Cards Grid -->
+    <table class="summary-table" style="width:100%;border-collapse:separate;border-spacing:6px;margin-bottom:18px;">
       <tr>
-        <td style="padding:15px;text-align:center;background:#d4edda;border-radius:8px;border:1px solid #c3e6cb;">
-          <div style="font-size:30px;font-weight:bold;color:#155724;">${totalPresent}</div>
-          <div style="color:#155724;font-size:13px;margin-top:4px;">Present<br>উপস্থিত</div>
+        <td class="stat-card-cell" style="width:33.33%;padding:12px 6px;text-align:center;background:#d4edda;border-radius:8px;border:1px solid #c3e6cb;">
+          <div class="stat-count" style="font-size:26px;font-weight:bold;color:#155724;line-height:1.1;">${totalPresent}</div>
+          <div class="stat-label" style="color:#155724;font-size:11.5px;margin-top:3px;font-weight:600;">Present<br><span style="font-weight:normal;">উপস্থিত</span></div>
         </td>
-        <td style="padding:15px;text-align:center;background:#fff3cd;border-radius:8px;border:1px solid #ffeeba;">
-          <div style="font-size:30px;font-weight:bold;color:#856404;">${totalLate}</div>
-          <div style="color:#856404;font-size:13px;margin-top:4px;">Late Entry<br>দেরিতে প্রবেশ</div>
+        <td class="stat-card-cell" style="width:33.33%;padding:12px 6px;text-align:center;background:#fff3cd;border-radius:8px;border:1px solid #ffeeba;">
+          <div class="stat-count" style="font-size:26px;font-weight:bold;color:#856404;line-height:1.1;">${totalLate}</div>
+          <div class="stat-label" style="color:#856404;font-size:11.5px;margin-top:3px;font-weight:600;">Late Entry<br><span style="font-weight:normal;">দেরিতে প্রবেশ</span></div>
         </td>
-        <td style="padding:15px;text-align:center;background:#fff3cd;border-radius:8px;border:1px solid #ffeeba;">
-          <div style="font-size:30px;font-weight:bold;color:#856404;">${totalEarly}</div>
-          <div style="color:#856404;font-size:13px;margin-top:4px;">Early Leave<br>আগে প্রস্থান</div>
+        <td class="stat-card-cell" style="width:33.33%;padding:12px 6px;text-align:center;background:#fff3cd;border-radius:8px;border:1px solid #ffeeba;">
+          <div class="stat-count" style="font-size:26px;font-weight:bold;color:#856404;line-height:1.1;">${totalEarly}</div>
+          <div class="stat-label" style="color:#856404;font-size:11.5px;margin-top:3px;font-weight:600;">Early Leave<br><span style="font-weight:normal;">আগে প্রস্থান</span></div>
         </td>
-        <td style="padding:15px;text-align:center;background:#f8d7da;border-radius:8px;border:1px solid #f5c6cb;">
-          <div style="font-size:30px;font-weight:bold;color:#721c24;">${totalVLate}</div>
-          <div style="color:#721c24;font-size:13px;margin-top:4px;">Very Late<br>অনেক দেরি</div>
+      </tr>
+      <tr>
+        <td class="stat-card-cell" style="width:33.33%;padding:12px 6px;text-align:center;background:#fee2e2;border-radius:8px;border:1px solid #fecaca;">
+          <div class="stat-count" style="font-size:26px;font-weight:bold;color:#991b1b;line-height:1.1;">${totalVLate}</div>
+          <div class="stat-label" style="color:#991b1b;font-size:11.5px;margin-top:3px;font-weight:600;">Very Late<br><span style="font-weight:normal;">অনেক দেরি</span></div>
         </td>
-        <td style="padding:15px;text-align:center;background:#f8d7da;border-radius:8px;border:1px solid #f5c6cb;">
-          <div style="font-size:30px;font-weight:bold;color:#721c24;">${totalAbsent}</div>
-          <div style="color:#721c24;font-size:13px;margin-top:4px;">Absent<br>অনুপস্থিত</div>
+        <td class="stat-card-cell" style="width:33.33%;padding:12px 6px;text-align:center;background:#f8d7da;border-radius:8px;border:1px solid #f5c6cb;">
+          <div class="stat-count" style="font-size:26px;font-weight:bold;color:#721c24;line-height:1.1;">${totalAbsent}</div>
+          <div class="stat-label" style="color:#721c24;font-size:11.5px;margin-top:3px;font-weight:600;">Absent<br><span style="font-weight:normal;">অনুপস্থিত</span></div>
         </td>
-        <td style="padding:15px;text-align:center;background:#fff3cd;border-radius:8px;border:1px solid #ffc107;">
-          <div style="font-size:30px;font-weight:bold;color:#856404;">${totalNoSignOut}</div>
-          <div style="color:#856404;font-size:13px;margin-top:4px;">No Sign Out<br>Sign Out নেই</div>
+        <td class="stat-card-cell" style="width:33.33%;padding:12px 6px;text-align:center;background:#fff3cd;border-radius:8px;border:1px solid #ffc107;">
+          <div class="stat-count" style="font-size:26px;font-weight:bold;color:#856404;line-height:1.1;">${totalNoSignOut}</div>
+          <div class="stat-label" style="color:#856404;font-size:11.5px;margin-top:3px;font-weight:600;">No Sign Out<br><span style="font-weight:normal;">Sign Out নেই</span></div>
         </td>
       </tr>
     </table>
-    <table style="width:100%;border-collapse:collapse;">
-      <thead>
-        <tr style="background:#1a1a1a;color:white;">
-          <th style="padding:12px;border:1px solid #333;text-align:left;">ID</th>
-          <th style="padding:12px;border:1px solid #333;text-align:left;">Name</th>
-          <th style="padding:12px;border:1px solid #333;text-align:center;">Sign In</th>
-          <th style="padding:12px;border:1px solid #333;text-align:center;">Sign Out</th>
-          <th style="padding:12px;border:1px solid #333;text-align:center;">Status</th>
-        </tr>
-      </thead>
-      <tbody>${tableRows}</tbody>
-    </table>
-    <p style="color:#aaa;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:15px;">
+
+    <!-- Mobile Scroll Hint -->
+    <div style="margin:14px 0 6px;display:table;width:100%;">
+      <div style="display:table-cell;text-align:left;font-size:13px;font-weight:bold;color:#1e293b;">📋 Attendance Details</div>
+      <div style="display:table-cell;text-align:right;font-size:11px;color:#64748b;">👉 ডানে-বামে স্ক্রল করুন</div>
+    </div>
+
+    <!-- Scrollable Table Container -->
+    <div style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #cbd5e1;border-radius:8px;background:#ffffff;">
+      <table class="att-tbl" style="width:100%;min-width:440px;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#0f172a;color:#ffffff;">
+            <th style="padding:9px 4px;border:1px solid #334155;text-align:center;width:44px;">ID</th>
+            <th style="padding:9px 8px;border:1px solid #334155;text-align:left;">Name</th>
+            <th style="padding:9px 4px;border:1px solid #334155;text-align:center;width:66px;white-space:nowrap;">Sign In</th>
+            <th style="padding:9px 4px;border:1px solid #334155;text-align:center;width:66px;white-space:nowrap;">Sign Out</th>
+            <th style="padding:9px 4px;border:1px solid #334155;text-align:center;width:95px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+
+    <p style="color:#64748b;font-size:11.5px;margin-top:16px;border-top:1px solid #e2e8f0;padding-top:12px;line-height:1.5;">
       Total: ${totalStaff} | Present: ${totalPresent} | Late: ${totalLate} | Early Leave: ${totalEarly} | Both: ${totalBoth} | Very Late: ${totalVLate} | Absent: ${totalAbsent} | No Sign Out: ${totalNoSignOut}<br>
       Automated daily report — 9:00 PM (GMT+6) | Emails sent: ${emailsSent} | Failed: ${emailsFailed}
     </p>
   </div>
-  <div style="background:#1a1a1a;padding:12px;text-align:center;font-size:12px;color:#aaa;">
+
+  <div style="background:#0f172a;padding:12px;text-align:center;font-size:12px;color:#94a3b8;border-bottom-left-radius:9px;border-bottom-right-radius:9px;">
     Attendance Management System
   </div>
 </div>
