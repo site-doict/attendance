@@ -2273,36 +2273,68 @@ function getHistoryInternal(userId){
 }
 
 // =============================================
-// HELPER: CHECK DEVICE INTERNAL
+// HELPER: CHECK DEVICE INTERNAL (STRICT 1 DEVICE = 1 USER)
 // =============================================
 function checkDeviceInternal(uid, fingerprint){
-  if(!uid || !fingerprint) return {status: "error", message: "Missing params"};
+  const cleanUid = String(uid || "").trim();
+  const cleanFp = String(fingerprint || "").trim();
+  if(!cleanUid || !cleanFp) return {status: "error", message: "Missing params"};
   
   const sheet = SpreadsheetApp.getActive().getSheetByName("devices");
   if(!sheet) return {status: "error", message: "Devices sheet missing"};
   
   const data = sheet.getDataRange().getValues();
 
-  for(let i = 1; i < data.length; i++){
-    const rowId = String(data[i][0]).trim();
-    const rowFp = String(data[i][1]).trim();
+  let userRegisteredDevice = null;
+  let deviceBoundOtherUser = null;
 
-    if(rowId === uid){
-      if(rowFp === fingerprint){
-        return {status:"allowed"};
-      } else {
-        return {status:"blocked"};
-      }
+  for(let i = 1; i < data.length; i++){
+    const rowId = String(data[i][0] || "").trim();
+    const rowFp = String(data[i][1] || "").trim();
+    if(!rowId && !rowFp) continue;
+
+    // 1. Check if this specific user already has a device on file
+    if(rowId.toLowerCase() === cleanUid.toLowerCase()){
+      userRegisteredDevice = rowFp;
+    }
+
+    // 2. Check if this device fingerprint is already bound to any OTHER user
+    if(rowFp === cleanFp && rowId.toLowerCase() !== cleanUid.toLowerCase()){
+      deviceBoundOtherUser = rowId;
     }
   }
 
+  // Case A: The user already has a registered device
+  if(userRegisteredDevice !== null){
+    if(userRegisteredDevice === cleanFp){
+      return {status: "allowed"};
+    } else {
+      // User is attempting to mark attendance from an unauthorized / different device
+      return {
+        status: "blocked",
+        reason: "unauthorized_device"
+      };
+    }
+  }
+
+  // Case B: The user has no device registered yet,
+  // BUT the current device is already bound to ANOTHER employee! (Proxy blocked)
+  if(deviceBoundOtherUser !== null){
+    return {
+      status: "blocked",
+      reason: "device_already_bound",
+      boundUser: deviceBoundOtherUser
+    };
+  }
+
+  // Case C: New user and fresh device -> Auto-bind this device to this user
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(8000)) {
     return {status: "error", message: "Server busy, please try again"};
   }
   try {
-    sheet.appendRow([uid, fingerprint]);
-    return {status:"registered"};
+    sheet.appendRow([cleanUid, cleanFp]);
+    return {status: "registered"};
   } finally {
     lock.releaseLock();
   }

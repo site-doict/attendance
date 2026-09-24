@@ -518,12 +518,15 @@ function getDeviceFingerprint(){
     const scr = window.screen;
     const nav = window.navigator;
 
-    // These values are GUARANTEED same in ALL browsers on same device
+    // Guaranteed consistent across all browsers on same physical device,
+    // immune to window resizing, and immune to cache clearing.
     const raw = [
-        scr.width,                       // physical screen width
-        scr.height,                      // physical screen height
-        scr.colorDepth,                  // color depth
-        new Date().getTimezoneOffset(),  // timezone offset
+        scr.width,                             // physical screen width
+        scr.height,                            // physical screen height
+        window.devicePixelRatio || 1,          // display pixel ratio
+        nav.hardwareConcurrency || 4,          // CPU core count
+        scr.colorDepth || 24,                  // color depth
+        new Date().getTimezoneOffset(),        // timezone offset
         nav.language || nav.userLanguage || "" // system language
     ].join("|");
 
@@ -604,6 +607,11 @@ function initializeDashboard(silent = false) {
       console.log("[initdash] normalized appSettings:", appSettings);
       userLeaveStatus = res.leaveStatus;
       if (res.deviceStatus.status === "blocked") {
+        if(res.deviceStatus.reason === "device_already_bound") {
+          deviceMsg.innerHTML = `🚨 সতর্কতা! 🚨<br><br>এই ডিভাইসটি ইতিমধ্যে অন্য একজন কর্মীর অ্যাকাউন্টে নিবন্ধিত!<br><br>একই ডিভাইস থেকে একাধিক অ্যাকাউন্টে প্রবেশ বা প্রক্সি উপস্থিতি সম্পূর্ণ নিষিদ্ধ ও শাস্তিযোগ্য অপরাধ।<br><br>দয়া করে আপনার নিজস্ব অনুমোদিত ডিভাইস ব্যবহার করুন।`;
+        } else {
+          deviceMsg.innerHTML = `🚨 সতর্কতা! 🚨<br><br>এই ডিভাইসটি অনুমোদিত নয়!<br><br>আপনি অন্য কারো ডিভাইস থেকে উপস্থিতি দেওয়ার চেষ্টা করছেন। এটি একটি গুরুতর অপরাধ এবং এই তথ্য রেকর্ড করা হয়েছে।<br><br>দয়া করে আপনার নিজস্ব ডিভাইস ব্যবহার করুন।<br>সমস্যা হলে আপনার অফিসারের সাথে যোগাযোগ করুন।<br><br><span style="font-size:14px; font-weight:normal;">⚠️ অন্যের আইডি ও পাসওয়ার্ড ব্যবহার করা শাস্তিযোগ্য অপরাধ।</span>`;
+        }
         deviceMsg.style.display = "block";
         inBtn.style.display = "none";
         outBtn.style.display = "none";
