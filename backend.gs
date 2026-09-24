@@ -1,4 +1,4 @@
-// =============================================
+﻿// =============================================
 // OFFICE ATTENDANCE SYSTEM - BACKEND v1.6
 // UPDATED: SERVER-SIDE SESSION AUTHENTICATION
 // =============================================
@@ -22,7 +22,7 @@ function setupSessionsSheet() {
   try {
     const ss = SpreadsheetApp.getActive();
     let sessionSheet = ss.getSheetByName("sessions");
-    
+
     if(!sessionSheet) {
       sessionSheet = ss.insertSheet("sessions");
       sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
@@ -32,7 +32,7 @@ function setupSessionsSheet() {
   } catch(err) {
     Logger.log("setupSessionsSheet warning: " + err);
   }
-  
+
   cleanupExpiredSessionsIfDue();
 }
 
@@ -222,15 +222,15 @@ function validateSession(sessionId) {
   if(!sessionSheet) {
     return {valid: false, error: "No sessions sheet found"};
   }
-  
+
   const data = sessionSheet.getDataRange().getValues();
   const now = new Date();
-  
+
   for(let i = 1; i < data.length; i++) {
     if(data[i][0] === sessionId) {
       const sessionData = JSON.parse(data[i][1] || "{}");
       const expiresAt = new Date(sessionData.expiresAt);
-      
+
       if(now <= expiresAt) {
         try {
           CacheService.getScriptCache().put(cacheKey, JSON.stringify({
@@ -254,7 +254,7 @@ function validateSession(sessionId) {
       }
     }
   }
-  
+
   return {valid: false, error: "Invalid session"};
 }
 
@@ -283,7 +283,7 @@ function deleteSession(sessionId) {
   try {
     CacheService.getScriptCache().remove("session:" + String(sessionId || "").trim());
   } catch (err) {}
-  
+
   const data = sessionSheet.getDataRange().getValues();
   for(let i = 1; i < data.length; i++) {
     if(data[i][0] === sessionId) {
@@ -291,7 +291,7 @@ function deleteSession(sessionId) {
       break;
     }
   }
-  
+
   // Respect the daily throttle instead of forcing a full cleanup on every logout
   cleanupExpiredSessionsIfDue();
 }
@@ -393,7 +393,7 @@ function getSettings(){
 
   const ss = SpreadsheetApp.getActive();
   const settingsSheet = ss.getSheetByName("settings");
-  
+
   const defaults = {
     officeStartTime: "09:00",
     officeEndTime: "17:00",
@@ -408,18 +408,18 @@ function getSettings(){
     officeLng: "89.7183403",
     officeRadius: "100"
   };
-  
+
   if(!settingsSheet){
     return defaults;
   }
-  
+
   const data = settingsSheet.getDataRange().getValues();
   const settings = { ...defaults };
-  
+
   for(let i = 1; i < data.length; i++){
     const key = String(data[i][0]).trim();
     let val = data[i][1];
-    
+
     // Convert Date objects to proper format
     if(val instanceof Date){
       // Check if it's a time (year is 1899)
@@ -439,10 +439,10 @@ function getSettings(){
       // String values - just trim
       val = String(val).trim();
     }
-    
+
     if(key) settings[key] = val;
   }
-  
+
   try { cache.put("settings_cache_v1", JSON.stringify(settings), 120); } catch(err) {}
   return settings;
 }
@@ -475,9 +475,9 @@ function isOfficeClosed(date){
   const settings = getSettings();
   const from = settings.officeClosedFrom;
   const to = settings.officeClosedTo;
-  
+
   if(!from || !to) return false;
-  
+
   // Compare as YYYY-MM-DD strings in the app's timezone instead of Date
   // objects. "new Date('YYYY-MM-DD')" parses as UTC midnight, which made
   // this check silently fail once "now" passed local midnight — i.e.
@@ -485,7 +485,7 @@ function isOfficeClosed(date){
   const checkStr = Utilities.formatDate(new Date(date), TIMEZONE, "yyyy-MM-dd");
   const fromStr  = String(from).trim().substring(0, 10);
   const toStr    = String(to).trim().substring(0, 10);
-  
+
   return checkStr >= fromStr && checkStr <= toStr;
 }
 
@@ -493,11 +493,11 @@ function isWeekendOrHoliday(date){
   const settings = getSettings();
   const customHolidays = settings.customHolidays || "Friday,Saturday";
   const holidayList = customHolidays.split(",").map(d => d.trim().toLowerCase());
-  
+
   const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   const dayOfWeek = new Date(date).getDay();
   const dayName = dayNames[dayOfWeek];
-  
+
   return holidayList.includes(dayName);
 }
 
@@ -524,15 +524,15 @@ function isDeclaredHoliday_(date){
 function getAttendanceSummary(){
   const sheet = SpreadsheetApp.getActive().getSheetByName("attendance");
   const data  = sheet.getDataRange().getValues();
-  
+
   let present = 0, absent = 0, late = 0, early = 0, vlate = 0, nosign = 0, total = 0;
   const today = Utilities.formatDate(new Date(), TIMEZONE, "M/d/yyyy");
-  
+
   for(let i = 1; i < data.length; i++){
     const row = data[i];
     const date = row[0] instanceof Date ? Utilities.formatDate(row[0], TIMEZONE, "M/d/yyyy") : String(row[0] || "").replace(/^'+/, "");
     const status = String(row[5] || "").trim();
-    
+
     if(date === today && status){
       total++;
       if(status === "Present") present++;
@@ -543,7 +543,7 @@ function getAttendanceSummary(){
       else if(status.includes("No Sign Out") || (String(row[6] || "").replace(/^'+/, "").trim() === "---" && status !== "Absent")) nosign++;
     }
   }
-  
+
   return {
     total: total,
     present: present,
@@ -745,7 +745,7 @@ function doGet(e){
     const history = getHistoryInternal(uid);
     const settings = getOfficeSettings(userOffice);
     const leaveStatus = getUserLeaveStatus(uid);
-    
+
     return ContentService
       .createTextOutput(JSON.stringify({
         deviceStatus: deviceStatus,
@@ -818,20 +818,20 @@ function doGet(e){
     }
     const data = userSheet.getDataRange().getValues();
     const headers = data[0] || [];
-    
+
     const idCol = headers.indexOf("ID");
     const nameCol = headers.indexOf("Name");
     const emailCol = headers.indexOf("Email");
     const roleCol = headers.indexOf("Role");
     const officeCol = headers.indexOf("Office");
     let statusCol = headers.indexOf("Status");
-    
+
     // Auto-create Status column if missing
     if(statusCol === -1) {
       statusCol = headers.length;
       userSheet.getRange(1, statusCol + 1).setValue("Status");
     }
-    
+
     let users = [];
     for(let i=1; i<data.length; i++){
       if(idCol !== -1 && !String(data[i][idCol]).trim()) continue; // skip empty rows
@@ -839,7 +839,7 @@ function doGet(e){
       if(data[i].length > statusCol && String(data[i][statusCol]).trim() !== "") {
         rowStatus = String(data[i][statusCol]).trim();
       }
-      
+
       users.push({
         id: idCol !== -1 ? String(data[i][idCol]).trim() : "",
         name: nameCol !== -1 ? String(data[i][nameCol]).trim() : "",
@@ -849,7 +849,7 @@ function doGet(e){
         status: rowStatus
       });
     }
-    
+
     return ContentService.createTextOutput(JSON.stringify(users)).setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -885,7 +885,7 @@ function doGet(e){
     const sheet = ss.getSheetByName("leaves");
     const userSheet = ss.getSheetByName("users");
     if(!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
-    
+
     // Create a name map for IDs
     const userMap = {};
     if (userSheet) {
@@ -994,7 +994,7 @@ function doPost(e){
   }
 
   const sessionId = postParam("sessionId");
-  
+
   // Validate session for all protected operations
   if(!sessionId) {
     return ContentService.createTextOutput(JSON.stringify({
@@ -1002,7 +1002,7 @@ function doPost(e){
       error: "No session provided"
     })).setMimeType(ContentService.MimeType.JSON);
   }
-  
+
   const sessionValidation = validateSession(sessionId);
   if(!sessionValidation.valid) {
     return ContentService.createTextOutput(JSON.stringify({
@@ -1040,7 +1040,7 @@ function doPost(e){
       .createTextOutput(JSON.stringify(summary))
       .setMimeType(ContentService.MimeType.JSON);
   }
-  
+
   const id     = postParam("id");
   const name   = postParam("name");
   const status = postParam("status");
@@ -1134,7 +1134,7 @@ function doPost(e){
 if(type === "updatesettings"){
     const key = postParam("key");
     const value = postParam("value");
-    
+
     const settingsSheet = SpreadsheetApp.getActive().getSheetByName("settings");
     if(!settingsSheet){
       Logger.log("❌ Settings sheet not found!");
@@ -1142,19 +1142,19 @@ if(type === "updatesettings"){
         .createTextOutput(JSON.stringify({success:false, error:"Settings sheet not found"}))
         .setMimeType(ContentService.MimeType.JSON);
     }
-    
+
     Logger.log("Trying to save: " + key + " = " + value);
-    
+
     const data = settingsSheet.getDataRange().getValues();
     let updated = false;
-    
+
     // Log all existing keys
     Logger.log("Existing keys in sheet:");
 for(let i = 1; i < data.length; i++){
   const sheetKey = String(data[i][0]).trim();
   const actualRow = i + 1;  // Convert array index to actual row number
   Logger.log("  Array index " + i + " = Sheet row " + actualRow + ": [" + sheetKey + "]");
-  
+
   if(sheetKey === key){
     Logger.log("✅ Found key at sheet row " + actualRow + ", updating column 2...");
     settingsSheet.getRange(actualRow, 2).setValue(value);  // Use actualRow, not i
@@ -1162,12 +1162,12 @@ for(let i = 1; i < data.length; i++){
     break;
   }
 }
-    
+
     if(!updated){
       Logger.log("⚠️ Key not found, appending new row");
       settingsSheet.appendRow([key, value]);
     }
-    
+
        Logger.log("✅ Save complete for: " + key);
     try { CacheService.getScriptCache().remove("settings_cache_v1"); } catch(err) {}
 
@@ -1193,10 +1193,10 @@ for(let i = 1; i < data.length; i++){
     if(!userSheet){
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"Users sheet not found"})).setMimeType(ContentService.MimeType.JSON);
     }
-    
+
     const userRows = userSheet.getDataRange().getValues();
     const headers = userRows[0] || [];
-    
+
     const idCol = headers.indexOf("ID");
     if(idCol === -1){
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"ID column not found in users sheet"})).setMimeType(ContentService.MimeType.JSON);
@@ -1207,9 +1207,9 @@ for(let i = 1; i < data.length; i++){
         return ContentService.createTextOutput(JSON.stringify({success:false, error:"Employee ID already exists!"})).setMimeType(ContentService.MimeType.JSON);
       }
     }
-    
+
     let newRow = new Array(headers.length).fill("");
-    
+
     const nameCol = headers.indexOf("Name");
     const emailCol = headers.indexOf("Email");
     const passCol = headers.indexOf("Password");
@@ -1225,9 +1225,9 @@ for(let i = 1; i < data.length; i++){
     const officeCol = headers.indexOf("Office");
     if (officeCol !== -1) newRow[officeCol] = uoffice;
     newRow[statusCol] = "Active"; // Default status
-    
+
     userSheet.appendRow(newRow);
-    
+
     return ContentService.createTextOutput(JSON.stringify({success:true, message:"User created successfully"})).setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -1243,11 +1243,11 @@ for(let i = 1; i < data.length; i++){
     const headers = data[0] || [];
     const idCol = headers.indexOf("ID");
     const statusCol = headers.indexOf("Status");
-    
+
     if(idCol === -1 || statusCol === -1){
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"ID or Status column not found. Reload page to initialize headers."})).setMimeType(ContentService.MimeType.JSON);
     }
-    
+
     let toggled = false;
     for(let i = 1; i < data.length; i++){
       if(String(data[i][idCol]).trim() === String(targetId).trim()){
@@ -1255,7 +1255,7 @@ for(let i = 1; i < data.length; i++){
         const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
         userSheet.getRange(i + 1, statusCol + 1).setValue(newStatus);
         toggled = true;
-        break; 
+        break;
       }
     }
 
@@ -1277,11 +1277,11 @@ for(let i = 1; i < data.length; i++){
     const data = userSheet.getDataRange().getValues();
     const headers = data[0] || [];
     const idCol = headers.indexOf("ID");
-    
+
     if(idCol === -1){
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"ID column not found"})).setMimeType(ContentService.MimeType.JSON);
     }
-    
+
     let deleted = false;
     for(let i = data.length - 1; i >= 1; i--){
       if(String(data[i][idCol]).trim() === String(targetId).trim()){
@@ -1303,16 +1303,16 @@ for(let i = 1; i < data.length; i++){
     const uid = postParam("userid");
     const start = postParam("startdate"); // YYYY-MM-DD
     const end = postParam("enddate"); // YYYY-MM-DD
-    
+
     const ss = SpreadsheetApp.getActive();
     let leaveSheet = ss.getSheetByName("leaves");
     if(!leaveSheet){
       leaveSheet = ss.insertSheet("leaves");
       leaveSheet.appendRow(["ID", "From", "To", "Timestamp"]);
     }
-    
+
     leaveSheet.appendRow([uid, start, end, new Date()]);
-    
+
     // Find User to send email
     const userSheet = ss.getSheetByName("users");
     if(userSheet){
@@ -1321,7 +1321,7 @@ for(let i = 1; i < data.length; i++){
       const idCol = headers.indexOf("ID");
       const nameCol = headers.indexOf("Name");
       const emailCol = headers.indexOf("Email");
-      
+
       if(idCol !== -1 && emailCol !== -1){
         for(let i=1; i<data.length; i++){
           if(String(data[i][idCol]).trim() === String(uid)){
@@ -1351,7 +1351,7 @@ for(let i = 1; i < data.length; i++){
         }
       }
     }
-    
+
     return ContentService.createTextOutput(JSON.stringify({success:true, message:"Leave granted"})).setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -1362,20 +1362,20 @@ for(let i = 1; i < data.length; i++){
     if(!deviceSheet){
       return ContentService.createTextOutput(JSON.stringify({success:false, error:"Devices sheet not found"})).setMimeType(ContentService.MimeType.JSON);
     }
-    
+
     const data = deviceSheet.getDataRange().getValues();
     let deleted = false;
-    
+
     // Iterate backwards to safely delete multiple rows if an ID is strangely registered multiple times
     for(let i = data.length - 1; i >= 1; i--){
       const currentId = String(data[i][0]).trim();
-      
+
       if(currentId === String(targetId).trim()){
         deviceSheet.deleteRow(i + 1); // spreadsheet rows are 1-indexed
         deleted = true;
       }
     }
-    
+
     if(deleted){
         return ContentService.createTextOutput(JSON.stringify({success:true, message:"Device reset successfully"})).setMimeType(ContentService.MimeType.JSON);
     } else {
@@ -1388,28 +1388,28 @@ for(let i = 1; i < data.length; i++){
     const recipients = postParam("recipients");
     const subject = postParam("subject");
     const message = postParam("message");
-    
+
     const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
     const userRows = userSheet.getDataRange().getValues();
     const userHeaders = userRows[0];
-    
+
     const idCol = userHeaders.indexOf("ID");
     const nameCol = userHeaders.indexOf("Name");
     const emailCol = userHeaders.indexOf("Email");
     const roleCol = userHeaders.indexOf("Role");
-    
+
     let sentCount = 0;
-    
+
     for(let i = 1; i < userRows.length; i++){
       const u = userRows[i];
       const uid = String(u[idCol] || "").trim();
       const uemail = String(u[emailCol] || "").trim();
       const urole = String(u[roleCol] || "user").trim().toLowerCase();
-      
+
       if(!uemail) continue;
-      
+
       let shouldSend = false;
-      
+
       if(recipients === "all"){
         shouldSend = true;
       } else if(recipients === "staff"){
@@ -1418,7 +1418,7 @@ for(let i = 1; i < data.length; i++){
         const targetIds = recipients.split(",").map(s => s.trim());
         shouldSend = targetIds.includes(uid);
       }
-      
+
       if(shouldSend){
         try{
           GmailApp.sendEmail(uemail, subject, message);
@@ -1428,7 +1428,7 @@ for(let i = 1; i < data.length; i++){
         }
       }
     }
-    
+
     return ContentService
       .createTextOutput(JSON.stringify({success:true, sent:sentCount}))
       .setMimeType(ContentService.MimeType.JSON);
@@ -1536,18 +1536,18 @@ function loginUser(e) {
   // For POST requests, parameters come in e.parameter
   const id = String(e.parameter.id || "").trim();
   const pass = String(e.parameter.pass || "").trim();
-  
+
   // Debug: Log received parameters and request method
   Logger.log("Login request - Method: " + (e.postData ? "POST" : "GET"));
   Logger.log("Login request received - ID: " + id + ", Pass: " + (pass ? "***" : "null"));
-  
+
   if(!id || !pass) {
     return ContentService.createTextOutput(JSON.stringify({
       success: false,
       error: "Missing credentials"
     })).setMimeType(ContentService.MimeType.JSON);
   }
-  
+
   // Get user data with retry to handle temporary sheet lock contention
   let userSheet = null;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -1565,7 +1565,7 @@ function loginUser(e) {
       error: "Users sheet not found"
     })).setMimeType(ContentService.MimeType.JSON);
   }
-  
+
   let data = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -1590,7 +1590,7 @@ function loginUser(e) {
   const nameCol = headers.indexOf("Name");
   const officeCol = headers.indexOf("Office");
   const statusCol = headers.indexOf("Status");
-  
+
   for(let i = 1; i < data.length; i++) {
     const uID = String(data[i][idCol] || "").trim();
     const uPass = String(data[i][passCol] || "").trim();
@@ -1609,7 +1609,7 @@ function loginUser(e) {
           error: "Account is deactivated"
         })).setMimeType(ContentService.MimeType.JSON);
       }
-      
+
       // Create session and return (resilient against lock contention)
       let sessionId;
       try {
@@ -1625,7 +1625,7 @@ function loginUser(e) {
           expiresAt: expiry
         });
       }
-      
+
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         sessionId: sessionId,
@@ -1638,7 +1638,7 @@ function loginUser(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
   }
-  
+
   // No user found
   return ContentService.createTextOutput(JSON.stringify({
     success: false,
@@ -1654,13 +1654,13 @@ function sendDailyEmails(){
   const now     = new Date();
   const dayOfWk = now.getDay();
   const settings = getSettings();
-  
+
   // Check if emails are paused
   if(settings.emailsPaused === "yes"){
     Logger.log("Emails are paused by admin.");
     return;
   }
-  
+
   // Determine if it's a working day
   const isHoliday = isWeekendOrHoliday(now);
   const isClosed  = isOfficeClosed(now);
@@ -1706,10 +1706,10 @@ function sendDailyEmails(){
       let lEnd = new Date(leaveData[i][2]);
       lStart.setHours(0,0,0,0);
       lEnd.setHours(23,59,59,999);
-      
+
       const nowMidnight = new Date(now.getTime());
       nowMidnight.setHours(12,0,0,0);
-      
+
       if(nowMidnight >= lStart && nowMidnight <= lEnd) {
         leaveMap[lUid] = true;
       }
@@ -1767,7 +1767,7 @@ const attRows = attSheet.getDataRange().getValues();
       if (isOffDay) {
         // Record as Off Day if today is weekend/holiday
         attSheet.appendRow([now, uid, uname, today, "Off Day", "Off Day", "", "", "Off Day"]);
-        continue; 
+        continue;
       } else if(isOnLeave) {
         // Mark as On Leave in Google Sheet and Skip email
         attSheet.appendRow([now, uid, uname, today, "On Leave", "On Leave", "", "", "On Leave"]);
@@ -1775,12 +1775,12 @@ const attRows = attSheet.getDataRange().getValues();
       } else {
         // Mark as Absent in Google Sheet and Send absent email
         attSheet.appendRow([now, uid, uname, today, "Absent", "Absent", "", "", "Absent"]);
-        
+
         statusEN    = "Absent";
         statusBN    = "অনুপস্থিত";
         statusColor = "#dc3545";
-        noticeEN    = "You were marked absent today. If this is incorrect, please contact your officer.";
-        noticeBN    = "আজ আপনাকে অনুপস্থিত চিহ্নিত করা হয়েছে। এটি ভুল হলে অফিসারের সাথে যোগাযোগ করুন।";
+        noticeEN    = "You were marked absent today. If this is incorrect, please contact the administration.";
+        noticeBN    = "আজ আপনাকে অনুপস্থিত চিহ্নিত করা হয়েছে। এটি ভুল বা অনিচ্ছাকৃত হলে কর্তৃপক্ষের সাথে যোগাযোগ করুন।";
       }
     } else {
       const outVal    = String(att.outTime).replace(/^'+/, "").trim();
@@ -1791,10 +1791,10 @@ const attRows = attSheet.getDataRange().getValues();
           statusEN = resolved.en; statusBN = resolved.bn; statusColor = resolved.color;
           if(att.status === "Present"){
             noticeEN = "You did not Sign Out today. Please remember to Sign Out before leaving the office.";
-            noticeBN = "আজ আপনি Sign Out করেননি। অফিস থেকে বের হওয়ার আগে Sign Out করতে ভুলবেন না।";
+            noticeBN = "আজ আপনি Sign Out করেননি। অফিস ত্যাগের পূর্বে সর্বদা Sign Out সম্পন্ন করার অনুরোধ করা হলো।";
           } else {
-            noticeEN = "You arrived late and also did not Sign Out today. Please contact your officer.";
-            noticeBN = "আজ আপনি দেরিতে এসেছেন এবং Sign Out করেননি। অফিসারের সাথে যোগাযোগ করুন।";
+            noticeEN = "You arrived late and also did not Sign Out today. Please contact the administration.";
+            noticeBN = "আজ আপনি দেরিতে উপস্থিত হয়েছেন এবং Sign Out করেননি। কর্তৃপক্ষের সাথে যোগাযোগ করুন।";
           }
         } else {
           statusEN = att.status; statusBN = getStatusBN(att.status); statusColor = getStatusColor(att.status);
@@ -2023,19 +2023,19 @@ function getStatusColor(status){
 function getNotices(status){
   if(status === "Late Entry")
     return { en: "You arrived late today. Please ensure punctuality in the future.",
-             bn: "আজ আপনি দেরিতে অফিসে এসেছেন। ভবিষ্যতে সময়মতো আসার চেষ্টা করুন।" };
+             bn: "আজ আপনি দেরিতে উপস্থিত হয়েছেন। ভবিষ্যতে সময়নিষ্ঠ থাকার অনুরোধ করা হলো।" };
   if(status === "Early Leave")
     return { en: "You left early today. Please ensure you complete your work hours.",
-             bn: "আজ আপনি নির্ধারিত সময়ের আগে চলে গেছেন। কর্মঘণ্টা পূরণ করার চেষ্টা করুন।" };
+             bn: "আজ আপনি নির্ধারিত সময়ের পূর্বে প্রস্থান করেছেন। কর্মঘণ্টা বজায় রাখার অনুরোধ করা হলো।" };
   if(status === "Late Entry | Early Leave")
-    return { en: "You arrived late and also left early today. Please contact your officer.",
-             bn: "আজ আপনি দেরিতে এসেছেন এবং আগে চলে গেছেন। অফিসারের সাথে যোগাযোগ করুন।" };
+    return { en: "You arrived late and also left early today. Please contact the administration.",
+             bn: "আজ আপনি দেরিতে এসেছেন এবং সময়ের পূর্বে প্রস্থান করেছেন। কর্তৃপক্ষের সাথে যোগাযোগ করুন।" };
   if(status === "Very Late")
-    return { en: "You arrived very late today (after 10:30 AM). Please contact your officer immediately.",
-             bn: "আজ আপনি অনেক দেরিতে অফিসে এসেছেন (১০:৩০ AM এর পর)। অনুগ্রহ করে অফিসারের সাথে যোগাযোগ করুন।" };
+    return { en: "You arrived very late today. Please contact the administration immediately.",
+             bn: "আজ আপনি অনেক দেরিতে উপস্থিত হয়েছেন। অবিলম্বে কর্তৃপক্ষের সাথে যোগাযোগ করুন।" };
   if(status === "Very Late | Early Leave")
-    return { en: "You arrived very late and also left early today. Please contact your officer immediately.",
-             bn: "আজ আপনি অনেক দেরিতে এসেছেন এবং আগে চলে গেছেন। অফিসারের সাথে যোগাযোগ করুন।" };
+    return { en: "You arrived very late and also left early today. Please contact the administration immediately.",
+             bn: "আজ আপনি অনেক দেরিতে এসেছেন এবং সময়ের পূর্বে প্রস্থান করেছেন। অবিলম্বে কর্তৃপক্ষের সাথে যোগাযোগ করুন।" };
   return { en: "", bn: "" };
 }
 
@@ -2048,7 +2048,7 @@ function sendHolidayEveEmails(){
   const now     = new Date();
   const dayOfWk = now.getDay();
   const settings = getSettings();
-  
+
   // Check if emails are paused
   if(settings.emailsPaused === "yes"){
     Logger.log("Emails are paused by admin.");
@@ -2227,7 +2227,7 @@ function getHistoryInternal(userId){
     const r = data[i];
     const rowId = String(r[1] || "").trim();
     if(!rowId) continue;
-    
+
     // Filter by user ID if provided
     if (userId && rowId !== String(userId).trim()) continue;
 
@@ -2279,10 +2279,10 @@ function checkDeviceInternal(uid, fingerprint){
   const cleanUid = String(uid || "").trim();
   const cleanFp = String(fingerprint || "").trim();
   if(!cleanUid || !cleanFp) return {status: "error", message: "Missing params"};
-  
+
   const sheet = SpreadsheetApp.getActive().getSheetByName("devices");
   if(!sheet) return {status: "error", message: "Devices sheet missing"};
-  
+
   const data = sheet.getDataRange().getValues();
 
   let userRegisteredDevice = null;
@@ -2361,7 +2361,7 @@ function getUserLeaveStatus(uid) {
 
     const start = new Date(data[i][1]);
     const end = new Date(data[i][2]);
-    
+
     const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0);
     const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999);
 
@@ -2382,9 +2382,10 @@ function getUserLeaveStatus(uid) {
     }
   }
 
-  return { 
-    active: !!activeLeave, 
+  return {
+    active: !!activeLeave,
     currentLeave: activeLeave,
-    allLeaves: allLeaves 
+    allLeaves: allLeaves
   };
 }
+

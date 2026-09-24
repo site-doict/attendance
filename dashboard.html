@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -55,7 +55,7 @@ body{
     height: 100%;
     z-index: -1;
     background: #0f172a;
-    background-image: 
+    background-image:
         radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.5) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(88, 28, 135, 0.45) 0px, transparent 50%),
         radial-gradient(at 100% 100%, rgba(30, 58, 138, 0.45) 0px, transparent 50%),
@@ -195,7 +195,7 @@ button{
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         color: rgba(255, 255, 255, 0.9);
       }
-      
+
       .history-table tr:nth-child(even) {
         background: rgba(255, 255, 255, 0.02);
       }
@@ -254,17 +254,19 @@ button{
 
 #deviceMsg, #fraudMsg{
     display: none;
-    background: #dc3545;
-    border-radius: 12px;
-    padding: 20px;
+    background: rgba(220, 53, 69, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 16px 20px;
     margin: 15px auto;
-    max-width: 420px;
+    max-width: 440px;
     color: white;
-    font-size: 17px;
-    font-weight: bold;
-    line-height: 1.9;
-    box-shadow: 0 4px 15px rgba(220,53,69,0.5);
-    animation: pulse 1.2s infinite;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.6;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(220,53,69,0.4);
+    animation: pulse 1.5s infinite;
     position: relative;
     z-index: 1;
 }
@@ -389,15 +391,11 @@ button{
 <!-- ===== সব মেসেজ আগে ===== -->
 
 <div id="deviceMsg">
-    🚨 সতর্কতা! 🚨<br><br>
-    এই ডিভাইসটি অনুমোদিত নয়!<br><br>
-    আপনি অন্য কারো ডিভাইস থেকে উপস্থিতি দেওয়ার চেষ্টা করছেন।
-    এটি একটি গুরুতর অপরাধ এবং এই তথ্য রেকর্ড করা হয়েছে।<br><br>
-    দয়া করে আপনার নিজস্ব ডিভাইস ব্যবহার করুন।<br>
-    সমস্যা হলে আপনার অফিসারের সাথে যোগাযোগ করুন।<br><br>
-    <span style="font-size:14px; font-weight:normal;">
-        ⚠️ অন্যের আইডি ও পাসওয়ার্ড ব্যবহার করা শাস্তিযোগ্য অপরাধ।
-    </span>
+    <div style="font-size: 17px; font-weight: 700; margin-bottom: 6px;">🚨 অননুমোদিত ডিভাইস!</div>
+    <div style="margin-bottom: 6px;">এই ডিভাইসটি আপনার আইডির জন্য অনুমোদিত নয়। আপনি ভিন্ন ডিভাইস থেকে প্রবেশের চেষ্টা করছেন—যা শাস্তিযোগ্য অপরাধ এবং এ তথ্য অডিট লগে রেকর্ড করা হয়েছে।</div>
+    <div style="font-size: 13px; opacity: 0.95; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 6px; margin-top: 6px;">
+        👉 নিজস্ব অনুমোদিত ডিভাইস ব্যবহার করুন। প্রয়োজনে অ্যাডমিনের সাথে যোগাযোগ করুন।
+    </div>
 </div>
 
 <div id="fraudMsg"></div>
@@ -571,7 +569,7 @@ function initializeDashboard(silent = false) {
     }
     return;
   }
-  
+
   const fp = getDeviceFingerprint();
   const url = `${WEB_APP_URL}?action=initdash&id=${encodeURIComponent(userData.id)}&fp=${encodeURIComponent(fp)}&sessionId=${encodeURIComponent(sessionId)}`;
 
@@ -608,9 +606,9 @@ function initializeDashboard(silent = false) {
       userLeaveStatus = res.leaveStatus;
       if (res.deviceStatus.status === "blocked") {
         if(res.deviceStatus.reason === "device_already_bound") {
-          deviceMsg.innerHTML = `🚨 সতর্কতা! 🚨<br><br>এই ডিভাইসটি ইতিমধ্যে অন্য একজন কর্মীর অ্যাকাউন্টে নিবন্ধিত!<br><br>একই ডিভাইস থেকে একাধিক অ্যাকাউন্টে প্রবেশ বা প্রক্সি উপস্থিতি সম্পূর্ণ নিষিদ্ধ ও শাস্তিযোগ্য অপরাধ।<br><br>দয়া করে আপনার নিজস্ব অনুমোদিত ডিভাইস ব্যবহার করুন।`;
+          deviceMsg.innerHTML = `<div style="font-size:17px;font-weight:700;margin-bottom:6px;">🚨 প্রক্সি উপস্থিতি সতর্কবার্তা!</div><div style="margin-bottom:6px;">এই ডিভাইসটি ইতিমধ্যে অন্য একটি আইডিতে নিবন্ধিত! একই ডিভাইস থেকে একাধিক ব্যক্তির উপস্থিতি দেওয়া সম্পূর্ণ নিষিদ্ধ ও শাস্তিযোগ্য অপরাধ। এ অপচেষ্টা সিস্টেমে রেকর্ড করা হয়েছে।</div><div style="font-size:13px;opacity:0.95;border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;margin-top:6px;">👉 আপনার নিজস্ব অনুমোদিত ডিভাইস ব্যবহার করুন।</div>`;
         } else {
-          deviceMsg.innerHTML = `🚨 সতর্কতা! 🚨<br><br>এই ডিভাইসটি অনুমোদিত নয়!<br><br>আপনি অন্য কারো ডিভাইস থেকে উপস্থিতি দেওয়ার চেষ্টা করছেন। এটি একটি গুরুতর অপরাধ এবং এই তথ্য রেকর্ড করা হয়েছে।<br><br>দয়া করে আপনার নিজস্ব ডিভাইস ব্যবহার করুন।<br>সমস্যা হলে আপনার অফিসারের সাথে যোগাযোগ করুন।<br><br><span style="font-size:14px; font-weight:normal;">⚠️ অন্যের আইডি ও পাসওয়ার্ড ব্যবহার করা শাস্তিযোগ্য অপরাধ।</span>`;
+          deviceMsg.innerHTML = `<div style="font-size:17px;font-weight:700;margin-bottom:6px;">🚨 অননুমোদিত ডিভাইস!</div><div style="margin-bottom:6px;">এই ডিভাইসটি আপনার আইডির জন্য অনুমোদিত নয়। আপনি ভিন্ন ডিভাইস থেকে প্রবেশের চেষ্টা করছেন—যা শাস্তিযোগ্য অপরাধ এবং এ তথ্য অডিট লগে রেকর্ড করা হয়েছে।</div><div style="font-size:13px;opacity:0.95;border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;margin-top:6px;">👉 নিজস্ব অনুমোদিত ডিভাইস ব্যবহার করুন। প্রয়োজনে অ্যাডমিনের সাথে যোগাযোগ করুন।</div>`;
         }
         deviceMsg.style.display = "block";
         inBtn.style.display = "none";
@@ -637,18 +635,18 @@ function initializeDashboard(silent = false) {
       if(loadingText) {
         // Clear existing content
         loadingText.innerHTML = '';
-        
+
         // Create error message safely
         const errorSpan = document.createElement('span');
         errorSpan.style.color = '#dc3545';
         errorSpan.textContent = '❌ Load Failed';
-        
+
         // Create retry button safely
         const retryBtn = document.createElement('button');
         retryBtn.textContent = 'Retry';
         retryBtn.style.cssText = 'margin-top:10px; padding:8px 15px; font-size:14px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;';
         retryBtn.onclick = () => location.reload();
-        
+
         // Append elements safely
         loadingText.appendChild(errorSpan);
         loadingText.appendChild(document.createElement('br'));
@@ -674,11 +672,11 @@ function getDistance(lat1, lng1, lat2, lng2){
 
 // ================= GET LOCATION & MARK =================
 function getLocationAndMark(type, status){
-    statusTx.innerText = "📍 আপনার অবস্থান নির্ণয় করা হচ্ছে...";
+    statusTx.innerText = "📍 অবস্থান (GPS) যাচাই করা হচ্ছে...";
     fraudMsg.style.display = "none";
 
     if(!navigator.geolocation){
-        statusTx.innerText = "❌ Geolocation not supported on this device!";
+        statusTx.innerText = "❌ আপনার ডিভাইসে লোকেশন (GPS) সুবিধা সমর্থিত নয়!";
         return;
     }
 
@@ -686,7 +684,7 @@ function getLocationAndMark(type, status){
         function(pos){
             const userLat = pos.coords.latitude;
             const userLng = pos.coords.longitude;
-            
+
             const officeLat = appSettings ? parseFloat(appSettings.officeLat) : 24.8946369;
             const officeLng = appSettings ? parseFloat(appSettings.officeLng) : 89.7183403;
             const maxRadius = appSettings ? parseInt(appSettings.officeRadius) || 100 : 100;
@@ -699,45 +697,18 @@ function getLocationAndMark(type, status){
                 sendData(status, type, userLat, userLng);
             } else {
                 fraudMsg.style.display = "block";
-                // Create fraud message safely using DOM manipulation
-                fraudMsg.innerHTML = '';
-                
-                const lines = [
-                    '🚨 সতর্কতা! 🚨',
-                    '',
-                    `আপনি অফিস থেকে ${Math.round(dist)} মিটার দূরে আছেন!`,
-                    '',
-                    'আপনি অফিস এলাকার বাইরে থেকে উপস্থিতি দেওয়ার চেষ্টা করছেন।',
-                    'এই তথ্য রেকর্ড করা হয়েছে।',
-                    '',
-                    'অনুগ্রহ করে অফিসে এসে উপস্থিতি দিন।',
-                    '',
-                    '⚠️ মিথ্যা উপস্থিতি দেওয়ার চেষ্টা শাস্তিযোগ্য অপরাধ।'
-                ];
-                
-                lines.forEach((line, index) => {
-                    if (line === '') {
-                        fraudMsg.appendChild(document.createElement('br'));
-                        fraudMsg.appendChild(document.createElement('br'));
-                    } else {
-                        const span = document.createElement('span');
-                        span.textContent = line;
-                        if (index === 2) { // Distance line - make it bold
-                            const strong = document.createElement('strong');
-                            strong.textContent = span.textContent;
-                            span.textContent = 'আপনি অফিস থেকে ';
-                            span.appendChild(strong);
-                            span.appendChild(document.createTextNode(' দূরে আছেন!'));
-                        }
-                        fraudMsg.appendChild(span);
-                        fraudMsg.appendChild(document.createElement('br'));
-                    }
-                });
+                fraudMsg.innerHTML = `
+                    <div style="font-size:17px;font-weight:700;margin-bottom:6px;">🚨 অফিস সীমানার বাইরে অবস্থান!</div>
+                    <div style="margin-bottom:6px;">আপনি অফিস থেকে <strong>${Math.round(dist)} মিটার দূরে</strong> আছেন। সীমানার বাইরে থেকে উপস্থিতি দেওয়ার এ চেষ্টা সিস্টেমে রেকর্ড করা হয়েছে।</div>
+                    <div style="font-size:13px;opacity:0.95;border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;margin-top:6px;">
+                        👉 অবিলম্বে অফিসে এসে উপস্থিতি দিন। অসদুপায় অবলম্বন শাস্তিযোগ্য অপরাধ!
+                    </div>
+                `;
                 statusTx.innerText = "";
             }
         },
         function(err){
-            statusTx.innerText = "❌ লোকেশন অ্যাক্সেস বন্ধ আছে! উপস্থিতি দিতে লোকেশন চালু করুন।";
+            statusTx.innerText = "❌ ডিভাইসের জিপিএস (GPS) বন্ধ! উপস্থিতি নিশ্চিত করতে লোকেশন চালু করুন।";
         },
         { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -775,11 +746,11 @@ function controlButtons(rows){
 
     const settings = appSettings || {};
     if (!appSettings) return; // Wait until settings are loaded
-    
+
     // Parse office hours
     const [startHour, startMin] = String(settings.officeStartTime).split(":").map(Number);
     const [endHour, endMin] = String(settings.officeEndTime).split(":").map(Number);
-    
+
     // Calculate window times (in minutes from midnight)
     if (!settings.officeStartTime || !settings.officeEndTime || isNaN(startHour) || isNaN(endHour)) {
         showStatusBox("⏳ Loading attendance settings...", "blue");
@@ -792,6 +763,12 @@ function controlButtons(rows){
     const OUT_START = endHour * 60 + endMin - (parseInt(settings.signOutGraceMins) || 10);  // End - grace
     const OUT_CLOSE = endHour * 60 + endMin + 60;  // End + 1 hour
 
+    let outStartHr = Math.floor(OUT_START / 60);
+    let outStartMi = OUT_START % 60;
+    if (outStartHr < 0) outStartHr += 24;
+    const ampmOut = outStartHr >= 12 ? "PM" : "AM";
+    const displayOutStart = convertTo12Hour(outStartHr, outStartMi) + " " + ampmOut;
+
     inBtn.style.display  = "none";
     outBtn.style.display = "none";
     document.getElementById("statusBox").style.display = "none";
@@ -799,35 +776,35 @@ function controlButtons(rows){
 
     if(!deviceAllowed) return;
 
-    // ========== SMART RETURN DATE LOGIC ========== 
+    // ========== SMART RETURN DATE LOGIC ==========
     // This finds the first actual working day, skipping weekends, holidays, and leaves.
     const smartReturnDate = findSmartReturnDate(now);
 
-    // ========== DYNAMIC LEAVE CHECK ========== 
+    // ========== DYNAMIC LEAVE CHECK ==========
     if (userLeaveStatus && userLeaveStatus.active) {
         showStatusBox(
-            "🌴 You are on approved leave today. Enjoy your day off!\n\n" +
-            "📅 Your next working day is: " + smartReturnDate,
+            "🌴 আজ আপনার অনুমোদিত ছুটি।\n\n" +
+            "📅 পরবর্তী কার্যদিবস: " + smartReturnDate,
         "blue");
         return;
     }
 
-    // ========== DYNAMIC OFFICE CLOSED CHECK (Date Ranges) ========== 
+    // ========== DYNAMIC OFFICE CLOSED CHECK (Date Ranges) ==========
     if (isOfficeClosed(now)) {
         showStatusBox(
-            "🏢 অফিস সাময়িকভাবে বন্ধ আছে!\n\n" +
-            "আপনার পরবর্তী কার্যদিবস: " + smartReturnDate,
+            "🏢 আজ অফিস বন্ধ রয়েছে।\n\n" +
+            "📅 পরবর্তী কার্যদিবস: " + smartReturnDate,
         "orange");
         return;
     }
 
     // ========== DYNAMIC WEEKEND/HOLIDAY CHECK ==========
     if(isWeekendOrHoliday(now)){
-        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const dayNames = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
         const dayName = dayNames[now.getDay()];
         showStatusBox(
-            "🏖️ আজ ছুটির দিন (" + dayName + ")!\n\n" +
-            "আপনার পরবর্তী কার্যদিবস: " + smartReturnDate,
+            "🏖️ আজ ছুটির দিন (" + dayName + ")।\n\n" +
+            "📅 পরবর্তী কার্যদিবস: " + smartReturnDate,
         "orange");
         return;
     }
@@ -842,7 +819,7 @@ function controlButtons(rows){
     // ========== ALREADY COMPLETE ==========
     if(rec && rec.inTime && rec.inTime !== "---" &&
        rec.outTime && rec.outTime !== "---"){
-        showStatusBox("✅ Attendance complete for today!", "green");
+        showStatusBox("✅ আজকের উপস্থিতি সম্পন্ন হয়েছে!", "green");
         return;
     }
 
@@ -853,35 +830,35 @@ function controlButtons(rows){
             // Sign in window: from 30 min before office start until start + signInWindowMins
             inBtn.style.display = "inline-block";
 
-    } else if(mins < IN_OPEN){
+        } else if(mins < IN_OPEN){
             let openHr = startHour;
             let openMi = startMin - SIGN_IN_EARLY_MINS;
             if(openMi < 0){ openMi += 60; openHr -= 1; }
             if(openHr < 0){ openHr += 24; }
             const ampmOpen = openHr >= 12 ? "PM" : "AM";
             const displayOpen = convertTo12Hour(openHr, openMi) + " " + ampmOpen;
-            showStatusBox("🔴 Sign In button opens at " + displayOpen, "red");
+            showStatusBox("🔴 Sign In বাটন " + displayOpen + "-এ সক্রিয় হবে।", "red");
 
         } else if(mins > IN_CLOSE && mins < OUT_START){
-            // Very late, BEFORE 3:30 - show message only, NO button yet
+            // Very late, BEFORE OUT_START - show message only, NO button yet
             showStatusBox(
-                "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
-                "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                "✅ আপনার Sign Out বাটন সক্রিয় হবে " + formatTimeWithAMPM(settings.officeEndTime) + " এর আগে।",
+                "⚠️ আপনি অনেক দেরিতে এসেছেন!\n\n" +
+                "অনুগ্রহ করে কর্তৃপক্ষের সাথে যোগাযোগ করুন।\n\n" +
+                "🔵 Sign Out বাটন " + displayOutStart + "-এ সক্রিয় হবে।",
             "red");
-            // DO NOT show button before 3:30
+            // DO NOT show button before OUT_START
 
         } else if(mins >= OUT_START && mins <= OUT_CLOSE){
-            // Very late, AFTER 3:30 - show message + button
+            // Very late, AFTER OUT_START - show message + button
             showStatusBox(
-                "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
-                "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                "✅ নিচের বাটন দিয়ে Sign Out করুন।",
+                "⚠️ আপনি অনেক দেরিতে এসেছেন!\n\n" +
+                "অনুগ্রহ করে কর্তৃপক্ষের সাথে যোগাযোগ করুন।\n\n" +
+                "✅ নিচের বাটন দিয়ে Sign Out করুন।",
             "red");
             outBtn.style.display = "inline-block";
 
         } else {
-            showStatusBox("🔴 আজকের উপস্থিতির সময় শেষ। আগামীকাল " + formatTimeWithAMPM(settings.officeStartTime) + " থেকে শুরু হবে।", "red");
+            showStatusBox("🔴 আজকের প্রবেশ উপস্থিতি (Sign In) বন্ধ। পরবর্তী কার্যদিবসে " + formatTimeWithAMPM(settings.officeStartTime) + " থেকে শুরু হবে।", "red");
         }
         return;
     }
@@ -894,17 +871,17 @@ function controlButtons(rows){
             // Message first, then button
             if(rec.status === "Very Late"){
                 showStatusBox(
-                    "⚠️ আপনি অনেক দেরিতে অফিসে এসেছেন!\n\n" +
-                    "অনুগ্রহ করে আপনার অফিসারের সাথে যোগাযোগ করুন।\n\n" +
-                    "✅ নিচের বাটন দিয়ে Sign Out করুন।",
+                    "⚠️ আপনি দেরিতে উপস্থিত হয়েছিলেন।\n\n" +
+                    "অনুগ্রহ করে কর্তৃপক্ষের সাথে যোগাযোগ রাখুন।\n\n" +
+                    "✅ নিচের বাটন দিয়ে Sign Out করুন।",
                 "red");
             }
             outBtn.style.display = "inline-block";
 
         } else if(mins < OUT_START){
-            showStatusBox("🔵 Sign Out button opens at 3:30 PM", "blue");
+            showStatusBox("🔵 Sign Out বাটন " + displayOutStart + "-এ সক্রিয় হবে।", "blue");
         } else {
-            showStatusBox("🔴 Sign Out closed for today", "red");
+            showStatusBox("🔴 আজকের প্রস্থান উপস্থিতি (Sign Out) বন্ধ।", "red");
         }
     }
 }
@@ -953,7 +930,7 @@ function displayHistory(rows) {
     let inTime = rec ? rec.inTime || "---" : "---";
     let outTime = rec ? rec.outTime || "---" : "---";
     let status = rec ? rec.status || "---" : "No Record";
-    
+
     // If no record, check if it was a holiday/weekend
     if ((!rec || status === "No Record") && isWeekendOrHoliday(d)) {
       status = "Off Day";
@@ -1062,14 +1039,14 @@ function sendData(status, type, lat, lng){
 function markIn(){
     const now  = new Date();
     const mins = now.getHours() * 60 + now.getMinutes();
-    
+
     let lateThreshold = 10 * 60; // default 10:00 AM
     if (appSettings && appSettings.officeStartTime) {
         const [h, m] = String(appSettings.officeStartTime).split(":").map(Number);
         const grace = parseInt(appSettings.signInGraceMins) || 15;
         lateThreshold = (h * 60) + m + grace;
     }
-    
+
     const status = mins > lateThreshold ? "Late Entry" : "Present";
     getLocationAndMark("in", status);
 }
@@ -1077,14 +1054,14 @@ function markIn(){
 function markOut(){
     const now  = new Date();
     const mins = now.getHours() * 60 + now.getMinutes();
-    
+
     let earlyThreshold = 16 * 60 + 45; // default 4:45 PM
     if (appSettings && appSettings.officeEndTime) {
         const [h, m] = String(appSettings.officeEndTime).split(":").map(Number);
         const grace = parseInt(appSettings.signOutGraceMins) || 10;
         earlyThreshold = (h * 60) + m - grace;
     }
-    
+
     const status = mins < earlyThreshold ? "Early Leave" : "Present";
 
     // Check if there's a today record - if no inTime, it's very late
@@ -1190,16 +1167,16 @@ function isOfficeClosed(date) {
 // Helper to check if a specific date falls within any approved leave
 function isUserOnLeave(date) {
   if (!userLeaveStatus || !userLeaveStatus.allLeaves) return false;
-  
+
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-  
+
   for (let leave of userLeaveStatus.allLeaves) {
     const partsStart = leave.start.split("/");
     const partsEnd = leave.end.split("/");
-    
+
     const start = new Date(parseInt(partsStart[2]), parseInt(partsStart[0]) - 1, parseInt(partsStart[1]), 0, 0, 0, 0);
     const end = new Date(parseInt(partsEnd[2]), parseInt(partsEnd[0]) - 1, parseInt(partsEnd[1]), 23, 59, 59, 999);
-    
+
     if (d >= start && d <= end) return true;
   }
   return false;
@@ -1208,28 +1185,28 @@ function isUserOnLeave(date) {
 // Unified "Smart Return" finder
 function findSmartReturnDate(baseDate) {
   if (!appSettings) return "---";
-  
+
   let current = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), 12, 0, 0, 0);
   let found = false;
   let safetyCounter = 0;
-  
+
   while (!found && safetyCounter < 60) { // Safety limit of 60 days
     current.setDate(current.getDate() + 1);
-    
+
     const isHoliday = isWeekendOrHoliday(current);
     const isClosed = isOfficeClosed(current);
     const onLeave = isUserOnLeave(current);
-    
+
     if (!isHoliday && !isClosed && !onLeave) {
       found = true;
     }
     safetyCounter++;
   }
-  
+
   const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const dayName = dayNames[current.getDay()];
   const dateStr = (current.getMonth() + 1) + "/" + current.getDate() + "/" + current.getFullYear();
-  
+
   return dateStr + " (" + dayName + ")";
 }
 
@@ -1322,3 +1299,4 @@ validateUserSession();
 
 </body>
 </html>
+
