@@ -266,7 +266,7 @@ const USER_SHEET =
 const WEB_APP_URL =
 "https://script.google.com/macros/s/AKfycbz8aGa9gSSEDx4zTtbb8fhx9iW-wmx9bE7yf5FUBygZ69lG-1EgSgLJ-LBnomV_wNTY/exec";
 
-function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+function fetchWithTimeout(url, options = {}, timeoutMs = 25000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(url, { ...options, signal: controller.signal })
@@ -340,10 +340,6 @@ function login(){
     // Input validation
     if(!id || !pass){
         errEl.innerText = "Enter ID and Password";
-        // Record failed attempt
-        attempts.count++;
-        attempts.firstAttempt = attempts.firstAttempt || now;
-        localStorage.setItem("loginAttempts", JSON.stringify(attempts));
         return;
     }
     
@@ -353,19 +349,12 @@ function login(){
     const idPattern = /^[a-zA-Z0-9\s\-_\.@]+$/;
     if(!idPattern.test(id) || id.length > 50){
         errEl.innerText = "Invalid ID format";
-        // Record failed attempt
-        attempts.count++;
-        attempts.firstAttempt = attempts.firstAttempt || now;
-        localStorage.setItem("loginAttempts", JSON.stringify(attempts));
         return;
     }
     
     // Validate password length (min 4, max 100 chars - more permissive)
     if(pass.length < 4 || pass.length > 100){
         errEl.innerText = "Password must be 4-100 characters";
-        attempts.count++;
-        attempts.firstAttempt = attempts.firstAttempt || now;
-        localStorage.setItem("loginAttempts", JSON.stringify(attempts));
         return;
     }
     
@@ -378,14 +367,19 @@ function login(){
     for(let pattern of dangerousPatterns){
         if(pattern.test(id) || pattern.test(pass)){
             errEl.innerText = "Invalid characters detected";
-            attempts.count++;
-            attempts.firstAttempt = attempts.firstAttempt || now;
-            localStorage.setItem("loginAttempts", JSON.stringify(attempts));
             return;
         }
     }
 
+    loadEl.innerText = "⏳ Verifying Account...";
     loadEl.style.display = "block";
+
+    // Progress notice if Google Apps Script cold-start takes a few seconds
+    const slowNoticeTimer = setTimeout(() => {
+        if(loadEl.style.display !== "none") {
+            loadEl.innerText = "⏳ Server waking up, please hold on...";
+        }
+    }, 4000);
 
     // Debug: Log the login attempt
     console.log("Attempting login with ID:", id);
@@ -403,14 +397,18 @@ function login(){
         body: `id=${encodeURIComponent(id)}&pass=${encodeURIComponent(pass)}`
     })
     .then(res => {
+        clearTimeout(slowNoticeTimer);
         console.log("Login response status:", res.status);
         return res.json();
     })
     .then(data => {
-        console.log("Login response data:", data);
+        clearTimeout(slowNoticeTimer);
         loadEl.style.display = "none";
 
         if(data.success) {
+            // Reset failed attempts on success
+            localStorage.removeItem("loginAttempts");
+
             // Store session and office context in localStorage
             localStorage.setItem("sessionId", data.sessionId);
             localStorage.setItem("userOffice", data.user && data.user.office ? data.user.office : "madarganj");
@@ -422,20 +420,23 @@ function login(){
                 location.href = "dashboard.html";
             }
         } else {
-            // Record failed attempt for rate limiting
-            attempts.count++;
-            attempts.firstAttempt = attempts.firstAttempt || now;
-            localStorage.setItem("loginAttempts", JSON.stringify(attempts));
+            // ONLY increment lockout count if it's an actual invalid credential attempt!
+            if(data.error === "Invalid ID or Password") {
+                attempts.count++;
+                attempts.firstAttempt = attempts.firstAttempt || now;
+                localStorage.setItem("loginAttempts", JSON.stringify(attempts));
+            }
             errEl.innerText = data.error || "❌ Login failed";
             console.log("Login failed:", data.error);
         }
     })
     .catch(err => {
+        clearTimeout(slowNoticeTimer);
         loadEl.style.display = "none";
         console.error("Login fetch error:", err);
         errEl.innerText = err && err.message === "Request timed out. Please try again."
-            ? "⏱️ Server is busy, please try again."
-            : "❌ Cannot connect. Try again.";
+            ? "⏱️ সার্ভার চালু হতে সময় নিচ্ছে। দয়া করে আর একবার Login বাটনে চাপ দিন।"
+            : "❌ সার্ভারে কানেক্ট করা যাচ্ছে না। ইন্টারনেট চেক করে আবার চেষ্টা করুন।";
     });
 }
 

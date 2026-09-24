@@ -13,16 +13,26 @@ const TIMEZONE    = "GMT+6";
 // =============================================
 
 function setupSessionsSheet() {
-  const ss = SpreadsheetApp.getActive();
-  let sessionSheet = ss.getSheetByName("sessions");
-  
-  if(!sessionSheet) {
-    sessionSheet = ss.insertSheet("sessions");
-    sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
-    Logger.log("✅ Created sessions sheet with headers");
+  const cache = CacheService.getScriptCache();
+  if (cache.get("sessions_sheet_ok") === "true") {
+    cleanupExpiredSessionsIfDue();
+    return;
+  }
+
+  try {
+    const ss = SpreadsheetApp.getActive();
+    let sessionSheet = ss.getSheetByName("sessions");
+    
+    if(!sessionSheet) {
+      sessionSheet = ss.insertSheet("sessions");
+      sessionSheet.appendRow(["sessionId", "sessionData", "createdAt", "expiresAt"]);
+      Logger.log("✅ Created sessions sheet with headers");
+    }
+    cache.put("sessions_sheet_ok", "true", 21600); // 6 hours
+  } catch(err) {
+    Logger.log("setupSessionsSheet warning: " + err);
   }
   
-  // Clean up expired sessions at most once per day so login requests stay fast
   cleanupExpiredSessionsIfDue();
 }
 
@@ -143,7 +153,7 @@ function createSessionLocked(userId, role, office) {
   } catch (err) {}
 
   const lock = LockService.getScriptLock();
-  if (lock.tryLock(3000)) {
+  if (lock.tryLock(10000)) {
     try {
       let sessionSheet = SpreadsheetApp.getActive().getSheetByName("sessions");
       if(!sessionSheet) {
@@ -158,7 +168,7 @@ function createSessionLocked(userId, role, office) {
       lock.releaseLock();
     }
   } else {
-    Logger.log("Session persistence skipped: sheet busy");
+    Logger.log("Session persistence skipped: sheet busy (HMAC token safely generated)");
   }
   return sessionId;
 }
@@ -1524,8 +1534,8 @@ function resolveNoSignOutStatus(originalStatus){
 
 function loginUser(e) {
   // For POST requests, parameters come in e.parameter
-  const id = e.parameter.id;
-  const pass = e.parameter.pass;
+  const id = String(e.parameter.id || "").trim();
+  const pass = String(e.parameter.pass || "").trim();
   
   // Debug: Log received parameters and request method
   Logger.log("Login request - Method: " + (e.postData ? "POST" : "GET"));
@@ -1538,8 +1548,17 @@ function loginUser(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
   
-  // Get user data and create session
-  const userSheet = SpreadsheetApp.getActive().getSheetByName("users");
+  // Get user data with retry to handle temporary sheet lock contention
+  let userSheet = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      userSheet = SpreadsheetApp.getActive().getSheetByName("users");
+      if (userSheet) break;
+    } catch (err) {
+      Utilities.sleep(300);
+    }
+  }
+
   if(!userSheet) {
     return ContentService.createTextOutput(JSON.stringify({
       success: false,
@@ -1547,7 +1566,23 @@ function loginUser(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
   
-  const data = userSheet.getDataRange().getValues();
+  let data = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      data = userSheet.getDataRange().getValues();
+      if (data && data.length > 0) break;
+    } catch (err) {
+      Utilities.sleep(300);
+    }
+  }
+
+  if (!data || data.length < 2) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "Unable to read user data. Please try again."
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   const headers = data[0] || [];
   const idCol = headers.indexOf("ID");
   const passCol = headers.indexOf("Password");
@@ -1567,7 +1602,7 @@ function loginUser(e) {
     const passwordMatch = uPass.includes(":")
       ? verifyPassword(pass, uPass) // already hashed
       : uPass === pass; // still plain text (old users)
-    if (uID === id && passwordMatch) {
+    if (uID.toLowerCase() === id.toLowerCase() && passwordMatch) {
       if(uStatus === "inactive") {
         return ContentService.createTextOutput(JSON.stringify({
           success: false,
@@ -1575,15 +1610,20 @@ function loginUser(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
       
-    // Create session and return
+      // Create session and return (resilient against lock contention)
       let sessionId;
       try {
         sessionId = createSession(uID, uRole, uOffice);
       } catch (lockErr) {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          error: "Server busy, please try again"
-        })).setMimeType(ContentService.MimeType.JSON);
+        Logger.log("createSession fallback: " + lockErr);
+        const expiry = new Date(Date.now() + 8 * 60 * 60 * 1000);
+        sessionId = encodeSessionToken_({
+          userId: uID,
+          role: uRole,
+          office: uOffice,
+          createdAt: new Date(),
+          expiresAt: expiry
+        });
       }
       
       return ContentService.createTextOutput(JSON.stringify({
