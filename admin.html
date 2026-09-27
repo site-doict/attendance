@@ -1626,8 +1626,12 @@
         <p style="margin-bottom: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">View or Reset fingerprint
           devices associated with employees. Usually necessary when an employee changes their mobile phone.</p>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-          <button class="btn btn-primary" onclick="loadDevices()"
-            style="padding: 6px 14px; font-size: 13px; min-height: 36px; width: auto;">🔄 Refresh List</button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="loadDevices()"
+              style="padding: 6px 14px; font-size: 13px; min-height: 36px; width: auto;">🔄 Refresh List</button>
+            <button class="btn btn-danger" onclick="resetAllDevices()"
+              style="padding: 6px 14px; font-size: 13px; min-height: 36px; width: auto; background: #ef4444; color: white;">⚠️ Reset All Devices</button>
+          </div>
           <span style="font-size: 11px; color: rgba(255, 255, 255, 0.6);">👉 ডানে-বামে স্ক্রল করুন</span>
         </div>
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
@@ -3376,6 +3380,33 @@
           });
       }
 
+      function resetAllDevices() {
+        if (!confirm("⚠️ আপনি কি নিশ্চিত যে আপনি সকল কর্মচারীর ডিভাইস ফিঙ্গারপ্রিন্ট রিসেট করতে চান?\n\nএটি করার পর প্রত্যেক কর্মচারী পরবর্তী লগইনে তাদের নিজস্ব ডিভাইস থেকে স্বয়ংক্রিয়ভাবে অটো-বাইন্ড হতে পারবেন।")) return;
+
+        const fd = new FormData();
+        fd.append("type", "resetalldevices");
+        fd.append("sessionId", sessionId);
+
+        const tbody = document.getElementById("devicesListBody");
+        tbody.innerHTML = '<tr><td colspan="3" style="padding: 15px; text-align: center; color: #888;">⏳ Resetting all devices...</td></tr>';
+
+        fetch(WEB_APP_URL, { method: "POST", body: fd })
+          .then(r => r.json())
+          .then(d => {
+            if (d.success) {
+              alert("✅ সকল ডিভাইস সফলভাবে রিসেট করা হয়েছে!");
+              loadDevices();
+            } else {
+              alert("Wait, failed to reset devices: " + (d.error || "Unknown"));
+              loadDevices();
+            }
+          })
+          .catch(e => {
+            alert("Network error occurred.");
+            loadDevices();
+          });
+      }
+
       // =============================================
       // LOGOUT
       // =============================================
@@ -3408,6 +3439,7 @@
       window.createUser = createUser;
       window.loadDevices = loadDevices;
       window.resetDevice = resetDevice;
+      window.resetAllDevices = resetAllDevices;
       window.loadSettings = loadSettings;
       window.loadUsersForLeave = loadUsersForLeave;
       window.loadLeavesList = loadLeavesList;

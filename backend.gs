@@ -1056,7 +1056,7 @@ function doPost(e){
   const status = postParam("status");
   const type   = postParam("type");
 
-  const adminOnlyPostTypes = ["updatesettings", "createuser", "toggleuserstatus", "deleteuser", "grantleave", "deletedevice", "sendemail"];
+  const adminOnlyPostTypes = ["updatesettings", "createuser", "toggleuserstatus", "deleteuser", "grantleave", "deletedevice", "resetalldevices", "sendemail"];
   if(type && adminOnlyPostTypes.indexOf(String(type).trim()) !== -1) {
     const r = String(sessionValidation.role || "").toLowerCase();
     if(r !== "admin" && r !== "superadmin") {
@@ -1391,6 +1391,20 @@ for(let i = 1; i < data.length; i++){
     } else {
         return ContentService.createTextOutput(JSON.stringify({success:false, error:"Device not found for this user"})).setMimeType(ContentService.MimeType.JSON);
     }
+  }
+
+  // ---------- RESET ALL DEVICES (admin only) ----------
+  if(type === "resetalldevices"){
+    const deviceSheet = SpreadsheetApp.getActive().getSheetByName("devices");
+    if(!deviceSheet){
+      return ContentService.createTextOutput(JSON.stringify({success:false, error:"Devices sheet not found"})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const lastRow = deviceSheet.getLastRow();
+    if(lastRow > 1){
+      deviceSheet.deleteRows(2, lastRow - 1);
+    }
+    return ContentService.createTextOutput(JSON.stringify({success:true, message:"All devices reset successfully"})).setMimeType(ContentService.MimeType.JSON);
   }
 
   // ---------- SEND CUSTOM EMAIL (admin only) ----------
@@ -2331,6 +2345,7 @@ function checkDeviceInternal(uid, fingerprint){
   const data = sheet.getDataRange().getValues();
 
   let userRegisteredDevice = null;
+  let emptySlotRowIndex = -1;
   let deviceBoundOtherUser = null;
 
   for(let i = 1; i < data.length; i++){
@@ -2340,17 +2355,22 @@ function checkDeviceInternal(uid, fingerprint){
 
     // 1. Check if this specific user already has a device on file
     if(rowId.toLowerCase() === cleanUid.toLowerCase()){
-      userRegisteredDevice = rowFp;
+      if(rowFp !== ""){
+        userRegisteredDevice = rowFp;
+      } else {
+        // User ID exists in this row, but fingerprint column is empty/cleared
+        emptySlotRowIndex = i + 1;
+      }
     }
 
     // 2. Check if this device fingerprint is already bound to any OTHER user
-    if(rowFp === cleanFp && rowId.toLowerCase() !== cleanUid.toLowerCase()){
+    if(rowFp !== "" && rowFp === cleanFp && rowId.toLowerCase() !== cleanUid.toLowerCase()){
       deviceBoundOtherUser = rowId;
     }
   }
 
-  // Case A: The user already has a registered device
-  if(userRegisteredDevice !== null){
+  // Case A: The user already has an active registered device
+  if(userRegisteredDevice !== null && userRegisteredDevice !== ""){
     if(userRegisteredDevice === cleanFp){
       return {status: "allowed"};
     } else {
@@ -2372,13 +2392,19 @@ function checkDeviceInternal(uid, fingerprint){
     };
   }
 
-  // Case C: New user and fresh device -> Auto-bind this device to this user
+  // Case C: New user or empty device slot and fresh device -> Auto-bind this device to this user
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(8000)) {
     return {status: "error", message: "Server busy, please try again"};
   }
   try {
-    sheet.appendRow([cleanUid, cleanFp]);
+    if(emptySlotRowIndex !== -1){
+      // Update the existing row where fingerprint was empty
+      sheet.getRange(emptySlotRowIndex, 2).setValue(cleanFp);
+    } else {
+      // Append a new row
+      sheet.appendRow([cleanUid, cleanFp]);
+    }
     return {status: "registered"};
   } finally {
     lock.releaseLock();
